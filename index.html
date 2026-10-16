@@ -132,16 +132,26 @@
 
 
         .workspace-location-tabs, .workspace-location-tabs > [role="tabpanel"] { width: 100%; min-width: 0; }
-        .workspace-location-tabs { min-height: 100vh; }
+        .workspace-location-tabs { min-height: 100vh; padding-bottom: 26px; }
         .workspace-tab-list {
-            position: sticky;
-            top: 0;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
             z-index: 65;
             display: flex;
             justify-content: center;
             gap: 5px;
             height: 24px;
-            background: var(--paper);
+            background: transparent;
+            pointer-events: none;
+        }
+        .workspace-tab-list .workspace-tab {
+            border-top: 1px solid var(--ink);
+            border-bottom: none;
+            border-radius: 7px 7px 0 0;
+            box-shadow: 1px -2px 3px rgba(24, 36, 43, .12);
+            pointer-events: auto;
         }
         .workspace-tab {
             min-height: 0;
@@ -186,7 +196,7 @@
             border-bottom: 1px solid var(--ink);
             background: rgba(243, 239, 228, 0.96);
             position: sticky;
-            top: 24px;
+            top: 0;
             z-index: 20;
         }
 
@@ -398,9 +408,33 @@
         .panel-grab-tab.today-tab:hover { background: var(--accent); color: white; border-color: var(--accent); }
         .panel-grab-tab.today-tab[aria-expanded="true"] { background: var(--accent); color: white; border-color: var(--accent); }
 
+        .lock-in-pill {
+            position: fixed;
+            left: 12px;
+            bottom: 12px;
+            z-index: 62;
+            min-height: 34px;
+            padding: 0 14px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: var(--panel);
+            color: var(--muted);
+            box-shadow: 2px 2px 6px rgba(24, 36, 43, .12);
+            font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing: .04em;
+            white-space: nowrap;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+        }
+        .lock-in-pill:hover { border-color: var(--accent); color: var(--ink); }
+        .lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
+        .lock-in-pill.is-dragging { cursor: grabbing; transition: none; }
+        .lock-in-pill:focus-visible { outline: 3px solid rgba(208, 14, 0, .28); outline-offset: 2px; }
+        .lock-in-pill .lock-in-emoji { font-size: 22px; line-height: 1; vertical-align: -2px; }
+
         .association-group {
             border-radius: 8px;
-            margin-bottom: 4px;
         }
         .association-summary {
             display: flex;
@@ -490,7 +524,7 @@
         .stat { min-width: 0; padding: 5px 8px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,253,247,.64); }
         .stat-value { display: block; margin-top: 5px; font: 820 19px/1 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .workspace-tabs { display: flex; gap: 6px; margin: 0 0 24px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+        .workspace-tabs { display: flex; gap: 6px; margin: 0 0 24px; position: sticky; top: 72px; z-index: 15; }
         .workspace-tab { flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 9px 12px; font-weight: 750; font-size: 13px; }
         .workspace-tab[aria-selected="true"] { background: var(--ink); color: white; }
         .workspace-tab[aria-selected="true"] .nav-count { background: rgba(255,255,255,.17); color: white; }
@@ -617,8 +651,8 @@
                 bottom: 0;
                 right: 0;
                 z-index: 62;
-                width: 36px;
-                height: 120px;
+                width: 28px;
+                height: 150px;
                 min-height: 0;
                 padding: 0;
                 border: 1px solid var(--ink);
@@ -651,6 +685,11 @@
 
         @media (max-width: 888px) {
             .topbar { position: static; min-height: auto; align-items: flex-start; flex-wrap: wrap; padding: 12px 14px; }
+            .workspace-tabs {
+                position: sticky;
+                top: var(--plans-nav-height, 0px);
+                background: var(--paper);
+            }
             .brand-sub, .storage-state, .desktop-action { display: none; }
             backup-tracker::part(status) { display: none; }
             .top-actions button { padding: 0 10px; }
@@ -659,6 +698,13 @@
             /* Mobile Bottom Views Rail */
             .rail { display: contents; }
             .rail-sticky { display: contents; }
+            .plans-nav {
+                position: sticky;
+                top: 0;
+                z-index: 30;
+                background: var(--paper);
+                border-bottom: 1px solid var(--ink);
+            }
             .rail-eyebrow, .rail-rule { display: none; }
             .nav-list {
                 position: fixed;
@@ -749,8 +795,8 @@
             }
             .panel-grab-tab:not(.today-tab).left-tab {
                 left: 0;
-                width: 36px;
-                height: 120px;
+                width: 28px;
+                height: 150px;
                 border-left: none;
                 border-radius: 0 10px 0 0;
                 box-shadow: 2px -2px 6px rgba(24, 36, 43, 0.12);
@@ -794,6 +840,7 @@
             .list-toolbar { align-items: flex-start; flex-wrap: wrap; }
             .list-toolbar-right { flex-wrap: wrap; }
             .toast-region { bottom: calc(140px + env(safe-area-inset-bottom)); }
+            .lock-in-pill { bottom: 132px; }
         }
 
         @media (max-width: 520px) {
@@ -1762,7 +1809,7 @@
                         <div class="protect-plan-group" role="group" aria-label="Lock In">
                             <span class="protect-plan-label">🔒 Lock In</span>
                             <div class="protect-plan-toggles">
-                                <button type="button" class="protect-toggle" data-plan="no" aria-pressed="false">No</button>
+                                <button type="button" class="protect-toggle" data-plan="no" aria-pressed="false">?</button>
                                 <button type="button" class="protect-toggle" data-plan="now" data-duration="480" aria-pressed="false">Now (8min)</button>
                                 <button type="button" class="protect-toggle" data-plan="sprint" data-duration="1320" aria-pressed="false">Sprint (22min)</button>
                                 <button type="button" class="protect-toggle" data-plan="focus" data-duration="2640" aria-pressed="false">Focus (44min)</button>
@@ -2924,7 +2971,7 @@
                 for (const item of rankedDailySeries.slice(visiblePileSeries.length)) {
                     item.values.forEach((value, index) => { otherValues[index] += value; });
                 }
-                visiblePileSeries.push({ label: 'Other', values: otherValues, total: otherValues.reduce((sum, value) => sum + value, 0) });
+                visiblePileSeries.push({ label: 'Other', values: otherValues, total: otherValues.reduce((sum, value) => sum + value, 0), associationValues: rankedDailySeries.slice(visiblePileSeries.length).map(item => item.label) });
                 visiblePileSeries.sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
             }
 
@@ -3000,6 +3047,9 @@
                         .empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 35px; color: var(--muted, #697177); text-align: center; font-size: 11px; line-height: 1.5; }
                         .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 10px; margin-top: 8px; }
                         .legend-item { min-width: 0; display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 5px; font-size: 9px; }
+                        button.legend-item { width: 100%; border: 0; border-radius: 4px; padding: 4px; background: transparent; text-align: left; cursor: pointer; }
+                        button.legend-item:hover { background: var(--paper-deep, #e8e1d2); }
+                        button.legend-item:focus-visible { outline: 2px solid var(--ink, #18242b); outline-offset: 1px; }
                         .swatch { width: 7px; height: 7px; border-radius: 2px; }
                         .legend-name { overflow: hidden; color: var(--muted, #697177); text-overflow: ellipsis; white-space: nowrap; }
                         .legend-value { font: 750 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -3163,8 +3213,18 @@
             renderLegend(items) {
                 const legend = this.shadowRoot.querySelector('.legend');
                 legend.replaceChildren(...items.slice(0, 8).map((item, index) => {
-                    const row = document.createElement('div');
+                    const row = document.createElement('button');
+                    row.type = 'button';
                     row.className = 'legend-item';
+                    row.title = `Show tasks with ${this.groupBy}: ${item.label}`;
+                    row.setAttribute('aria-label', row.title);
+                    const association = { type: this.groupBy, value: item.label };
+                    if (item.associationValues) association.values = item.associationValues;
+                    row.addEventListener('click', () => this.dispatchEvent(new CustomEvent('task-chart-filter', {
+                        bubbles: true,
+                        composed: true,
+                        detail: association
+                    })));
                     const swatch = document.createElement('span');
                     swatch.className = 'swatch';
                     swatch.style.background = COLOR_PALETTE[index % COLOR_PALETTE.length];
@@ -3223,7 +3283,7 @@
                     ? analytics.taskPile.days.map((items) => items.reduce((sum, item) => sum + item.value, 0))
                     : analytics.pile.labels.map((_, dayIndex) => series.reduce((sum, item) => sum + item.values[dayIndex], 0));
                 const max = Math.max(0, ...dailyTotals);
-                this.renderLegend(taskView ? [] : series.map((item) => ({ label: item.label, value: item.total })));
+                this.renderLegend(taskView ? [] : series.map((item) => ({ label: item.label, value: item.total, associationValues: item.associationValues })));
                 canvasLabel(
                     this.shadowRoot.querySelector('canvas'),
                     taskView
@@ -3609,6 +3669,7 @@
                 this.planningSearch = { plans: '', wants: '' };
                 this.statusFilter = 'open';
                 this.associationFilter = null;
+                this.planFilter = null;
                 this.search = '';
                 this.sortKey = 'default';
                 this.sortDir = 'asc';
@@ -3660,10 +3721,23 @@
                 this.protectSessionStartedAt = null;
                 this.protectTargetSeconds = 1320;
                 this.protectTimerInterval = null;
+                this.lockInEnabled = false;
+                try {
+                    const savedLockIn = localStorage.getItem('taskimatic-lock-in-enabled');
+                    this.lockInEnabled = savedLockIn === null ? this.protectPlan !== 'no' : savedLockIn === 'true';
+                } catch (error) { /* Storage is optional. */ }
+                this.lockInPillPos = null;
+                try {
+                    const savedPillPos = JSON.parse(localStorage.getItem('taskimatic-lock-in-pill-pos') || 'null');
+                    if (savedPillPos && Number.isFinite(savedPillPos.x) && Number.isFinite(savedPillPos.y)) this.lockInPillPos = savedPillPos;
+                } catch (error) { /* Position is optional when storage is unavailable. */ }
+                this.lockInPillDrag = null;
+                this.suppressLockInPillClick = false;
                 this.handleResize = () => {
                     this.positionTodayTab(this.todayTabTop);
                     this.updateTaskColumns();
                     this.positionBrandHelp();
+                    this.positionLockInPill();
                 };
                 this.handleClockStateChange = () => this.syncClock();
                 this.handleHashChange = () => {
@@ -3691,6 +3765,11 @@
                 if (this.dataset.mounted) return;
                 this.dataset.mounted = 'true';
                 this.renderShell();
+                const plansNav = this.querySelector('#plans-nav');
+                this.plansNavResizeObserver = new ResizeObserver(() => {
+                    this.style.setProperty('--plans-nav-height', `${plansNav.getBoundingClientRect().height}px`);
+                });
+                this.plansNavResizeObserver.observe(plansNav);
                 this.updateTaskColumns();
                 this.bindEvents();
                 window.addEventListener('resize', this.handleResize);
@@ -3703,6 +3782,7 @@
             }
 
             disconnectedCallback() {
+                this.plansNavResizeObserver?.disconnect();
                 clearTimeout(this.timerTick);
                 if (this.protectTimerInterval) {
                     clearInterval(this.protectTimerInterval);
@@ -3839,6 +3919,16 @@
                                     <button class="nav-button" type="button" data-status="all"><span>All tasks</span><span class="nav-count" data-count="all">0</span></button>
                                     <button class="nav-button" type="button" data-status="done"><span>Completed</span><span class="nav-count" data-count="done">0</span></button>
                                 </nav>
+                                <details class="association-group plans-nav" id="plans-nav" open>
+                                    <summary class="association-summary" aria-label="Toggle plans list">
+                                        <div class="association-summary-left">
+                                            <span class="association-caret" aria-hidden="true">▶</span>
+                                            <span class="association-type-label">Plans</span>
+                                        </div>
+                                        <span class="nav-count" data-plans-count>0</span>
+                                    </summary>
+                                    <div class="association-tree-children plans-list" role="group" aria-label="Plans"></div>
+                                </details>
                                 <hr class="rail-rule">
                                 <div class="association-drawer" id="associations-drawer">
                                     <div class="drawer-header">
@@ -3918,11 +4008,12 @@
                     <button type="button" class="panel-grab-tab today-tab" id="today-tab" aria-label="Toggle Today panel" aria-controls="today-drawer" aria-describedby="today-lock" aria-expanded="false" title="Today — drag up or down to move; arrow keys also move the tab">
                         <span class="tab-text">Today</span>
                     </button>
+                    <button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">Lock In? <span class="lock-in-emoji">🔓</span></button>
                     <button type="button" class="panel-grab-tab left-tab" id="associations-tab" aria-label="Toggle Associations panel" aria-expanded="false" title="Associations">
                         <span class="tab-text">Associations</span>
                     </button>
-                    <button type="button" class="panel-grab-tab right-tab" id="insights-tab" aria-label="Toggle Work panel" aria-expanded="false" title="Work">
-                        <span class="tab-text">Work</span>
+                    <button type="button" class="panel-grab-tab right-tab" id="insights-tab" aria-label="Toggle Analytics panel" aria-expanded="false" title="Analytics">
+                        <span class="tab-text">Analytics</span>
                     </button>
                     <div class="drawer-scrim" id="drawer-scrim" aria-hidden="true"></div>
                     <div class="protect-modal" id="protect-modal" role="dialog" aria-modal="true" aria-labelledby="protect-modal-task" aria-hidden="true" inert tabindex="-1">
@@ -4298,6 +4389,99 @@
                 });
             }
 
+            setLockInEnabled(enabled) {
+                this.lockInEnabled = Boolean(enabled);
+                try { localStorage.setItem('taskimatic-lock-in-enabled', String(this.lockInEnabled)); } catch (error) { /* Storage is optional. */ }
+                this.updateLockInPill();
+            }
+
+            updateLockInPill() {
+                const pill = this.querySelector('#lock-in-pill');
+                if (!pill) return;
+                pill.innerHTML = `Lock In${this.lockInEnabled ? '!' : '?'} <span class="lock-in-emoji">${this.lockInEnabled ? '🔒' : '🔓'}</span>`;
+                pill.classList.toggle('is-locked', this.lockInEnabled);
+                pill.setAttribute('aria-pressed', String(this.lockInEnabled));
+                pill.title = this.lockInEnabled
+                    ? 'Lock In on — human timers open the focus timer. Click to turn off; drag to move.'
+                    : 'Lock In off — click to turn on; drag to move.';
+            }
+
+            positionLockInPill() {
+                const pill = this.querySelector('#lock-in-pill');
+                if (!pill) return;
+                if (!this.lockInPillPos) {
+                    pill.style.left = '';
+                    pill.style.top = '';
+                    pill.style.bottom = '';
+                    return;
+                }
+                const maxX = Math.max(8, window.innerWidth - pill.offsetWidth - 8);
+                const maxY = Math.max(8, window.innerHeight - pill.offsetHeight - 8);
+                this.lockInPillPos = {
+                    x: Math.max(8, Math.min(maxX, this.lockInPillPos.x)),
+                    y: Math.max(8, Math.min(maxY, this.lockInPillPos.y))
+                };
+                pill.style.left = `${this.lockInPillPos.x}px`;
+                pill.style.top = `${this.lockInPillPos.y}px`;
+                pill.style.bottom = 'auto';
+            }
+
+            saveLockInPillPosition() {
+                if (!this.lockInPillPos) return;
+                try { localStorage.setItem('taskimatic-lock-in-pill-pos', JSON.stringify(this.lockInPillPos)); }
+                catch (error) { /* Keep the position for this session when storage is unavailable. */ }
+            }
+
+            bindLockInPill() {
+                const pill = this.querySelector('#lock-in-pill');
+                if (!pill) return;
+                this.positionLockInPill();
+                this.updateLockInPill();
+                pill.addEventListener('pointerdown', (event) => {
+                    if (!event.isPrimary || event.button !== 0) return;
+                    this.suppressLockInPillClick = false;
+                    const rect = pill.getBoundingClientRect();
+                    this.lockInPillDrag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startPos: { x: rect.left, y: rect.top }, moved: false };
+                    pill.setPointerCapture(event.pointerId);
+                });
+                pill.addEventListener('pointermove', (event) => {
+                    const drag = this.lockInPillDrag;
+                    if (!drag || drag.pointerId !== event.pointerId) return;
+                    const deltaX = event.clientX - drag.startX;
+                    const deltaY = event.clientY - drag.startY;
+                    if (Math.abs(deltaX) + Math.abs(deltaY) >= 4) drag.moved = true;
+                    if (!drag.moved) return;
+                    pill.classList.add('is-dragging');
+                    this.lockInPillPos = { x: drag.startPos.x + deltaX, y: drag.startPos.y + deltaY };
+                    this.positionLockInPill();
+                });
+                const finishDrag = (event) => {
+                    const drag = this.lockInPillDrag;
+                    if (!drag || drag.pointerId !== event.pointerId) return;
+                    this.suppressLockInPillClick = drag.moved;
+                    this.lockInPillDrag = null;
+                    pill.classList.remove('is-dragging');
+                    if (pill.hasPointerCapture(event.pointerId)) pill.releasePointerCapture(event.pointerId);
+                    if (drag.moved) this.saveLockInPillPosition();
+                };
+                pill.addEventListener('pointerup', finishDrag);
+                pill.addEventListener('pointercancel', finishDrag);
+                pill.addEventListener('lostpointercapture', finishDrag);
+                pill.addEventListener('keydown', (event) => {
+                    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+                    event.preventDefault();
+                    const step = event.shiftKey ? 60 : 20;
+                    const rect = pill.getBoundingClientRect();
+                    const current = this.lockInPillPos || { x: rect.left, y: rect.top };
+                    this.lockInPillPos = {
+                        x: current.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
+                        y: current.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0)
+                    };
+                    this.positionLockInPill();
+                    this.saveLockInPillPosition();
+                });
+            }
+
             isTodayLocked() {
                 return this.tasks.some(task => task.today && Boolean(task.activeTimers?.human));
             }
@@ -4401,9 +4585,10 @@
                     const input = this.querySelector('.capture-input');
                     const parsed = parseQuickTask(input.value);
                     if (!parsed.text) { input.focus(); return; }
-                    if (this.associationFilter && !parsed.associations.some((item) => item.type === this.associationFilter.type && item.value === this.associationFilter.value)) {
+                    if (this.associationFilter && !this.associationFilter.values && !(this.associationFilter.chartSelection && this.associationFilter.value === 'Unassigned') && !parsed.associations.some((item) => item.type === this.associationFilter.type && item.value === this.associationFilter.value)) {
                         parsed.associations.push(cloneValue(this.associationFilter));
                     }
+                    if (this.planFilter) parsed.planId = this.planFilter;
                     await this.createTask(parsed);
                     input.value = '';
                     input.focus();
@@ -4432,7 +4617,7 @@
                 this.updateProtectPlanButtons();
 
                 this.bindProtectModal(this.querySelector('#protect-modal'));
-                this.querySelector('.active-filter button').addEventListener('click', () => this.setAssociationFilter(null));
+                this.querySelector('.active-filter button').addEventListener('click', () => { this.planFilter = null; this.setAssociationFilter(null); });
                 this.querySelector('.pip-action').addEventListener('click', () => this.openPipWindow());
                 this.querySelector('backup-tracker').addEventListener('backup-request', async () => {
                     await this.ready;
@@ -4453,6 +4638,14 @@
 
                 // Drawer interactions
                 this.bindTodayTabDrag();
+                this.bindLockInPill();
+                this.querySelector('#lock-in-pill').addEventListener('click', (event) => {
+                    if (this.suppressLockInPillClick && event.detail !== 0) {
+                        this.suppressLockInPillClick = false;
+                        return;
+                    }
+                    this.setLockInEnabled(!this.lockInEnabled);
+                });
                 this.querySelector('#today-tab').addEventListener('click', (event) => {
                     if (this.suppressTodayTabClick && event.detail !== 0) {
                         this.suppressTodayTabClick = false;
@@ -4490,6 +4683,23 @@
                     else this.openSessionDetails.delete(event.detail.id);
                 });
                 this.addEventListener('task-chart-navigate', (event) => this.revealTask(event.detail.id));
+                this.addEventListener('task-chart-filter', (event) => {
+                    this.setMainView('tasks');
+                    this.statusFilter = 'all';
+                    this.planFilter = null;
+                    this.search = '';
+                    const searcher = this.querySelector('.task-search');
+                    if (searcher) searcher.value = '';
+                    this.querySelectorAll('.nav-button').forEach((button) => {
+                        button.classList.toggle('active', button.dataset.status === 'all');
+                    });
+                    this.closeDrawers();
+                    const association = { ...event.detail, chartSelection: true };
+                    const synthetic = association.values || association.value === 'Unassigned';
+                    if (synthetic) this.updateLocationHash(null);
+                    this.setAssociationFilter(association, { updateUrl: !synthetic });
+                    this.querySelector('.list-toolbar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
                 this.addEventListener('task-delete', (event) => this.deleteTask(event.detail.id));
             }
 
@@ -4544,7 +4754,14 @@
                     if (this.statusFilter === 'open' && (task.status !== 'open' || task.tabled)) return false;
                     if (this.statusFilter === 'tabled' && !task.tabled) return false;
                     if (this.statusFilter === 'done' && task.status !== 'done') return false;
-                    if (this.associationFilter && !task.associations.some((item) => item.type === this.associationFilter.type && item.value === this.associationFilter.value)) return false;
+                    if (this.planFilter && task.planId !== this.planFilter) return false;
+                    if (this.associationFilter) {
+                        const filter = this.associationFilter;
+                        const values = filter.values || [filter.value];
+                        const matches = task.associations.some((item) => item.type === filter.type && values.includes(item.value));
+                        const unassigned = filter.chartSelection && values.includes('Unassigned') && !task.associations.some((item) => item.type === filter.type);
+                        if (!matches && !unassigned) return false;
+                    }
                     if (this.search) {
                         const haystack = `${task.text} ${task.notes} ${task.prompts} ${task.associations.map((item) => `${item.type} ${item.value}`).join(' ')}`.toLowerCase();
                         if (!haystack.includes(this.search)) return false;
@@ -4585,6 +4802,11 @@
                 this.renderAll();
             }
 
+            setPlanFilter(planId) {
+                this.planFilter = planId;
+                this.renderAll();
+            }
+
             revealAssociation(association) {
                 const [normalized] = normalizeAssociations([association]);
                 if (!normalized) return;
@@ -4600,6 +4822,7 @@
                 if (this.tablePreferences.enabled) this.tableTaskId = taskId;
                 this.statusFilter = task.tabled ? 'tabled' : task.status === 'done' ? 'done' : 'open';
                 this.associationFilter = null;
+                this.planFilter = null;
                 this.search = '';
                 this.updateLocationHash(null);
                 const searcher = this.querySelector('.task-search');
@@ -4622,6 +4845,7 @@
             renderAll() {
                 this.renderCounts();
                 this.renderAssociations();
+                this.renderPlansNav();
                 this.renderStats();
                 this.renderTasks();
                 this.renderTodayTasks();
@@ -4947,8 +5171,12 @@
                 hierarchyButton.hidden = !this.tablePreferences.enabled;
                 hierarchyButton.textContent = this.tablePreferences.selected || 'Hierarchy';
                 const filterBar = this.querySelector('.active-filter');
-                filterBar.hidden = !this.associationFilter;
-                if (this.associationFilter) filterBar.querySelector('span').textContent = `${this.associationFilter.type}: ${this.associationFilter.value}`;
+                const filterPlan = this.planFilter ? this.plans.find(plan => plan.id === this.planFilter) : null;
+                filterBar.hidden = !this.associationFilter && !filterPlan;
+                const filterBits = [];
+                if (filterPlan) filterBits.push(`Plan: ${filterPlan.text}`);
+                if (this.associationFilter) filterBits.push(`${this.associationFilter.type}: ${this.associationFilter.value}`);
+                filterBar.querySelector('span').textContent = filterBits.join(' · ');
                 list.replaceChildren();
                 if (!tasks.some(task => task.id === this.tableTaskId)) this.tableTaskId = null;
                 if (this.tablePreferences.enabled && tasks.length) {
@@ -5173,6 +5401,47 @@
                     }
                     details.append(children);
                     container.append(details);
+                }
+            }
+
+            renderPlansNav() {
+                const nav = this.querySelector('#plans-nav');
+                if (!nav) return;
+                if (this.planFilter && !this.plans.some(plan => plan.id === this.planFilter)) this.planFilter = null;
+                const badge = nav.querySelector('[data-plans-count]');
+                if (badge) badge.textContent = this.plans.length;
+                const list = nav.querySelector('.plans-list');
+                list.replaceChildren();
+                if (!this.plans.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'no-associations';
+                    empty.textContent = 'Add a plan from the Plans tab and it will show up here.';
+                    list.append(empty);
+                    return;
+                }
+                const sorted = [...this.plans].sort((a, b) => a.text.localeCompare(b.text));
+                for (const plan of sorted) {
+                    const openCount = this.tasks.filter(task => task.planId === plan.id && task.status === 'open').length;
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'association-button';
+                    if (this.planFilter === plan.id) button.classList.add('active');
+                    button.title = `Show tasks attached to ${plan.text}`;
+                    const name = document.createElement('span');
+                    name.className = 'association-button-label';
+                    name.textContent = plan.text;
+                    const number = document.createElement('span');
+                    number.className = 'nav-count';
+                    number.textContent = openCount;
+                    number.title = `${openCount} open task${openCount === 1 ? '' : 's'}`;
+                    button.append(name, number);
+                    button.addEventListener('click', () => {
+                        const isSame = this.planFilter === plan.id;
+                        if (!isSame) this.setMainView('tasks');
+                        this.setPlanFilter(isSame ? null : plan.id);
+                        if (window.innerWidth <= 820) this.closeDrawers();
+                    });
+                    list.append(button);
                 }
             }
 
@@ -5512,12 +5781,13 @@
             }
 
             isProtectPlanEngaged() {
-                return Boolean(this.protectPlan && this.protectPlan !== 'no');
+                return Boolean(this.lockInEnabled);
             }
 
             setProtectPlan(plan) {
                 if (!['no', 'now', 'sprint', 'focus', 'flow'].includes(plan)) plan = 'no';
                 this.protectPlan = plan;
+                if (plan !== 'no') this.setLockInEnabled(true);
                 try { localStorage.setItem('taskimatic-protect-plan', plan); } catch (e) {}
                 this.updateProtectPlanButtons();
             }
@@ -5631,7 +5901,8 @@
                     flow: 'Flow (88min)'
                 };
                 this.protectTaskId = task.id;
-                this.protectTargetSeconds = durations[this.protectPlan] || 22 * 60;
+                // A today-panel plan (Now/Sprint/Focus/Flow) overrides the task's estimated time.
+                this.protectTargetSeconds = durations[this.protectPlan] || (task.estimatedMinutes ? task.estimatedMinutes * 60 : 22 * 60);
                 this.protectAccumulatedSeconds = 0;
                 this.protectSessionStartedAt = Date.now();
                 this.protectIsPaused = false;
@@ -5643,7 +5914,7 @@
                 if (notes) notes.value = task.notes || '';
                 modal.querySelectorAll?.('.protect-form-status').forEach(status => { status.textContent = ''; });
                 const planLabel = modal.querySelector('.protect-modal-plan-label');
-                if (planLabel) planLabel.textContent = labels[this.protectPlan] || '🔒 Lock In';
+                if (planLabel) planLabel.textContent = labels[this.protectPlan] || (task.estimatedMinutes ? `Estimate (< ${task.estimatedMinutes}min)` : '🔒 Lock In');
                 const pauseBtn = modal.querySelector('.protect-btn-pause');
                 if (pauseBtn) pauseBtn.textContent = 'Pause';
                 const center = modal.querySelector('.protect-modal-center');
