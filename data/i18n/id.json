@@ -399,7 +399,12 @@
       "assignedTaskIs": "tugas masih ditetapkan",
       "assignedTasksAre": "tugas masih ditetapkan",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — pengelolaan pribadi +@$< | Tanpa Perlu Mendaftar"
+      "pageTitle": "taskimatic — pengelolaan pribadi +@$< | Tanpa Perlu Mendaftar",
+      "settings": "Pengaturan",
+      "fontSize": "Ukuran teks",
+      "decreaseFontSize": "Perkecil ukuran font",
+      "increaseFontSize": "Perbesar ukuran font",
+      "chooseYourLanguage": "Pilih bahasa Anda"
     }
   },
   "error": {

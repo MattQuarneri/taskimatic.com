@@ -399,7 +399,12 @@
       "assignedTaskIs": "कार्य असाइन है",
       "assignedTasksAre": "कार्य असाइन हैं",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — निजी +@$< प्रबंधन | साइन-अप की आवश्यकता नहीं"
+      "pageTitle": "taskimatic — निजी +@$< प्रबंधन | साइन-अप की आवश्यकता नहीं",
+      "settings": "सेटिंग्स",
+      "fontSize": "टेक्स्ट का आकार",
+      "decreaseFontSize": "फ़ॉन्ट आकार छोटा करें",
+      "increaseFontSize": "फ़ॉन्ट आकार बड़ा करें",
+      "chooseYourLanguage": "अपनी भाषा चुनें"
     }
   },
   "error": {

@@ -399,7 +399,12 @@
       "assignedTaskIs": "attività è",
       "assignedTasksAre": "attività sono",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — gestione privata +@$< | Nessuna registrazione richiesta"
+      "pageTitle": "taskimatic — gestione privata +@$< | Nessuna registrazione richiesta",
+      "settings": "Impostazioni",
+      "fontSize": "Dimensione testo",
+      "decreaseFontSize": "Riduci dimensione carattere",
+      "increaseFontSize": "Aumenta dimensione carattere",
+      "chooseYourLanguage": "Scegli la tua lingua"
     }
   },
   "error": {

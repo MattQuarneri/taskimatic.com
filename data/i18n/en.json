@@ -399,7 +399,12 @@
       "assignedTaskIs": "task is",
       "assignedTasksAre": "tasks are",
       "pluralSuffix": "s",
-      "pageTitle": "taskimatic — private +@$< management | No Sign-Up Required"
+      "pageTitle": "taskimatic — private +@$< management | No Sign-Up Required",
+      "settings": "Settings",
+      "fontSize": "Text size",
+      "decreaseFontSize": "Decrease font size",
+      "increaseFontSize": "Increase font size",
+      "chooseYourLanguage": "Choose your language"
     }
   },
   "error": {

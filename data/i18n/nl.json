@@ -399,7 +399,12 @@
       "assignedTaskIs": "taak is",
       "assignedTasksAre": "taken zijn",
       "pluralSuffix": "en",
-      "pageTitle": "taskimatic — privé +@$< beheer | Geen registratie vereist"
+      "pageTitle": "taskimatic — privé +@$< beheer | Geen registratie vereist",
+      "settings": "Instellingen",
+      "fontSize": "Tekstgrootte",
+      "decreaseFontSize": "Lettergrootte verkleinen",
+      "increaseFontSize": "Lettergrootte vergroten",
+      "chooseYourLanguage": "Kies uw taal"
     }
   },
   "error": {

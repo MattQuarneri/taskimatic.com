@@ -399,7 +399,12 @@
       "assignedTaskIs": "задача назначена",
       "assignedTasksAre": "задачи назначены",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — приватное управление +@$< | Регистрация не требуется"
+      "pageTitle": "taskimatic — приватное управление +@$< | Регистрация не требуется",
+      "settings": "Настройки",
+      "fontSize": "Размер текста",
+      "decreaseFontSize": "Уменьшить шрифт",
+      "increaseFontSize": "Увеличить шрифт",
+      "chooseYourLanguage": "Выберите язык"
     }
   },
   "error": {

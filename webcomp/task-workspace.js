@@ -116,6 +116,7 @@ class TaskWorkspace extends HTMLElement {
         if (this.dataset.mounted) return;
         this.dataset.mounted = 'true';
         this.renderShell();
+        this.initFontScale();
         const plansNav = this.querySelector('#plans-nav');
         this.plansNavResizeObserver = new ResizeObserver(() => {
             this.style.setProperty('--plans-nav-height', `${plansNav.getBoundingClientRect().height}px`);
@@ -258,10 +259,30 @@ class TaskWorkspace extends HTMLElement {
                     </backup-tracker>
                     <button class="import-action desktop-action" type="button">${escapeHTML(t('ui.text.import'))}</button>
                     <button class="download-action primary" type="button">${escapeHTML(t('ui.text.downloadApp'))}</button>
-                    <input class="import-input" type="file" accept="application/json,.json" hidden aria-label="${escapeHTML(t('ui.text.importTaskData'))}">
-                    <select class="language-picker" aria-label="${escapeHTML(t('ui.text.language'))}">
-                        ${window.i18n.getAvailableLanguages().map(lang => `<option value="${escapeHTML(lang)}" ${lang === window.i18n.currentLang ? 'selected' : ''}>${escapeHTML(window.i18n.languages[lang].Lang)}</option>`).join('')}
-                    </select>
+                    <div class="settings-menu-container">
+                        <button class="settings-button" type="button" aria-label="${escapeHTML(t('ui.text.settings'))}" aria-expanded="false" aria-haspopup="true" title="${escapeHTML(t('ui.text.settings'))}">
+                            <svg class="gear-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </button>
+                        <div class="settings-dropdown" hidden>
+                            <div class="settings-row">
+                                <label class="settings-label" for="settings-language-picker">${escapeHTML(t('ui.text.language'))}</label>
+                                <select id="settings-language-picker" class="language-picker" aria-label="${escapeHTML(t('ui.text.language'))}">
+                                    ${window.i18n.getAvailableLanguages().map(lang => `<option value="${escapeHTML(lang)}" ${lang === window.i18n.currentLang ? 'selected' : ''}>${escapeHTML(window.i18n.languages[lang].Lang)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">${escapeHTML(t('ui.text.fontSize'))}</span>
+                                <div class="font-size-controls">
+                                    <button type="button" class="font-size-btn font-size-dec" aria-label="${escapeHTML(t('ui.text.decreaseFontSize'))}" title="Smaller text">−</button>
+                                    <span class="font-size-indicator" aria-live="polite">100%</span>
+                                    <button type="button" class="font-size-btn font-size-inc" aria-label="${escapeHTML(t('ui.text.increaseFontSize'))}" title="Larger text">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
             <div class="app-grid">
@@ -413,6 +434,13 @@ class TaskWorkspace extends HTMLElement {
                 <p class="agent-error" role="status"></p>
                 <div class="agent-list"></div>
                 <button type="button" id="agent-manager-close">${escapeHTML(t('ui.text.close'))}</button>
+            </dialog>
+            <dialog class="language-first-run-dialog" id="language-first-run-dialog" aria-labelledby="language-first-run-title">
+                <h2 id="language-first-run-title">${escapeHTML(t('ui.text.chooseYourLanguage'))}</h2>
+                <div class="first-run-lang-list"></div>
+                <div class="first-run-actions">
+                    <button type="button" class="first-run-confirm primary" id="first-run-confirm-btn">${escapeHTML(t('ui.text.save'))}</button>
+                </div>
             </dialog>
         `;
     }
@@ -905,7 +933,162 @@ class TaskWorkspace extends HTMLElement {
         bubble.style.top = `${bounds.bottom + 14}px`;
     }
 
+    initFontScale() {
+        let savedScale = 1.0;
+        try {
+            const raw = localStorage.getItem('taskimatic:font-scale');
+            if (raw) {
+                const parsed = parseFloat(raw);
+                if (Number.isFinite(parsed) && parsed >= 0.7 && parsed <= 2.0) {
+                    savedScale = parsed;
+                }
+            }
+        } catch {}
+        this.setFontScale(savedScale, { persist: false });
+    }
+
+    setFontScale(scale, { persist = true } = {}) {
+        const rounded = Math.round(scale * 100) / 100;
+        this.fontScale = rounded;
+        document.documentElement.style.setProperty('--font-scale', String(rounded));
+        if (persist) {
+            try {
+                localStorage.setItem('taskimatic:font-scale', String(rounded));
+            } catch {}
+        }
+        this.updateFontSizeControls();
+    }
+
+    updateFontSizeControls() {
+        const indicator = this.querySelector('.font-size-indicator');
+        if (indicator) {
+            indicator.textContent = `${Math.round((this.fontScale || 1.0) * 100)}%`;
+        }
+        const decBtn = this.querySelector('.font-size-dec');
+        const incBtn = this.querySelector('.font-size-inc');
+        const steps = [0.85, 0.92, 1.0, 1.1, 1.22, 1.35];
+        if (decBtn) decBtn.disabled = (this.fontScale || 1.0) <= steps[0];
+        if (incBtn) incBtn.disabled = (this.fontScale || 1.0) >= steps[steps.length - 1];
+    }
+
+    stepFontSize(direction) {
+        const steps = [0.85, 0.92, 1.0, 1.1, 1.22, 1.35];
+        const current = this.fontScale || 1.0;
+        if (direction < 0) {
+            const nextIndex = steps.slice().reverse().findIndex(s => s < current - 0.01);
+            if (nextIndex !== -1) {
+                this.setFontScale(steps[steps.length - 1 - nextIndex]);
+            }
+        } else {
+            const nextIndex = steps.findIndex(s => s > current + 0.01);
+            if (nextIndex !== -1) {
+                this.setFontScale(steps[nextIndex]);
+            }
+        }
+    }
+
+    bindSettingsEvents() {
+        const container = this.querySelector('.settings-menu-container');
+        const settingsBtn = this.querySelector('.settings-button');
+        const dropdown = this.querySelector('.settings-dropdown');
+        const decBtn = this.querySelector('.font-size-dec');
+        const incBtn = this.querySelector('.font-size-inc');
+
+        if (settingsBtn && dropdown) {
+            settingsBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const isOpen = !dropdown.hidden;
+                dropdown.hidden = isOpen;
+                settingsBtn.setAttribute('aria-expanded', String(!isOpen));
+            });
+
+            dropdown.addEventListener('click', (event) => {
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!container?.contains(event.target) && !dropdown.hidden) {
+                    dropdown.hidden = true;
+                    settingsBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !dropdown.hidden) {
+                    dropdown.hidden = true;
+                    settingsBtn.setAttribute('aria-expanded', 'false');
+                    settingsBtn.focus();
+                }
+            });
+        }
+
+        if (decBtn) {
+            decBtn.addEventListener('click', () => this.stepFontSize(-1));
+        }
+        if (incBtn) {
+            incBtn.addEventListener('click', () => this.stepFontSize(1));
+        }
+
+        this.updateFontSizeControls();
+        this.checkFirstRunLanguage();
+    }
+
+    checkFirstRunLanguage() {
+        const choices = window.i18n?.firstRunChoices;
+        if (!choices || choices.length <= 1) return;
+        try {
+            if (localStorage.getItem('taskimatic:language-chosen')) return;
+        } catch {}
+
+        const dialog = this.querySelector('#language-first-run-dialog');
+        if (!dialog || typeof dialog.showModal !== 'function') return;
+
+        const list = dialog.querySelector('.first-run-lang-list');
+        if (!list) return;
+        list.replaceChildren();
+
+        let selected = window.i18n.currentLang || choices[0];
+        for (const code of choices) {
+            const langName = window.i18n.languages?.[code]?.Lang || code;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `first-run-lang-btn ${code === selected ? 'active' : ''}`;
+            btn.dataset.lang = code;
+            btn.textContent = langName;
+            btn.addEventListener('click', () => {
+                selected = code;
+                list.querySelectorAll('.first-run-lang-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.lang === selected);
+                });
+            });
+            list.append(btn);
+        }
+
+        const confirmBtn = dialog.querySelector('#first-run-confirm-btn');
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                dialog.close();
+                window.i18n.setStoredLanguage(selected);
+                delete window.i18n.firstRunChoices;
+                if (selected !== window.i18n.currentLang) {
+                    await window.i18n.setLanguage(selected);
+                    const url = new URL(location.href);
+                    url.searchParams.set('lang', window.i18n.currentLang);
+                    location.assign(url.href);
+                }
+            };
+        }
+
+        dialog.addEventListener('close', () => {
+            window.i18n.setStoredLanguage(window.i18n.currentLang);
+            delete window.i18n.firstRunChoices;
+        }, { once: true });
+
+        dialog.showModal();
+    }
+
     bindEvents() {
+        this.bindSettingsEvents();
         this.querySelector('.language-picker').addEventListener('change', async event => {
             const picker = event.currentTarget;
             picker.disabled = true;
@@ -957,6 +1140,11 @@ class TaskWorkspace extends HTMLElement {
             this.tableTaskId = null;
             this.setAssociationFilter(event.detail);
         });
+        this.querySelector('.capture-input').addEventListener('input', (event) => {
+            this.querySelector('.task-search').value = event.target.value;
+            this.search = event.target.value.trim().toLowerCase();
+            this.renderTasks();
+        });
         this.querySelector('.capture-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const input = this.querySelector('.capture-input');
@@ -968,6 +1156,9 @@ class TaskWorkspace extends HTMLElement {
             if (this.planFilter) parsed.planId = this.planFilter;
             await this.createTask(parsed);
             input.value = '';
+            this.querySelector('.task-search').value = '';
+            this.search = '';
+            this.renderTasks();
             input.focus();
         });
 
@@ -2118,6 +2309,10 @@ class TaskWorkspace extends HTMLElement {
             version: APP_VERSION,
             exportedAt: nowISO(),
             schemaVersion: 3,
+            settings: {
+                language: window.i18n?.currentLang || 'en',
+                fontScale: this.fontScale || 1.0
+            },
             tasks: cloneValue(this.sortedTasks()),
             plans: cloneValue(this.plans),
             wants: cloneValue(this.wants),
@@ -2134,6 +2329,13 @@ class TaskWorkspace extends HTMLElement {
     }
 
     async importData(input, options = {}) {
+        let rawSettings = null;
+        if (typeof input === 'string') {
+            try { rawSettings = JSON.parse(input)?.settings; } catch {}
+        } else if (input && typeof input === 'object') {
+            rawSettings = input.settings;
+        }
+
         const incoming = normalizeWorkspaceSnapshot(input, normalizeTask);
         const strategy = options.strategy || 'merge';
         if (!['merge', 'replace'].includes(strategy)) throw new Error(t('error.messages.importStrategyMustBeMergeOrReplace'));
@@ -2146,6 +2348,25 @@ class TaskWorkspace extends HTMLElement {
         await this.repository.replaceWorkspace(snapshot);
         Object.assign(this, snapshot);
         invalidateDurationCache();
+
+        if (rawSettings) {
+            if (typeof rawSettings.fontScale === 'number') {
+                this.setFontScale(rawSettings.fontScale);
+            }
+            if (typeof rawSettings.language === 'string' && window.i18n?.languages?.[rawSettings.language]) {
+                const targetLang = rawSettings.language;
+                window.i18n.setStoredLanguage?.(targetLang);
+                if (targetLang !== window.i18n.currentLang) {
+                    await window.i18n.setLanguage(targetLang);
+                    if (typeof location !== 'undefined' && location.assign) {
+                        const url = new URL(location.href);
+                        url.searchParams.set('lang', window.i18n.currentLang);
+                        location.assign(url.href);
+                    }
+                }
+            }
+        }
+
         this.renderAll();
         this.emitChange('imported');
         return { imported: incoming.tasks.length, total: this.tasks.length, plans: { imported: incoming.plans.length, total: this.plans.length }, wants: { imported: incoming.wants.length, total: this.wants.length }, agents: { imported: incoming.agents.length, total: this.agents.length } };

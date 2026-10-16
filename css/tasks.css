@@ -14,6 +14,14 @@
     --yellow: #e8b949;
     --shadow: 4px 4px 0 rgba(24, 36, 43, 0.13);
     --radius: 14px;
+    --font-scale: 1;
+    --font-xs: calc(11px * var(--font-scale, 1));
+    --font-sm: calc(12px * var(--font-scale, 1));
+    --font-md: calc(13px * var(--font-scale, 1));
+    --font-base: calc(14px * var(--font-scale, 1));
+    --font-lg: calc(16px * var(--font-scale, 1));
+    --font-xl: calc(18px * var(--font-scale, 1));
+    --font-2xl: calc(20px * var(--font-scale, 1));
     color-scheme: light;
 }
 
@@ -31,6 +39,7 @@ body {
     background-size: 100% 28px;
     color: var(--ink);
     font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: var(--font-base);
 }
 
 button, input, select, textarea { font: inherit; }
@@ -188,11 +197,203 @@ task-workspace { display: block; min-height: calc(100vh - 24px); }
 .brand-name { font-weight: 850; letter-spacing: -0.035em; font-size: 20px; }
 .brand-sub { color: var(--muted); font: 650 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; }
 .top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.top-actions button { padding: 0 13px; font-weight: 720; font-size: 13px; }
-.language-picker { min-height: 40px; max-width: 150px; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); font-size: 13px; }
+.top-actions button:not(.settings-button):not(.font-size-btn) { padding: 0 13px; font-weight: 720; font-size: var(--font-md); }
+.language-picker { min-height: 38px; width: 100%; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); font-size: var(--font-md); }
 .top-actions .primary { background: var(--ink); color: white; }
 .top-actions .primary:hover { background: #2c3d46; }
 .top-actions .pip-action[aria-pressed="true"] { background: var(--green); color: white; }
+
+/* Settings Menu & Font Controls */
+.settings-menu-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.settings-button {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    min-width: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ink);
+    border-radius: 9px;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 2px 2px 0 rgba(24, 36, 43, 0.12);
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.settings-button:hover {
+    background: var(--paper-deep);
+    color: var(--ink);
+}
+
+.settings-button[aria-expanded="true"] {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.settings-button .gear-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+.settings-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 70;
+    min-width: 230px;
+    padding: 14px;
+    border: 1px solid var(--ink);
+    border-radius: 12px;
+    background: var(--panel);
+    box-shadow: 4px 4px 0 var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-dropdown[hidden] {
+    display: none !important;
+}
+
+.settings-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.settings-label {
+    font-size: var(--font-xs);
+    font-weight: 750;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.font-size-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+}
+
+.font-size-btn {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 rgba(24, 36, 43, 0.12);
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.font-size-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: white;
+}
+
+.font-size-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.font-size-indicator {
+    font: 750 var(--font-md)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--ink);
+    min-width: 48px;
+    text-align: center;
+}
+
+/* First-run Language Selection Modal */
+.language-first-run-dialog {
+    border: 2px solid var(--ink);
+    border-radius: 16px;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 24px;
+    max-width: min(440px, calc(100vw - 32px));
+    width: 100%;
+}
+
+.language-first-run-dialog::backdrop {
+    background: rgba(24, 36, 43, 0.45);
+    backdrop-filter: blur(3px);
+}
+
+.language-first-run-dialog h2 {
+    margin: 0 0 16px;
+    font-size: var(--font-xl);
+    letter-spacing: -0.02em;
+}
+
+.first-run-lang-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.first-run-lang-btn {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: var(--font-base);
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 120ms ease;
+}
+
+.first-run-lang-btn:hover {
+    border-color: var(--ink);
+    background: var(--panel);
+}
+
+.first-run-lang-btn.active {
+    border-color: var(--ink);
+    background: var(--accent);
+    color: white;
+    box-shadow: 2px 2px 0 var(--ink);
+}
+
+.first-run-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.first-run-confirm {
+    min-height: 40px;
+    padding: 0 20px;
+    font-weight: 750;
+    font-size: var(--font-md);
+}
 
 .storage-state {
     display: inline-flex;
@@ -686,7 +887,7 @@ task-item { display: block; }
         align-items: center;
         gap: 2px;
         padding: 3px 2px;
-        font-size: 11px;
+        font-size: max(12px, var(--font-sm));
         font-weight: 750;
         border: 1px solid transparent;
         border-radius: 8px;
@@ -697,7 +898,12 @@ task-item { display: block; }
         background: var(--panel);
         box-shadow: 1px 1px 0 rgba(24, 36, 43, 0.12);
     }
-    .nav-count { min-width: 17px; padding: 1px 4px; font-size: 9px; }
+    .nav-count { min-width: 20px; padding: 2px 5px; font-size: max(11px, var(--font-xs)); }
+
+    /* Prevent mobile browser (iOS Safari) automatic viewport zoom on input focus */
+    input[type="text"], input[type="search"], input[type="number"], select, textarea {
+        font-size: 16px;
+    }
 
     /* Left Associations Slide-out Panel */
     .association-drawer {

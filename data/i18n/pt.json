@@ -399,7 +399,12 @@
       "assignedTaskIs": "tarefa ainda atribuída",
       "assignedTasksAre": "tarefas ainda atribuídas",
       "pluralSuffix": "s",
-      "pageTitle": "taskimatic — gestão privada +@$< | Sem necessidade de cadastro"
+      "pageTitle": "taskimatic — gestão privada +@$< | Sem necessidade de cadastro",
+      "settings": "Configurações",
+      "fontSize": "Tamanho do texto",
+      "decreaseFontSize": "Diminuir tamanho da fonte",
+      "increaseFontSize": "Aumentar tamanho da fonte",
+      "chooseYourLanguage": "Escolha seu idioma"
     }
   },
   "error": {

@@ -399,7 +399,12 @@
       "assignedTaskIs": "项任务",
       "assignedTasksAre": "项任务",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — 私密 +@$< 管理 | 无需注册"
+      "pageTitle": "taskimatic — 私密 +@$< 管理 | 无需注册",
+      "settings": "设置",
+      "fontSize": "文字大小",
+      "decreaseFontSize": "缩小字号",
+      "increaseFontSize": "放大字号",
+      "chooseYourLanguage": "选择你的语言"
     }
   },
   "error": {

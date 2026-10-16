@@ -399,7 +399,12 @@
       "assignedTaskIs": "Aufgabe ist",
       "assignedTasksAre": "Aufgaben sind",
       "pluralSuffix": "n",
-      "pageTitle": "taskimatic — private +@$< Verwaltung | Keine Registrierung erforderlich"
+      "pageTitle": "taskimatic — private +@$< Verwaltung | Keine Registrierung erforderlich",
+      "settings": "Einstellungen",
+      "fontSize": "Schriftgröße",
+      "decreaseFontSize": "Schrift verkleinern",
+      "increaseFontSize": "Schrift vergrößern",
+      "chooseYourLanguage": "Wählen Sie Ihre Sprache"
     }
   },
   "error": {

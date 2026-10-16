@@ -119,14 +119,14 @@ class TaskItem extends HTMLElement {
                 }
                 .check.checked { background: var(--green, #28785c); }
                 .check.today-check.checked { background: var(--blue, #315f91); }
-                .check-control { display: grid; justify-items: center; gap: 4px; margin-bottom: 9px; color: var(--muted, #697177); font: 750 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+                .check-control { display: grid; justify-items: center; gap: 4px; margin-bottom: 9px; color: var(--muted, #697177); font: 750 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
                 .check-control input { appearance: none; cursor: pointer; margin: 3px 0 0; }
                 .check-control input:checked { background: var(--blue, #315f91); }
                 .check-control input:checked::after { content: '✓'; }
                 .check-control .check { margin: 3px 0 0; }
                 .check:focus-visible { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }
-                .priority-control { display: grid; justify-items: center; gap: 3px; margin-top: 6px; color: var(--muted, #697177); font: 750 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; }
-                .priority-input { width: 38px; height: 25px; border: 1px solid #bdb7aa; border-radius: 6px; background: var(--panel, #fffdf7); padding: 0 3px; color: var(--ink, #18242b); text-align: center; font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+                .priority-control { display: grid; justify-items: center; gap: 3px; margin-top: 6px; color: var(--muted, #697177); font: 750 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; }
+                .priority-input { width: 38px; height: 25px; border: 1px solid #bdb7aa; border-radius: 6px; background: var(--panel, #fffdf7); padding: 0 3px; color: var(--ink, #18242b); text-align: center; font: 800 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
                 .priority-input:focus { outline: 2px solid rgba(49,95,145,.22); outline-offset: 1px; }
                 .text {
                     display: block;
@@ -139,7 +139,7 @@ class TaskItem extends HTMLElement {
                     padding: 2px 3px;
                     background: transparent;
                     color: var(--ink, #18242b);
-                    font-size: 15px;
+                    font-size: var(--font-lg, 16px);
                     font-weight: 720;
                     line-height: 1.45;
                 }
@@ -155,7 +155,7 @@ class TaskItem extends HTMLElement {
                     background: var(--ink, #18242b);
                     color: white;
                     box-shadow: 2px 2px 0 rgba(24,36,43,.16);
-                    font: 750 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+                    font: 750 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
                 }
                 .human.timer.running { background: var(--green); }
                 .timer.running { background: var(--accent, #e65135); }
@@ -177,7 +177,7 @@ class TaskItem extends HTMLElement {
                     border-radius: 999px;
                     background: color-mix(in srgb, var(--chip-color) 10%, transparent);
                     color: var(--chip-color);
-                    font: 750 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+                    font: 750 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
                 }
                 .chip-label { overflow: hidden; padding: 0 5px 0 8px; text-overflow: ellipsis; white-space: nowrap; }
                 .chip button { width: 22px; height: 23px; border: 0; background: transparent; color: inherit; opacity: .65; }
@@ -192,27 +192,27 @@ class TaskItem extends HTMLElement {
                     background: color-mix(in srgb, var(--blue, #315f91) 8%, transparent);
                     color: var(--blue, #315f91);
                     padding: 0 9px;
-                    font: 750 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+                    font: 750 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                     text-decoration: none;
                 }
                 .link-pill:hover { background: color-mix(in srgb, var(--blue, #315f91) 16%, transparent); }
-                .add-group { min-height: 25px; border: 1px dashed #999488; border-radius: 999px; padding: 0 8px; background: transparent; color: var(--muted, #697177); font-size: 10px; font-weight: 750; }
-                .time-total { color: var(--muted, #697177); font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+                .add-group { min-height: 25px; border: 1px dashed #999488; border-radius: 999px; padding: 0 8px; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 11px); font-weight: 750; }
+                .time-total { color: var(--muted, #697177); font: 700 var(--font-xs, 11px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
                 .time-totals { display: grid; justify-items: end; gap: 4px; }
                 .group-editor { display: grid; grid-template-columns: 120px minmax(130px, 1fr) auto; gap: 5px; margin: 5px 0 0 5px; padding: 8px; border: 1px solid #d6d0c3; border-radius: 9px; background: #f5f0e5; }
-                .group-editor input { min-width: 0; height: 34px; border: 1px solid #bdb7aa; border-radius: 7px; background: #fffdf7; padding: 0 8px; font-size: 12px; }
-                .group-editor button { min-height: 34px; border: 1px solid var(--ink, #18242b); border-radius: 7px; background: var(--ink, #18242b); color: white; padding: 0 10px; font-size: 11px; font-weight: 800; }
+                .group-editor input { min-width: 0; height: 34px; border: 1px solid #bdb7aa; border-radius: 7px; background: #fffdf7; padding: 0 8px; font-size: var(--font-sm, 12px); }
+                .group-editor button { min-height: 34px; border: 1px solid var(--ink, #18242b); border-radius: 7px; background: var(--ink, #18242b); color: white; padding: 0 10px; font-size: var(--font-xs, 11px); font-weight: 800; }
                 .details { margin: 5px 0 0 5px; border-top: 1px solid #ded8ca; padding-top: 8px; }
-                .plan-control { display: grid; gap: 5px; margin: 5px 0 0 5px; color: var(--muted, #697177); font-size: 10px; }
+                .plan-control { display: grid; gap: 5px; margin: 5px 0 0 5px; color: var(--muted, #697177); font-size: var(--font-xs, 11px); }
                 .plan-row { display: flex; gap: 5px; }
-                .plan-select { flex: 1; min-width: 0; max-width: 100%; height: 30px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font-size: 11px; }
-                .open-plan { border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: 10px; cursor: pointer; }
+                .plan-select { flex: 1; min-width: 0; max-width: 100%; height: 30px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font-size: var(--font-sm, 12px); }
+                .open-plan { border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: var(--font-xs, 11px); cursor: pointer; }
                 .editor-toolbar { display: flex; align-items: flex-end; gap: 8px; margin-top: 9px; }
                 .editor-tabs { display: flex; flex-shrink: 0; gap: 3px; }
-                .estimated-time { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; padding-bottom: 3px; color: var(--muted, #697177); font-size: 9px; }
+                .estimated-time { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; padding-bottom: 3px; color: var(--muted, #697177); font-size: var(--font-xs, 11px); }
                 .estimate-options { display: inline-flex; gap: 3px; }
                 .estimate-option { position: relative; cursor: pointer; }
                 .estimate-option input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
@@ -220,27 +220,27 @@ class TaskItem extends HTMLElement {
                 .estimate-option:hover span { border-color: var(--ink, #18242b); color: var(--ink, #18242b); }
                 .estimate-option input:checked + span { background: var(--ink, #18242b); border-color: var(--ink, #18242b); color: white; }
                 .estimate-option input:focus-visible + span { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }
-                .editor-tabs button { min-height: 24px; padding: 3px 7px; border: 1px solid var(--line, #cfc8b8); border-bottom: 0; border-radius: 6px 6px 0 0; background: transparent; color: var(--muted, #697177); font-size: 10px; cursor: pointer; }
+                .editor-tabs button { min-height: 24px; padding: 3px 7px; border: 1px solid var(--line, #cfc8b8); border-bottom: 0; border-radius: 6px 6px 0 0; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 11px); cursor: pointer; }
                 .editor-tabs button[aria-selected="true"] { background: var(--ink, #18242b); color: white; border-color: var(--ink, #18242b); }
                 button[role="tab"]:hover { background: var(--panel, #fffdf7); color: var(--ink, #18242b); }
-                .agent-picker { display: grid; gap: 4px; min-width: 0; max-width: 160px; font-size: 10px; color: var(--muted, #697177); }
-                .agent-select { width: 100%; min-width: 0; height: 31px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font-size: 10px; }
+                .agent-picker { display: grid; gap: 4px; min-width: 0; max-width: 160px; font-size: var(--font-xs, 11px); color: var(--muted, #697177); }
+                .agent-select { width: 100%; min-width: 0; height: 31px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font-size: var(--font-sm, 12px); }
                 .agent-form { display: grid; gap: 4px; max-width: 160px; }
-                .agent-form input { min-width: 0; width: 100%; height: 31px; padding: 0 5px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: 11px; }
-                .agent-form button { min-height: 27px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--paper, #f3efe4); font-size: 10px; cursor: pointer; }
-                .notes, .prompts { display: block; width: 100%; min-height: 48px; max-height: 180px; resize: vertical; border: 1px solid #d6d0c3; border-radius: 0 8px 8px 8px; background: rgba(245,240,229,.55); padding: 8px; color: var(--ink, #18242b); font-size: 12px; line-height: 1.45; }
-                summary { display: inline-flex; align-items: center; gap: 5px; color: var(--muted, #697177); cursor: pointer; font-size: 10px; font-weight: 750; list-style: none; }
+                .agent-form input { min-width: 0; width: 100%; height: 31px; padding: 0 5px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: var(--font-sm, 12px); }
+                .agent-form button { min-height: 27px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--paper, #f3efe4); font-size: var(--font-xs, 11px); cursor: pointer; }
+                .notes, .prompts { display: block; width: 100%; min-height: 48px; max-height: 180px; resize: vertical; border: 1px solid #d6d0c3; border-radius: 0 8px 8px 8px; background: rgba(245,240,229,.55); padding: 8px; color: var(--ink, #18242b); font-size: var(--font-base, 14px); line-height: 1.45; }
+                summary { display: inline-flex; align-items: center; gap: 5px; color: var(--muted, #697177); cursor: pointer; font-size: var(--font-xs, 11px); font-weight: 750; list-style: none; }
                 summary::-webkit-details-marker { display: none; }
                 summary::before { content: '›'; font-size: 16px; transition: transform 120ms ease; }
                 details[open] summary::before { transform: rotate(90deg); }
                 .footer { display: flex; align-items: end; justify-content: space-between; gap: 5px; margin: 5px 0 0 5px; }
-                .age { color: var(--muted, #697177); font: 650 9px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+                .age { color: var(--muted, #697177); font: 650 var(--font-xs, 11px)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
                 :host([table-detail]) .footer { margin-left: 0; flex-wrap: wrap; }
-                .table-back { min-height: 30px; padding: 0 8px; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--panel, #fffdf7); font-size: 12px; }
-                .tabled-control { display: inline-flex; align-items: center; gap: 5px; color: var(--muted, #697177); font-size: 10px; font-weight: 750; cursor: pointer; }
+                .table-back { min-height: 30px; padding: 0 8px; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--panel, #fffdf7); font-size: var(--font-sm, 12px); }
+                .tabled-control { display: inline-flex; align-items: center; gap: 5px; color: var(--muted, #697177); font-size: var(--font-xs, 11px); font-weight: 750; cursor: pointer; }
                 .tabled-control input { width: 15px; height: 15px; accent-color: var(--yellow, #e8b949); }
                 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-                .delete { min-height: 27px; border: 0; background: transparent; color: var(--muted, #697177); font-size: 10px; }
+                .delete { min-height: 27px; border: 0; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 11px); }
                 .delete.armed { color: var(--accent-dark, #b93621); font-weight: 850; }
                 [hidden] { display: none !important; }
                 @media (max-width: 520px) {
@@ -248,6 +248,7 @@ class TaskItem extends HTMLElement {
                     .timers { grid-column: 2; justify-self: stretch; grid-template-columns: 1fr 1fr; }
                     .agent-picker, .agent-form { grid-column: 2; max-width: none; }
                     .plan-control, .meta-row, .group-editor, .details, .footer { margin-left: 5px; }
+                    .notes, .prompts, .group-editor input, .plan-select, .agent-select, .agent-form input { font-size: 16px; }
                     .notes-wrap { margin-left: 0; }
                     .group-editor { grid-template-columns: 1fr 1fr; }
                     .group-editor button { grid-column: 1 / -1; }

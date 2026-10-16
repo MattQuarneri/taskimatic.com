@@ -399,7 +399,12 @@
       "assignedTaskIs": "görev atanmış durumda",
       "assignedTasksAre": "görev atanmış durumda",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — private +@$< yönetimi | Kayıt Gerekmez"
+      "pageTitle": "taskimatic — private +@$< yönetimi | Kayıt Gerekmez",
+      "settings": "Ayarlar",
+      "fontSize": "Metin boyutu",
+      "decreaseFontSize": "Yazı boyutunu küçült",
+      "increaseFontSize": "Yazı boyutunu büyüt",
+      "chooseYourLanguage": "Dilinizi seçin"
     }
   },
   "error": {

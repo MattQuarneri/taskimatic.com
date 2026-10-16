@@ -399,7 +399,12 @@
       "assignedTaskIs": "件のタスクが割り当てられています",
       "assignedTasksAre": "件のタスクが割り当てられています",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — プライベート +@$< 管理 | 登録不要"
+      "pageTitle": "taskimatic — プライベート +@$< 管理 | 登録不要",
+      "settings": "設定",
+      "fontSize": "文字サイズ",
+      "decreaseFontSize": "文字を小さくする",
+      "increaseFontSize": "文字を大きくする",
+      "chooseYourLanguage": "言語を選択してください"
     }
   },
   "error": {

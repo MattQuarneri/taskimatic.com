@@ -121,3 +121,75 @@ test('the service worker caches every language offered by the picker', () => {
     assert.match(html, /class="language-picker"/);
     assert.match(html, /getAvailableLanguages\(\)\.map\(lang => window\.i18n\.loadLocale\(lang\)\)/);
 });
+
+test('first-run multilingual detection offers choices when multiple languages match', async () => {
+    const {window: {i18n}} = createI18nContext({
+        navigator: {languages: ['pt-BR', 'hi-IN', 'en']},
+        embedded: {
+            data: locales,
+            languages: manifest.languages,
+            defaultLang: 'en'
+        }
+    });
+    await i18n.ready;
+    assert.equal(i18n.currentLang, 'pt');
+    assert.deepEqual([...i18n.firstRunChoices], ['pt', 'hi', 'en']);
+});
+
+test('first-run single language match selects it and persists without multilingual prompt', async () => {
+    const store = new Map();
+    const mockStorage = {
+        getItem: k => store.get(k) ?? null,
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: k => store.delete(k),
+        clear: () => store.clear()
+    };
+    const {window: {i18n}} = createI18nContext({
+        navigator: {languages: ['hi-IN']},
+        localStorage: mockStorage,
+        embedded: {
+            data: locales,
+            languages: manifest.languages,
+            defaultLang: 'en'
+        }
+    });
+    await i18n.ready;
+    assert.equal(i18n.currentLang, 'hi');
+    assert.equal(i18n.firstRunChoices, undefined);
+    assert.equal(mockStorage.getItem('taskimatic:language'), 'hi');
+});
+
+test('saved language in localStorage is prioritized over browser languages', async () => {
+    const store = new Map([['taskimatic:language', 'de']]);
+    const mockStorage = {
+        getItem: k => store.get(k) ?? null,
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: k => store.delete(k),
+        clear: () => store.clear()
+    };
+    const {window: {i18n}} = createI18nContext({
+        navigator: {languages: ['pt-BR', 'hi-IN']},
+        localStorage: mockStorage,
+        embedded: {
+            data: locales,
+            languages: manifest.languages,
+            defaultLang: 'en'
+        }
+    });
+    await i18n.ready;
+    assert.equal(i18n.currentLang, 'de');
+    assert.equal(i18n.firstRunChoices, undefined);
+});
+
+test('task workspace template includes settings gear button, font size controls, and language dialog', () => {
+    const workspaceCode = fs.readFileSync(new URL('../webcomp/task-workspace.js', import.meta.url), 'utf8');
+    assert.match(workspaceCode, /class="settings-button"/);
+    assert.match(workspaceCode, /class="settings-dropdown"/);
+    assert.match(workspaceCode, /class="font-size-controls"/);
+    assert.match(workspaceCode, /class="[^"]*font-size-dec[^"]*"/);
+    assert.match(workspaceCode, /class="[^"]*font-size-inc[^"]*"/);
+    assert.match(workspaceCode, /class="font-size-indicator"/);
+    assert.match(workspaceCode, /id="language-first-run-dialog"/);
+    assert.match(workspaceCode, /settings:\s*\{[^}]*language:[^}]*fontScale:/s);
+});
+

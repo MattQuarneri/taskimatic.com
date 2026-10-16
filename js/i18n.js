@@ -21,9 +21,25 @@ class I18nService {
             this.data = saved.data;
             this.languages = saved.languages;
             this.defaultLang = saved.defaultLang;
+            this.fixup = saved.fixup || {};
             const params = new URLSearchParams(window.location.search);
-            this.currentLang = this.resolveLanguage(params.get('lang') || params.get('Lang'))
-                || this.resolveLanguage(this.getCookie(this.cookieName)) || saved.currentLang;
+            const explicitParam = this.resolveLanguage(params.get('lang') || params.get('Lang'));
+            const cookieLang = this.resolveLanguage(this.getCookie(this.cookieName));
+            const storedLang = this.resolveLanguage(this.getStoredLanguage());
+
+            if (explicitParam) {
+                this.currentLang = explicitParam;
+                this.setCookie(this.cookieName, explicitParam, this.cookieExpireDays);
+                this.setStoredLanguage(explicitParam);
+            } else if (cookieLang) {
+                this.currentLang = cookieLang;
+            } else if (storedLang) {
+                this.currentLang = storedLang;
+            } else if (saved.currentLang) {
+                this.currentLang = saved.currentLang;
+            } else {
+                this.currentLang = this.detectLanguage();
+            }
             this.loadedLocales = new Set(Object.keys(this.data));
             return true;
         }
@@ -184,28 +200,72 @@ class I18nService {
         return output.join('\n');
     }
 
+    getBrowserMatchedLanguages() {
+        const nav = typeof navigator !== 'undefined' ? navigator : null;
+        const rawList = (nav && Array.isArray(nav.languages) && nav.languages.length)
+            ? nav.languages
+            : (nav?.language ? [nav.language] : (nav?.userLanguage ? [nav.userLanguage] : []));
+        const seen = new Set();
+        const matched = [];
+        for (const tag of rawList) {
+            const resolved = this.resolveLanguage(tag);
+            if (resolved && !seen.has(resolved)) {
+                seen.add(resolved);
+                matched.push(resolved);
+            }
+        }
+        return matched;
+    }
+
+    getStoredLanguage() {
+        try {
+            return localStorage.getItem('taskimatic:language');
+        } catch {
+            return null;
+        }
+    }
+
+    setStoredLanguage(lang) {
+        try {
+            localStorage.setItem('taskimatic:language', lang);
+            localStorage.setItem('taskimatic:language-chosen', 'true');
+        } catch {}
+    }
+
     detectLanguage() {
         if (!this.languages) return this.defaultLang;
 
-        // Priority order: cookie > URL param > browser language > default
-
-        // 1. Check for saved cookie preference first
-        const cookieLang = this.resolveLanguage(this.getCookie(this.cookieName));
-        if (cookieLang) return cookieLang;
-
-        // 2. Check URL parameter
+        // 1. Check URL parameter (explicit query override)
         const urlParams = new URLSearchParams(window.location.search);
         const urlLang = this.resolveLanguage(urlParams.get('lang') || urlParams.get('Lang'));
         if (urlLang) {
             this.setCookie(this.cookieName, urlLang, this.cookieExpireDays);
+            this.setStoredLanguage(urlLang);
             return urlLang;
         }
 
-        // 3. Check browser language
-        const browserLang = this.resolveLanguage(navigator.language || navigator.userLanguage);
-        if (browserLang) {
-            this.setCookie(this.cookieName, browserLang, this.cookieExpireDays);
-            return browserLang;
+        // 2. Check for saved cookie preference or localStorage
+        const cookieLang = this.resolveLanguage(this.getCookie(this.cookieName));
+        if (cookieLang) return cookieLang;
+
+        const storedLang = this.resolveLanguage(this.getStoredLanguage());
+        if (storedLang) {
+            this.setCookie(this.cookieName, storedLang, this.cookieExpireDays);
+            return storedLang;
+        }
+
+        // 3. First time startup: inspect user's browser language settings
+        const matched = this.getBrowserMatchedLanguages();
+        if (matched.length > 0) {
+            const topMatch = matched[0];
+            if (matched.length > 1) {
+                // Multilingual user: offer choices on first startup
+                this.firstRunChoices = matched;
+            } else {
+                this.setStoredLanguage(topMatch);
+            }
+            this.setCookie(this.cookieName, topMatch, this.cookieExpireDays);
+            return topMatch;
         }
 
         // 4. Default to English
@@ -337,8 +397,9 @@ class I18nService {
         await this.loadLocale(resolvedLang);
         this.currentLang = resolvedLang;
 
-        // Save to cookie for persistence across pages
+        // Save to cookie and localStorage for persistence across pages
         this.setCookie(this.cookieName, resolvedLang, this.cookieExpireDays);
+        this.setStoredLanguage(resolvedLang);
 
         // Notify all listeners
         this.listeners.forEach(callback => callback(resolvedLang));

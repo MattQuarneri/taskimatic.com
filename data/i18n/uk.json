@@ -399,7 +399,12 @@
       "assignedTaskIs": "завдання призначено",
       "assignedTasksAre": "завдання призначено",
       "pluralSuffix": "",
-      "pageTitle": "taskimatic — приватне керування +@$< | Реєстрація не потрібна"
+      "pageTitle": "taskimatic — приватне керування +@$< | Реєстрація не потрібна",
+      "settings": "Налаштування",
+      "fontSize": "Розмір тексту",
+      "decreaseFontSize": "Зменшити шрифт",
+      "increaseFontSize": "Збільшити шрифт",
+      "chooseYourLanguage": "Оберіть мову"
     }
   },
   "error": {
