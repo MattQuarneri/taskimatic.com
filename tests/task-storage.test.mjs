@@ -1,3 +1,4 @@
+import {t, escapeHTML, uiLabel, i18n} from './i18n-test-context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -47,6 +48,7 @@ function environment({available = true, writable = true, initial = '', idbAvaila
         async removeEntry(name) {files.delete(name);}
     };
     const context = {
+        t, escapeHTML, uiLabel,
         WORKSPACE_COLLECTIONS: kinds, STORE_NAME: 'tasks', DB_NAME: 'test', DB_VERSION: 3,
         cloneValue: structuredClone, normalizeTask: structuredClone, normalizeAgent: structuredClone,
         normalizePlanningRecord: (kind, record) => structuredClone(record),

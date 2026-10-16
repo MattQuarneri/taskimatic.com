@@ -1,3 +1,8 @@
+import {t, escapeHTML, uiLabel, i18n} from './i18n-test-context.mjs';
+globalThis.t = t;
+globalThis.escapeHTML = escapeHTML;
+globalThis.uiLabel = uiLabel;
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { sessionDraft, sessionTimestamps, installSessionTimes } from '../webcomp/session-times.js';

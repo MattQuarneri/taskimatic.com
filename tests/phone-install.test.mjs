@@ -1,3 +1,4 @@
+import {t, escapeHTML, uiLabel, i18n} from './i18n-test-context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -16,7 +17,8 @@ function launch({ua = 'iPhone', installed = false, storage = new Map(), blocked 
         }
     };
     vm.runInNewContext(code, {
-        window: {isSecureContext: true, matchMedia: () => ({matches: installed}), addEventListener: (name, fn) => {events[name] = fn;}},
+        t, escapeHTML, uiLabel,
+        window: {i18n: {ready: {then: fn => fn()}}, isSecureContext: true, matchMedia: () => ({matches: installed}), addEventListener: (name, fn) => {events[name] = fn;}},
         navigator: {userAgent: ua, platform, maxTouchPoints: touch}, location: {protocol: 'https:'}, document,
         localStorage: {getItem(key) {if (blocked) throw Error(); return storage.get(key);}, setItem(key,value) {if (blocked) throw Error(); storage.set(key,value);}},
         setTimeout: fn => {timers.push(fn); return 1;}, clearTimeout() {timers.length = 0;}

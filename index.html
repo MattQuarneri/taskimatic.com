@@ -32,6 +32,8 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="./tasks.webmanifest">
 
+    <script src="./js/i18n.js" data-taskimatic-i18n-service></script>
+
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
@@ -1015,14 +1017,14 @@
 </head>
 <body>
     <div class="workspace-location-tabs">
-        <div class="workspace-tab-list" role="tablist" aria-label="Workspace location">
-            <button type="button" class="workspace-tab" id="cloud-tab" role="tab" aria-controls="cloud-panel" aria-selected="true">Cloud</button>
-            <button type="button" class="workspace-tab" id="land-tab" role="tab" aria-controls="land-panel" aria-selected="false" tabindex="-1">Land</button>
+        <div class="workspace-tab-list" role="tablist" aria-label="Workspace location" data-i18n-aria-label="ui.text.workspaceLocation">
+            <button type="button" class="workspace-tab" id="cloud-tab" role="tab" aria-controls="cloud-panel" aria-selected="true"><span data-i18n="ui.text.cloud">Cloud</span></button>
+            <button type="button" class="workspace-tab" id="land-tab" role="tab" aria-controls="land-panel" aria-selected="false" tabindex="-1"><span data-i18n="ui.text.land">Land</span></button>
         </div>
         <div id="cloud-panel" role="tabpanel" aria-labelledby="cloud-tab">
             <header class="sr-only">
-                <h1>taskimatic — private +@$< management (No Sign-Up Required)</h1>
-                <p>A 100% local-first, privacy-focused task manager, planner, and time ledger that runs directly in your browser using local browser storage. No login, no cloud sync, and zero tracking.</p>
+                <h1 data-i18n="ui.text.pageHeading">taskimatic — private +@$&lt; management (No Sign-Up Required)</h1>
+                <p><span data-i18n="ui.text.a100LocalFirstPrivacyFocusedTaskManagerPlannerAndTimeLedgerThatRunsDirectlyInYourBrow">A 100% local-first, privacy-focused task manager, planner, and time ledger that runs directly in your browser using local browser storage. No login, no cloud sync, and zero tracking.</span></p>
             </header>
             <noscript>
                 <div style="padding: 24px; text-align: center; background: #fffdf7; border: 1px solid #cfc8b8; margin: 20px; border-radius: 12px; font-family: sans-serif;">
@@ -1036,8 +1038,8 @@
         </div>
         <div class="land-panel" id="land-panel" role="tabpanel" aria-labelledby="land-tab" tabindex="0" hidden>
             <section class="land-message">
-                <h2>Coming Soon: A server on a local machine near you.</h2>
-                <p>Taskimatic will soon give you a way to securely connect your local machine to our service so you get all the benefits of AI-powered task management and peer-to-peer collaboration while you keep privacy and control over your data.</p>
+                <h2><span data-i18n="ui.text.comingSoonAServerOnALocalMachineNearYou">Coming Soon: A server on a local machine near you.</span></h2>
+                <p><span data-i18n="ui.text.taskimaticWillSoonGiveYouAWayToSecurelyConnectYourLocalMachineToOurServiceSoYouGetAll">Taskimatic will soon give you a way to securely connect your local machine to our service so you get all the benefits of AI-powered task management and peer-to-peer collaboration while you keep privacy and control over your data.</span></p>
             </section>
         </div>
     </div>
@@ -1117,14 +1119,14 @@
                 guide.className = 'phone-install-guide';
                 guide.setAttribute('aria-labelledby', 'phone-install-title');
                 guide.innerHTML = `
-                    <h2 id="phone-install-title">Keep Taskimatic on your phone</h2>
-                    <p>Open your tasks straight from your Home Screen.</p>
+                    <h2 id="phone-install-title">${escapeHTML(t('ui.text.keepTaskimaticOnYourPhone'))}</h2>
+                    <p>${escapeHTML(t('ui.text.openYourTasksStraightFromYourHomeScreen'))}</p>
                     <p>${isIOS
-                        ? 'Tap Share, then Add to Home Screen and Add. If the option is missing, open this page in Safari and try again.'
-                        : 'Open your browser’s menu (⋮) and choose Install app or Add to Home screen, then confirm. If the option is missing, open this page in Chrome.'}</p>
+                        ? t('ui.text.tapShareThenAddToHomeScreenAndAddIfTheOptionIsMissingOpenThisPageInSafariAndTryAgain')
+                        : t('ui.text.openYourBrowserSMenuAndChooseInstallAppOrAddToHomeScreenThenConfirmIfTheOptionIsMissi')}</p>
                     <div class="phone-install-actions">
-                        <button type="button" class="phone-install-button" hidden>Install app</button>
-                        <button type="button" class="phone-install-dismiss">Got it</button>
+                        <button type="button" class="phone-install-button" hidden>${escapeHTML(t('ui.text.installApp'))}</button>
+                        <button type="button" class="phone-install-dismiss">${escapeHTML(t('ui.text.gotIt'))}</button>
                     </div>`;
                 installButton = guide.querySelector('.phone-install-button');
                 installButton.hidden = !deferredPrompt;
@@ -1142,7 +1144,9 @@
                 guide.querySelector('.phone-install-dismiss').addEventListener('click', dismiss);
                 document.body.append(guide);
             };
-            const scheduleGuide = () => { timer = setTimeout(showGuide, 2000); };
+            const scheduleGuide = () => {
+                window.i18n.ready.then(() => { timer = setTimeout(showGuide, 2000); });
+            };
             if (document.readyState === 'complete') scheduleGuide();
             else window.addEventListener('load', scheduleGuide, { once: true });
         })();
@@ -1153,6 +1157,8 @@
         import { installSessionTimes } from './webcomp/session-times.js';
         import { WORKSPACE_COLLECTIONS, normalizeAssociations, normalizePlanningRecord, normalizeAgent, agentTaskReferences, normalizeWorkspaceSnapshot, validateWorkspaceLinks, planningAssociations } from './js/task-planning-model.js';
         import { associationDimensions, automaticHierarchy, buildTaskTable } from './js/task-table-model.js';
+
+        await window.i18n.ready;
 
         const DB_NAME = 'taskimatic-local';
         const DB_VERSION = 4;
@@ -1308,7 +1314,7 @@
 
             return {
                 id: cleanString(input.id, 120) || uid(),
-                text: cleanString(input.text ?? input.name, 1000) || 'Untitled task',
+                text: cleanString(input.text ?? input.name, 1000) || t('ui.text.untitledTask'),
                 notes: cleanString(input.notes, 10000),
                 prompts: String(input.prompts ?? '').slice(0, 50000),
                 estimatedMinutes: [10, 30, 60, 90].includes(Number(input.estimatedMinutes)) ? Number(input.estimatedMinutes) : null,
@@ -1363,7 +1369,7 @@
 
         function formatAge(createdAt, now = new Date()) {
             const created = new Date(createdAt);
-            if (Number.isNaN(created.getTime()) || created >= now) return '0 months, 0 days, 0 hours, 0 minutes';
+            if (Number.isNaN(created.getTime()) || created >= now) return t('ui.text.0Months0Days0Hours0Minutes');
             let cursor = new Date(created);
             let months = (now.getFullYear() - cursor.getFullYear()) * 12 + now.getMonth() - cursor.getMonth();
             const candidate = new Date(cursor);
@@ -1375,7 +1381,7 @@
             const days = Math.floor(remainderMinutes / 1440);
             const hours = Math.floor((remainderMinutes % 1440) / 60);
             const minutes = remainderMinutes % 60;
-            return `${months} months, ${days} days, ${hours} hours, ${minutes} minutes`;
+            return t('ui.text.ageDuration', { months, days, hours, minutes });
         }
 
         function formatDuration(seconds, compact = false) {
@@ -1384,9 +1390,9 @@
             const minutes = Math.floor((total % 3600) / 60);
             const secs = total % 60;
             if (compact) {
-                if (hours) return `${hours}h ${minutes}m`;
-                if (minutes) return `${minutes}m ${secs}s`;
-                return `${secs}s`;
+                if (hours) return t('ui.text.value0HValue1M', { value0: hours, value1: minutes });
+                if (minutes) return t('ui.text.value0MValue1S', { value0: minutes, value1: secs });
+                return t('ui.text.secondsShort', { count: secs });
             }
             return hours
                 ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
@@ -1419,7 +1425,7 @@
 
             async init() {
                 try {
-                    if (!('indexedDB' in globalThis)) throw new Error('IndexedDB unavailable');
+                    if (!('indexedDB' in globalThis)) throw new Error(t('error.messages.indexedDBUnavailable'));
                     this.db = await new Promise((resolve, reject) => {
                         const request = indexedDB.open(DB_NAME, DB_VERSION);
                         request.onupgradeneeded = () => {
@@ -1438,7 +1444,7 @@
                         request.onerror = () => reject(request.error);
                         request.onblocked = () => {
                             const label = document.querySelector('.storage-label');
-                            if (label) label.textContent = 'Close other taskimatic tabs to finish the storage upgrade…';
+                            if (label) label.textContent = t('ui.text.closeOtherTaskimaticTabsToFinishTheStorageUpgrade');
                         };
                     });
                 } catch (error) {
@@ -1455,7 +1461,7 @@
                             const directory = await root.getDirectoryHandle('taskimatic', { create: true });
                             const probe = await directory.getFileHandle('write-probe', { create: true });
                             await this.writeOpfsFile(probe, 'ready');
-                            if (await (await probe.getFile()).text() !== 'ready') throw new Error('OPFS read check failed');
+                            if (await (await probe.getFile()).text() !== 'ready') throw new Error(t('error.messages.oPFSReadCheckFailed'));
                             await directory.removeEntry('write-probe');
                             this.opfsFile = await directory.getFileHandle('workspace.json', { create: true });
                             const text = await (await this.opfsFile.getFile()).text();
@@ -1504,7 +1510,7 @@
                 const saved = JSON.parse(text);
                 if (saved.version !== 1 || !saved.workspace || !WORKSPACE_COLLECTIONS.every(kind =>
                     Array.isArray(saved.workspace[kind]) && saved.workspace[kind].every(record => record && typeof record.id === 'string'))) {
-                    throw new Error('Invalid OPFS workspace');
+                    throw new Error(t('error.messages.invalidOPFSWorkspace'));
                 }
                 validateWorkspaceLinks(saved.workspace);
                 return saved.workspace;
@@ -1544,7 +1550,7 @@
                     if (request && 'onsuccess' in request) request.onsuccess = () => { result = request.result; };
                     transaction.oncomplete = () => resolve(result);
                     transaction.onerror = () => reject(transaction.error);
-                    transaction.onabort = () => reject(transaction.error || new Error('Database transaction aborted'));
+                    transaction.onabort = () => reject(transaction.error || new Error(t('error.messages.databaseTransactionAborted')));
                 });
                 return mode === 'readwrite' && navigator.locks?.request
                     ? navigator.locks.request('taskimatic-workspace-storage', execute) : execute();
@@ -1609,7 +1615,7 @@
                     }
                     transaction.oncomplete = resolve;
                     transaction.onerror = () => reject(transaction.error);
-                    transaction.onabort = () => reject(transaction.error || new Error('Workspace save aborted'));
+                    transaction.onabort = () => reject(transaction.error || new Error(t('error.messages.workspaceSaveAborted')));
                 });
             }
         }
@@ -1773,8 +1779,8 @@
                     </div>
                     <div class="control">
                         <div class="selection"></div>
-                        <input type="range" id="start" aria-label="Start">
-                        <input type="range" id="end" aria-label="End">
+                        <input type="range" id="start" aria-label="${escapeHTML(t('ui.text.start'))}">
+                        <input type="range" id="end" aria-label="${escapeHTML(t('ui.text.end'))}">
                     </div>
                 `;
                 this._startInput = this.shadowRoot.getElementById('start');
@@ -1887,8 +1893,8 @@
                 }
                 this._startInput.value = String(start);
                 this._endInput.value = String(end);
-                this._startInput.setAttribute('aria-label', this.getAttribute('start-label') || 'Start');
-                this._endInput.setAttribute('aria-label', this.getAttribute('end-label') || 'End');
+                this._startInput.setAttribute('aria-label', this.getAttribute('start-label') || t('ui.text.start'));
+                this._endInput.setAttribute('aria-label', this.getAttribute('end-label') || t('ui.text.end'));
                 const span = max - min;
                 const startPercent = span > 0 ? ((start - min) / span) * 100 : 0;
                 const endPercent = span > 0 ? ((end - min) / span) * 100 : 0;
@@ -1899,8 +1905,8 @@
 
             _updateLabels(start = this.startValue, end = this.endValue) {
                 if (!this.shadowRoot) return;
-                this.shadowRoot.getElementById('startLabel').textContent = this.getAttribute('start-label') || 'Start';
-                this.shadowRoot.getElementById('endLabel').textContent = this.getAttribute('end-label') || 'End';
+                this.shadowRoot.getElementById('startLabel').textContent = this.getAttribute('start-label') || t('ui.text.start');
+                this.shadowRoot.getElementById('endLabel').textContent = this.getAttribute('end-label') || t('ui.text.end');
                 this.shadowRoot.getElementById('startValue').textContent = this._valueFormatter(start);
                 this.shadowRoot.getElementById('endValue').textContent = this._valueFormatter(end);
             }
@@ -1991,14 +1997,14 @@
                             }
 
                         </style>
-                        <div class="protect-plan-group" role="group" aria-label="Lock In">
-                            <span class="protect-plan-label">🔒 Lock In</span>
+                        <div class="protect-plan-group" role="group" aria-label="${escapeHTML(t('ui.text.lockIn'))}">
+                            <span class="protect-plan-label">${escapeHTML(t('ui.text.lockIn2'))}</span>
                             <div class="protect-plan-toggles">
                                 <button type="button" class="protect-toggle" data-plan="no" aria-pressed="false">?</button>
-                                <button type="button" class="protect-toggle" data-plan="now" data-duration="480" aria-pressed="false">Now (8min)</button>
-                                <button type="button" class="protect-toggle" data-plan="sprint" data-duration="1320" aria-pressed="false">Sprint (22min)</button>
-                                <button type="button" class="protect-toggle" data-plan="focus" data-duration="2640" aria-pressed="false">Focus (44min)</button>
-                                <button type="button" class="protect-toggle" data-plan="flow" data-duration="5280" aria-pressed="false">Flow (88min)</button>
+                                <button type="button" class="protect-toggle" data-plan="now" data-duration="480" aria-pressed="false">${escapeHTML(t('ui.text.now8min'))}</button>
+                                <button type="button" class="protect-toggle" data-plan="sprint" data-duration="1320" aria-pressed="false">${escapeHTML(t('ui.text.sprint22min'))}</button>
+                                <button type="button" class="protect-toggle" data-plan="focus" data-duration="2640" aria-pressed="false">${escapeHTML(t('ui.text.focus44min'))}</button>
+                                <button type="button" class="protect-toggle" data-plan="flow" data-duration="5280" aria-pressed="false">${escapeHTML(t('ui.text.flow88min'))}</button>
                             </div>
                         </div>
                     `;
@@ -2050,8 +2056,8 @@
                         button:focus-visible { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }
                         .sort-arrow { margin-left: 3px; font-style: normal; }
                     </style>
-                    <div class="sort-controls" role="group" aria-label="Sort tasks">
-                        ${Object.entries({ name: 'Name', age: 'Age', time: 'Time', human: 'Human', agent: 'Agent', lastActive: 'Last Active', priority: 'Priority' }).map(([key, label]) => `<button type="button" class="sort-btn" data-sort="${key}" data-label="${label}">${label}</button>`).join('')}
+                    <div class="sort-controls" role="group" aria-label="${escapeHTML(t('ui.text.sortTasks'))}">
+                        ${Object.entries({ name: t('ui.text.name'), age: t('ui.text.age'), time: t('ui.text.time'), human: t('ui.text.human'), agent: t('ui.text.agent'), lastActive: t('ui.text.lastActive'), priority: t('ui.text.priority') }).map(([key, label]) => `<button type="button" class="sort-btn" data-sort="${key}" data-label="${label}">${label}</button>`).join('')}
                     </div>
                 `;
                 this.shadowRoot.addEventListener('click', (event) => {
@@ -2081,12 +2087,12 @@
                     button.classList.toggle('active', active);
                     button.setAttribute('aria-pressed', String(active));
                     const description = button.dataset.sort === 'age'
-                        ? 'Task age since creation (ascending: newest first)'
+                        ? t('ui.text.taskAgeSinceCreationAscendingNewestFirst')
                         : button.dataset.sort === 'time'
-                            ? 'Total tracked time, including running clocks (ascending: least time first)'
+                            ? t('ui.text.totalTrackedTimeIncludingRunningClocksAscendingLeastTimeFirst')
                             : button.dataset.label;
                     button.title = description;
-                    button.setAttribute('aria-label', `${description}${active ? `, ${this.sortDir === 'asc' ? 'ascending' : 'descending'}` : ''}`);
+                    button.setAttribute('aria-label', `${description}${active ? `, ${this.sortDir === 'asc' ? t('ui.text.ascending') : t('ui.text.descending')}` : ''}`);
                     button.innerHTML = `${button.dataset.label}${active ? `<i class="sort-arrow" aria-hidden="true">${this.sortDir === 'asc' ? '↑' : '↓'}</i>` : ''}`;
                 });
             }
@@ -2351,54 +2357,54 @@
                     <article class="card ${running ? 'running' : ''} ${done ? 'done' : ''} ${tabled ? 'tabled' : ''}">
                         <div class="main-row">
                             <div>
-                                <label class="check-control"><input class="check today-check" type="checkbox" ${this._task.today ? 'checked' : ''}><span>Today</span></label>
-                                <div class="check-control"><button class="check complete-check ${done ? 'checked' : ''}" type="button" aria-pressed="${done}" aria-label="${done ? 'Reopen task' : 'Complete task'}" aria-describedby="complete-label">${done ? '✓' : ''}</button><span id="complete-label">Complete</span></div>
-                                <label class="priority-control">Priority<input class="priority-input" type="number" min="1" max="${this._priorityLimit || 1}" step="1" inputmode="numeric" ${done ? 'disabled' : ''} aria-label="Task priority; 1 is highest"></label>
+                                <label class="check-control"><input class="check today-check" type="checkbox" ${this._task.today ? 'checked' : ''}><span>${escapeHTML(t('ui.text.today'))}</span></label>
+                                <div class="check-control"><button class="check complete-check ${done ? 'checked' : ''}" type="button" aria-pressed="${done}" aria-label="${done ? t('ui.text.reopenTask') : t('ui.text.completeTask')}" aria-describedby="complete-label">${done ? '✓' : ''}</button><span id="complete-label">${escapeHTML(t('ui.text.complete'))}</span></div>
+                                <label class="priority-control">${escapeHTML(t('ui.text.priority'))}<input class="priority-input" type="number" min="1" max="${this._priorityLimit || 1}" step="1" inputmode="numeric" ${done ? 'disabled' : ''} aria-label="${escapeHTML(t('ui.text.taskPriority1IsHighest'))}"></label>
                             </div>
                             <div>
-                                <textarea class="text" rows="1" aria-label="Task text"></textarea>
+                                <textarea class="text" rows="1" aria-label="${escapeHTML(t('ui.text.taskText'))}"></textarea>
                                 <div class="editor-toolbar">
-                                    <div class="editor-tabs" role="tablist" aria-label="Task text fields">
-                                        <button id="task-notes-tab" type="button" role="tab" data-editor-tab="notes" aria-controls="task-notes-panel">Notes</button>
-                                        <button id="task-prompts-tab" type="button" role="tab" data-editor-tab="prompts" aria-controls="task-prompts-panel">Prompts</button>
+                                    <div class="editor-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.taskTextFields'))}">
+                                        <button id="task-notes-tab" type="button" role="tab" data-editor-tab="notes" aria-controls="task-notes-panel">${escapeHTML(t('ui.text.notes'))}</button>
+                                        <button id="task-prompts-tab" type="button" role="tab" data-editor-tab="prompts" aria-controls="task-prompts-panel">${escapeHTML(t('ui.text.prompts'))}</button>
                                     </div>
-                                    <div class="estimated-time" role="group" aria-label="Estimated time needed">
-                                        <span>Estimated time needed:</span>
-                                        <span class="estimate-options">${[10, 30, 60, 90].map(minutes => `<label class="estimate-option"><input type="radio" name="estimatedMinutes" value="${minutes}" aria-label="Less than ${minutes} minutes" ${this._task.estimatedMinutes === minutes ? 'checked' : ''}><span>&lt; ${minutes}</span></label>`).join('')}</span>
-                                        <span>minutes</span>
+                                    <div class="estimated-time" role="group" aria-label="${escapeHTML(t('ui.text.estimatedTimeNeeded'))}">
+                                        <span>${escapeHTML(t('ui.text.estimatedTimeNeeded2'))}</span>
+                                        <span class="estimate-options">${[10, 30, 60, 90].map(minutes => `<label class="estimate-option"><input type="radio" name="estimatedMinutes" value="${minutes}" aria-label="${escapeHTML(t('ui.text.lessThanValue1Minutes', { value1: minutes }))}" ${this._task.estimatedMinutes === minutes ? 'checked' : ''}><span>${escapeHTML(t('ui.text.value3', { value3: minutes }))}</span></label>`).join('')}</span>
+                                        <span>${escapeHTML(t('ui.text.minutes'))}</span>
                                     </div>
                                 </div>
-                                <div id="task-notes-panel" role="tabpanel" data-editor-panel="notes" aria-labelledby="task-notes-tab"><textarea class="notes" rows="2" maxlength="10000" placeholder="Add notes…" aria-label="Task notes"></textarea></div>
-                                <div id="task-prompts-panel" role="tabpanel" data-editor-panel="prompts" aria-labelledby="task-prompts-tab"><textarea class="prompts" rows="5" maxlength="50000" placeholder="Record a prompt…" aria-label="Task prompts"></textarea></div>
+                                <div id="task-notes-panel" role="tabpanel" data-editor-panel="notes" aria-labelledby="task-notes-tab"><textarea class="notes" rows="2" maxlength="10000" placeholder="${escapeHTML(t('ui.text.addNotes'))}" aria-label="${escapeHTML(t('ui.text.taskNotes'))}"></textarea></div>
+                                <div id="task-prompts-panel" role="tabpanel" data-editor-panel="prompts" aria-labelledby="task-prompts-tab"><textarea class="prompts" rows="5" maxlength="50000" placeholder="${escapeHTML(t('ui.text.recordAPrompt'))}" aria-label="${escapeHTML(t('ui.text.taskPrompts'))}"></textarea></div>
                             </div>
                             <div class="timers">
-                                <button class="timer human ${runningHuman ? 'running' : ''}" data-actor="human" type="button" ${done || tabled ? 'disabled' : ''} aria-label="${runningHuman ? 'Stop human timer' : 'Start human timer'}"></button>
-                                <button class="timer agent ${runningAgent ? 'running' : ''}" data-actor="agent" type="button" ${done || tabled ? 'disabled' : ''} aria-label="${runningAgent ? 'Stop agent timer' : 'Start agent timer'}"></button>
-                                <label class="agent-picker">Named agent<select class="agent-select" aria-label="Named agent"></select></label>
-                                <form class="agent-form" hidden><input class="agent-name" maxlength="120" placeholder="Agent name" aria-label="New agent name" required><button type="submit">Add agent</button><button class="agent-cancel" type="button">Cancel</button></form>
+                                <button class="timer human ${runningHuman ? 'running' : ''}" data-actor="human" type="button" ${done || tabled ? 'disabled' : ''} aria-label="${runningHuman ? t('ui.text.stopHumanTimer') : t('ui.text.startHumanTimer')}"></button>
+                                <button class="timer agent ${runningAgent ? 'running' : ''}" data-actor="agent" type="button" ${done || tabled ? 'disabled' : ''} aria-label="${runningAgent ? t('ui.text.stopAgentTimer') : t('ui.text.startAgentTimer')}"></button>
+                                <label class="agent-picker">${escapeHTML(t('ui.text.namedAgent'))}<select class="agent-select" aria-label="${escapeHTML(t('ui.text.namedAgent'))}"></select></label>
+                                <form class="agent-form" hidden><input class="agent-name" maxlength="120" placeholder="${escapeHTML(t('ui.text.agentName'))}" aria-label="${escapeHTML(t('ui.text.newAgentName'))}" required><button type="submit">${escapeHTML(t('ui.text.addAgent'))}</button><button class="agent-cancel" type="button">${escapeHTML(t('ui.text.cancel'))}</button></form>
                             </div>
                         </div>
-                        <label class="plan-control">Plan (optional)<span class="plan-row"><select class="plan-select" aria-label="Task plan"></select><button class="open-plan" type="button" ${this._task.planId ? '' : 'hidden'}>Open plan</button></span></label>
+                        <label class="plan-control">${escapeHTML(t('ui.text.planOptional'))}<span class="plan-row"><select class="plan-select" aria-label="${escapeHTML(t('ui.text.taskPlan'))}"></select><button class="open-plan" type="button" ${this._task.planId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openPlan'))}</button></span></label>
                         <div class="meta-row">
                             <div class="meta-left"><div class="chips"></div><div class="link-pills" hidden></div></div>
                             <div class="time-totals"><span class="time-total human-total"></span><span class="time-total agent-total"></span></div>
                         </div>
                         <form class="group-editor" hidden>
-                            <input class="group-type" list="property-types" maxlength="60" placeholder="property" aria-label="Association property">
+                            <input class="group-type" list="property-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}">
                             <datalist id="property-types">${COMMON_PROPERTIES.map((type) => `<option value="${type}"></option>`).join('')}</datalist>
-                            <input class="group-value" list="association-values" maxlength="120" placeholder="choose or type a new value" aria-label="Association value">
+                            <input class="group-value" list="association-values" maxlength="120" placeholder="${escapeHTML(t('ui.text.chooseOrTypeANewValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}">
                             <datalist id="association-values"></datalist>
-                            <button type="submit">Add association</button>
+                            <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                         </form>
                         
                         <details class="details" ${this._task.sessions.length ? '' : 'hidden'} ${this._sessionsOpen ? 'open' : ''}>
-                            <summary>${this._task.sessions.length} time ${this._task.sessions.length === 1 ? 'entry' : 'entries'}</summary>
+                            <summary>${escapeHTML(t('ui.text.value21TimeValue22', { value21: this._task.sessions.length, value22: uiLabel(this._task.sessions.length === 1 ? 'entry' : 'entries') }))}</summary>
                             <session-times></session-times>
                         </details>
                         <div class="footer">
-                            ${this.hasAttribute('table-detail') ? '<button class="table-back" type="button" aria-label="Back to task table">← Table</button>' : ''}
-                            <span class="age" title="Created ${new Date(this._task.createdAt).toLocaleString()}"></span>
-                            <div class="actions"><label class="tabled-control"><input class="tabled" type="checkbox" ${tabled ? 'checked' : ''}> Tabled</label><button class="delete" type="button" aria-label="Delete task">Delete</button></div>
+                            ${this.hasAttribute('table-detail') ? `<button class="table-back" type="button" aria-label="${escapeHTML(t('ui.text.backToTaskTable'))}">${escapeHTML(t('ui.text.table'))}</button>` : ''}
+                            <span class="age" title="${escapeHTML(t('ui.text.createdValue24', { value24: new Date(this._task.createdAt).toLocaleString() }))}"></span>
+                            <div class="actions"><label class="tabled-control"><input class="tabled" type="checkbox" ${tabled ? 'checked' : ''}> ${escapeHTML(t('ui.text.tabled'))}</label><button class="delete" type="button" aria-label="${escapeHTML(t('ui.text.deleteTask'))}">${escapeHTML(t('ui.text.delete'))}</button></div>
                         </div>
                     </article>
                 `;
@@ -2427,7 +2433,7 @@
                 });
 
                 const planSelect = this.shadowRoot.querySelector('.plan-select');
-                planSelect.append(new Option('No plan', ''));
+                planSelect.append(new Option(t('error.messages.noPlan'), ''));
                 for (const plan of this._plans) planSelect.append(new Option(plan.text, plan.id));
                 planSelect.value = this._task.planId || '';
                 planSelect.addEventListener('change', () => this.emit('task-plan-change', { planId: planSelect.value || null }));
@@ -2476,9 +2482,9 @@
                     });
                 });
                 const agentSelect = this.shadowRoot.querySelector('.agent-select');
-                agentSelect.append(new Option('No named agent', ''));
+                agentSelect.append(new Option(t('error.messages.noNamedAgent'), ''));
                 for (const agent of this._agents) agentSelect.append(new Option(agent.name, agent.id));
-                for (const [label, action] of [['Add named agent…', 'add'], ['Manage named agents…', 'manage']]) {
+                for (const [label, action] of [[t('ui.text.addNamedAgent'), 'add'], [t('ui.text.manageNamedAgents'), 'manage']]) {
                     const option = new Option(label, `__${action}_agent__`);
                     option.dataset.action = action;
                     agentSelect.append(option);
@@ -2517,7 +2523,7 @@
                     const remove = document.createElement('button');
                     remove.type = 'button';
                     remove.textContent = '×';
-                    remove.setAttribute('aria-label', `Remove ${association.type}: ${association.value}`);
+                    remove.setAttribute('aria-label', t('ui.text.removeValue0Value1', { value0: association.type, value1: association.value }));
                     remove.addEventListener('click', () => this.emit('task-association-remove', { association }));
                     chip.append(label, remove);
                     chips.append(chip);
@@ -2526,7 +2532,7 @@
                 const addGroup = document.createElement('button');
                 addGroup.type = 'button';
                 addGroup.className = 'add-group';
-                addGroup.textContent = '+ association';
+                addGroup.textContent = t('ui.text.association');
                 addGroup.addEventListener('click', () => {
                     const editor = this.shadowRoot.querySelector('.group-editor');
                     editor.hidden = !editor.hidden;
@@ -2566,7 +2572,7 @@
                         option.value = value;
                         return option;
                     }));
-                    valueInput.placeholder = type === 'dependent-task' ? 'choose an existing task' : 'choose or type a new value';
+                    valueInput.placeholder = type === 'dependent-task' ? t('ui.text.chooseAnExistingTask') : t('ui.text.chooseOrTypeANewValue');
                 };
                 typeInput.addEventListener('input', updateValueOptions);
                 typeInput.addEventListener('change', updateValueOptions);
@@ -2593,10 +2599,10 @@
                         return;
                     }
                     deleteButton.classList.add('armed');
-                    deleteButton.textContent = 'Delete? Click again';
+                    deleteButton.textContent = t('ui.text.deleteClickAgain');
                     this._confirmTimer = setTimeout(() => {
                         deleteButton.classList.remove('armed');
-                        deleteButton.textContent = 'Delete';
+                        deleteButton.textContent = t('ui.text.delete');
                     }, 3000);
                 });
 
@@ -2614,7 +2620,7 @@
                 const runningAgent = Boolean(this._task.activeTimers.agent);
                 const updateActor = (actor, running) => {
                     if (!force && !dayChanged && !running) return;
-                    const label = actor === 'human' ? 'Human' : 'Agent';
+                    const label = actor === 'human' ? t('ui.text.human') : t('ui.text.agent');
                     setText(
                         this.shadowRoot.querySelector(`.timer.${actor}`),
                         `${running ? '■' : '▶'} ${label} ${formatDuration(durationTodayForTask(this._task, actor, now))}`
@@ -2630,9 +2636,9 @@
                 updateActor('agent', runningAgent);
                 if (force || minute !== this._clockMinute) {
                     const tabledDuration = this._task.tabled && this._task.tabledAt
-                        ? ` · tabled ${formatAge(this._task.tabledAt, new Date(now))}`
+                        ? t('ui.text.tabledValue0', { value0: formatAge(this._task.tabledAt, new Date(now)) })
                         : '';
-                    setText(this.shadowRoot.querySelector('.age'), `Age = ${formatAge(this._task.createdAt, new Date(now))}${tabledDuration}`);
+                    setText(this.shadowRoot.querySelector('.age'), t('ui.text.ageValue0Value1', { value0: formatAge(this._task.createdAt, new Date(now)), value1: tabledDuration }));
                 }
                 this._clockDayKey = dayKey;
                 this._clockMinute = minute;
@@ -2699,7 +2705,7 @@
                         .order { margin: 0 0 8px; color: var(--muted, #697177); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
                     </style><p class="order"></p><div class="boxes"></div>`;
                 this.shadowRoot.querySelector('.order').textContent = this.hierarchy.length
-                    ? `${this._hierarchy === null ? 'Automatic' : 'Hierarchy'}: ${this.hierarchy.join(' → ')}` : 'Tasks without grouping';
+                    ? `${this._hierarchy === null ? t('ui.text.automatic') : t('ui.text.hierarchy')}: ${this.hierarchy.join(' → ')}` : t('ui.text.tasksWithoutGrouping');
                 const appendNode = (node, container) => {
                     for (const group of node.groups) {
                         const box = document.createElement('details');
@@ -2712,7 +2718,7 @@
                         type.textContent = group.type;
                         const value = document.createElement('span');
                         value.className = 'value';
-                        value.textContent = group.values.join(' · ') || `No ${group.type}`;
+                        value.textContent = group.values.join(' · ') || t('ui.text.noValue0', { value0: group.type });
                         const count = document.createElement('span');
                         count.className = 'count';
                         count.textContent = group.count;
@@ -2722,7 +2728,7 @@
                             filter.type = 'button';
                             filter.className = 'filter';
                             filter.textContent = '⌕';
-                            filter.title = `Filter ${group.type}: ${name}`;
+                            filter.title = t('ui.text.filterValue0Value1', { value0: group.type, value1: name });
                             filter.setAttribute('aria-label', filter.title);
                             filter.addEventListener('click', event => {
                                 event.preventDefault();
@@ -2796,13 +2802,13 @@
                         .drop-target { outline: 2px solid var(--blue, #315f91); }
                     </style>
                     <dialog aria-labelledby="heading">
-                        <h3 id="heading">Table hierarchy</h3>
-                        <p>Order dimensions from outer to inner boxes. Drag rows or use the arrows; uncheck dimensions to leave them out.</p>
-                        <label>Saved hierarchy<select class="presets"></select></label>
-                        <label>Name<input class="name" maxlength="80" placeholder="e.g. Client delivery" required></label>
-                        <p>Automatic uses fewer distinct values first. Counts reflect the tasks currently shown. Multiple values stay together so every task appears once.</p>
+                        <h3 id="heading">${escapeHTML(t('ui.text.tableHierarchy'))}</h3>
+                        <p>${escapeHTML(t('ui.text.orderDimensionsFromOuterToInnerBoxesDragRowsOrUseTheArrowsUncheckDimensionsToLeaveThe'))}</p>
+                        <label>${escapeHTML(t('ui.text.savedHierarchy'))}<select class="presets"></select></label>
+                        <label>${escapeHTML(t('ui.text.name'))}<input class="name" maxlength="80" placeholder="${escapeHTML(t('ui.text.eGClientDelivery'))}" required></label>
+                        <p>${escapeHTML(t('ui.text.automaticUsesFewerDistinctValuesFirstCountsReflectTheTasksCurrentlyShownMultipleValue'))}</p>
                         <div class="rows"></div>
-                        <div class="actions"><button type="button" class="automatic">Automatic</button><button type="button" class="delete">Delete saved</button><button type="button" class="cancel">Cancel</button><button type="button" class="save">Save &amp; use</button></div>
+                        <div class="actions"><button type="button" class="automatic">${escapeHTML(t('ui.text.automatic'))}</button><button type="button" class="delete">${escapeHTML(t('ui.text.deleteSaved'))}</button><button type="button" class="cancel">${escapeHTML(t('ui.text.cancel'))}</button><button type="button" class="save">${escapeHTML(t('ui.text.saveUse'))}</button></div>
                     </dialog>`;
                 this.dialog = this.shadowRoot.querySelector('dialog');
                 this.shadowRoot.querySelector('.cancel').onclick = () => this.dialog.close();
@@ -2833,7 +2839,7 @@
                 this.dimensions = associationDimensions(tasks, COMMON_PROPERTIES);
                 this.automatic = automaticHierarchy(tasks);
                 const select = this.shadowRoot.querySelector('.presets');
-                select.replaceChildren(new Option('Automatic (by association counts)', ''));
+                select.replaceChildren(new Option(t('error.messages.automaticByAssociationCounts'), ''));
                 for (const preset of this.presets) select.append(new Option(preset.name, preset.name));
                 select.value = selected || '';
                 this.loadDraft(select.value);
@@ -2878,13 +2884,13 @@
                     label.append(check, ` ${item.type}`);
                     const count = document.createElement('span');
                     count.className = 'count';
-                    count.textContent = `${this.dimensions.find(dimension => dimension.type === item.type)?.count || 0} values`;
+                    count.textContent = t('ui.text.values', { count: this.dimensions.find(dimension => dimension.type === item.type)?.count || 0 });
                     row.append(grip, label, count);
                     for (const [arrow, delta] of [['↑', -1], ['↓', 1]]) {
                         const button = document.createElement('button');
                         button.type = 'button';
                         button.textContent = arrow;
-                        button.setAttribute('aria-label', `Move ${item.type} ${delta < 0 ? 'outward' : 'inward'}`);
+                        button.setAttribute('aria-label', t('ui.text.moveValue0Value1', { value0: item.type, value1: delta < 0 ? t('ui.text.outward') : t('ui.text.inward') }));
                         button.disabled = index + delta < 0 || index + delta >= this.rows.length;
                         button.onclick = () => this.move(item.type, index + delta);
                         row.append(button);
@@ -2927,19 +2933,19 @@
 
             if (period === 'today') {
                 start.setHours(0, 0, 0, 0);
-                rangeLabel = 'Today';
+                rangeLabel = t('ui.text.today');
                 shortPeriod = true;
             } else if (period === 'this-week') {
                 const daysSinceMonday = (start.getDay() + 6) % 7;
                 start.setDate(start.getDate() - daysSinceMonday);
                 start.setHours(0, 0, 0, 0);
-                rangeLabel = 'This week';
+                rangeLabel = t('ui.text.thisWeek');
                 shortPeriod = true;
             } else {
                 const days = Math.min(365, Math.max(1, Number(period) || 30));
                 start.setDate(start.getDate() - days + 1);
                 start.setHours(0, 0, 0, 0);
-                rangeLabel = days === 365 ? 'Last year' : `Last ${days} days`;
+                rangeLabel = days === 365 ? t('ui.text.lastYear') : t('ui.text.lastValue0Days', { value0: days });
             }
 
             const dates = [];
@@ -3125,16 +3131,16 @@
                         .legend-value { font: 750 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
                         @media (max-width: 1120px) { .panel { min-height: 355px; } .canvas-wrap { height: 190px; } }
                     </style>
-                    <section class="panel" aria-label="Task analytics">
-                        <div class="mode-tabs" role="tablist" aria-label="Visualization type">
-                            <button type="button" data-mode="parts" class="active" role="tab" aria-selected="true">Part / Whole</button>
-                            <button type="button" data-mode="timeline" role="tab" aria-selected="false">Timeline</button>
-                            <button type="button" data-mode="pile" role="tab" aria-selected="false">Time Pile</button>
+                    <section class="panel" aria-label="${escapeHTML(t('ui.text.taskAnalytics'))}">
+                        <div class="mode-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.visualizationType'))}">
+                            <button type="button" data-mode="parts" class="active" role="tab" aria-selected="true">${escapeHTML(t('ui.text.partWhole'))}</button>
+                            <button type="button" data-mode="timeline" role="tab" aria-selected="false">${escapeHTML(t('ui.text.timeline'))}</button>
+                            <button type="button" data-mode="pile" role="tab" aria-selected="false">${escapeHTML(t('ui.text.timePile'))}</button>
                         </div>
                         <div class="controls">
-                            <label>Measure<select class="measure"><option value="time">Tracked time</option><option value="tasks">Task count</option></select></label>
-                            <label>Group by<select class="group-by"></select></label>
-                            <label class="period-control" hidden>Window<select class="period"><option value="today">Today</option><option value="this-week">This week</option><option value="14">14 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option></select></label>
+                            <label>${escapeHTML(t('ui.text.measure'))}<select class="measure"><option value="time">${escapeHTML(t('ui.text.trackedTime'))}</option><option value="tasks">${escapeHTML(t('ui.text.taskCount'))}</option></select></label>
+                            <label>${escapeHTML(t('ui.text.groupBy'))}<select class="group-by"></select></label>
+                            <label class="period-control" hidden>${escapeHTML(t('ui.text.window'))}<select class="period"><option value="today">${escapeHTML(t('ui.text.today'))}</option><option value="this-week">${escapeHTML(t('ui.text.thisWeek'))}</option><option value="14">${escapeHTML(t('ui.text.14Days'))}</option><option value="30" selected>${escapeHTML(t('ui.text.30Days'))}</option><option value="90">${escapeHTML(t('ui.text.90Days'))}</option><option value="365">${escapeHTML(t('ui.text.1Year'))}</option></select></label>
                         </div>
                         <h3 class="chart-title"></h3>
                         <p class="chart-subtitle"></p>
@@ -3144,7 +3150,7 @@
                             <div class="chart-tooltip" role="tooltip" hidden></div>
                             <div class="empty" hidden></div>
                         </div>
-                        <div class="legend" aria-label="Chart legend"></div>
+                        <div class="legend" aria-label="${escapeHTML(t('ui.text.chartLegend'))}"></div>
                     </section>
                 `;
                 this.shadowRoot.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => {
@@ -3186,7 +3192,7 @@
                     const taskOption = document.createElement('option');
                     taskOption.value = '';
                     taskOption.textContent = '';
-                    taskOption.setAttribute('aria-label', 'Individual tasks by time of day');
+                    taskOption.setAttribute('aria-label', t('ui.text.individualTasksByTimeOfDay'));
                     options.unshift(taskOption);
                 }
                 groupSelect.replaceChildren(...options);
@@ -3194,16 +3200,16 @@
                 const title = this.shadowRoot.querySelector('.chart-title');
                 const subtitle = this.shadowRoot.querySelector('.chart-subtitle');
                 if (this.mode === 'parts') {
-                    title.textContent = `${this.measure === 'time' ? 'Time' : 'Tasks'} by ${this.groupBy}`;
-                    subtitle.textContent = 'Associated work is divided evenly. Unassigned work is listed below and excluded from the chart.';
+                    title.textContent = t('ui.text.value0ByValue1', { value0: this.measure === 'time' ? t('ui.text.time') : t('ui.text.tasks'), value1: uiLabel(this.groupBy) });
+                    subtitle.textContent = t('ui.text.associatedWorkIsDividedEvenlyUnassignedWorkIsListedBelowAndExcludedFromTheChart');
                 } else if (this.mode === 'pile') {
-                    title.textContent = `Time Pile · ${this.measure === 'time' ? 'Tracked time' : 'Task count'} by ${this.groupBy || 'task'}`;
+                    title.textContent = t('ui.text.timePileValue0ByValue1', { value0: this.measure === 'time' ? t('ui.text.trackedTime') : t('ui.text.taskCount'), value1: uiLabel(this.groupBy || 'task') });
                     subtitle.textContent = this.groupBy
-                        ? `${windowRange.rangeLabel}; largest assigned period total at the base. Includes unassigned work.`
-                        : `${windowRange.rangeLabel}; individual tasks ordered by time of day, earliest at the base.`;
+                        ? t('ui.text.value0LargestAssignedPeriodTotalAtTheBaseIncludesUnassignedWork', { value0: windowRange.rangeLabel })
+                        : t('ui.text.value0IndividualTasksOrderedByTimeOfDayEarliestAtTheBase', { value0: windowRange.rangeLabel });
                 } else {
-                    title.textContent = `Cumulative ${this.measure === 'time' ? 'tracked time' : 'task growth'}`;
-                    subtitle.textContent = `${windowRange.rangeLabel}, attributed by ${this.groupBy}. Includes unassigned work.`;
+                    title.textContent = t('ui.text.cumulativeValue0', { value0: this.measure === 'time' ? t('ui.text.trackedTime2') : t('ui.text.taskGrowth') });
+                    subtitle.textContent = t('ui.text.value0AttributedByValue1IncludesUnassignedWork', { value0: windowRange.rangeLabel, value1: uiLabel(this.groupBy) });
                 }
                 queueMicrotask(() => this.draw());
             }
@@ -3244,7 +3250,7 @@
                 const tooltip = this.shadowRoot.querySelector('.chart-tooltip');
                 if (!layer || !tooltip) return;
                 const showTooltip = (region) => {
-                    tooltip.textContent = region.label;
+                    tooltip.textContent = uiLabel(region.label);
                     tooltip.hidden = false;
                     const halfWidth = tooltip.offsetWidth / 2;
                     const center = Math.max(8 + halfWidth, Math.min(layer.clientWidth - 8 - halfWidth, region.x + region.width / 2));
@@ -3266,7 +3272,7 @@
                     target.style.top = `${region.y}px`;
                     target.style.width = `${region.width}px`;
                     target.style.height = `${region.height}px`;
-                    target.setAttribute('aria-label', `Open task: ${region.label}`);
+                    target.setAttribute('aria-label', t('ui.text.openTaskValue0', { value0: region.label }));
                     target.addEventListener('pointerenter', () => showTooltip(region));
                     target.addEventListener('pointerleave', hideTooltip);
                     target.addEventListener('focus', () => showTooltip(region));
@@ -3289,7 +3295,7 @@
                     const row = document.createElement('button');
                     row.type = 'button';
                     row.className = 'legend-item';
-                    row.title = `Show tasks with ${this.groupBy}: ${item.label}`;
+                    row.title = t('ui.text.showTasksWithValue0Value1', { value0: this.groupBy, value1: item.label });
                     row.setAttribute('aria-label', row.title);
                     const association = { type: this.groupBy, value: item.label };
                     if (item.associationValues) association.values = item.associationValues;
@@ -3303,7 +3309,7 @@
                     swatch.style.background = item.label === 'Unassigned' ? '#cfc8b8' : COLOR_PALETTE[index % COLOR_PALETTE.length];
                     const name = document.createElement('span');
                     name.className = 'legend-name';
-                    name.textContent = item.label;
+                    name.textContent = uiLabel(item.label);
                     const value = document.createElement('span');
                     value.className = 'legend-value';
                     value.textContent = this.measure === 'time' ? formatDuration(item.value, true) : String(Math.round(item.value * 10) / 10);
@@ -3317,8 +3323,8 @@
                 const data = listed.filter(item => item.label !== 'Unassigned');
                 const total = data.reduce((sum, item) => sum + item.value, 0);
                 this.renderLegend(listed);
-                canvasLabel(this.shadowRoot.querySelector('canvas'), `Part-whole chart of ${this.measure} grouped by ${this.groupBy}`);
-                if (!total) { this.setEmpty(listed.length ? `Associate tasks with ${this.groupBy} to build this chart.` : this.measure === 'time' ? 'Start a timer to build your time picture.' : 'Add and associate a task to build this chart.'); return; }
+                canvasLabel(this.shadowRoot.querySelector('canvas'), t('ui.text.partWholeChartOfValue0GroupedByValue1', { value0: uiLabel(this.measure), value1: uiLabel(this.groupBy) }));
+                if (!total) { this.setEmpty(listed.length ? t('ui.text.associateTasksWithValue0ToBuildThisChart', { value0: this.groupBy }) : this.measure === 'time' ? t('ui.text.startATimerToBuildYourTimePicture') : t('ui.text.addAndAssociateATaskToBuildThisChart')); return; }
                 this.setEmpty('');
                 const centerX = bounds.width / 2;
                 const centerY = bounds.height / 2;
@@ -3347,7 +3353,7 @@
                 context.fillText(this.measure === 'time' ? formatDuration(total, true) : String(Math.round(total)), centerX, centerY - 1);
                 context.fillStyle = '#697177';
                 context.font = '700 9px ui-monospace, monospace';
-                context.fillText(this.measure === 'time' ? 'ASSIGNED TIME' : 'ASSIGNED TASKS', centerX, centerY + 15);
+                context.fillText(this.measure === 'time' ? t('ui.text.aSSIGNEDTIME') : t('ui.text.aSSIGNEDTASKS'), centerX, centerY + 15);
             }
 
             drawPile(context, bounds, analytics) {
@@ -3361,13 +3367,13 @@
                 canvasLabel(
                     this.shadowRoot.querySelector('canvas'),
                     taskView
-                        ? `Stacked daily bar chart of individual tasks ordered by time of day, earliest at the base`
-                        : `${analytics.shortPeriod ? 'Stacked daily bar' : 'Stacked daily line'} chart of ${this.measure} grouped by ${this.groupBy}, with the largest period total at the base`
+                        ? t('ui.text.stackedDailyBarChartOfIndividualTasksOrderedByTimeOfDayEarliestAtTheBase')
+                        : t('ui.text.value0ChartOfValue1GroupedByValue2WithTheLargestPeriodTotalAtTheBase', { value0: analytics.shortPeriod ? t('ui.text.stackedDailyBar') : t('ui.text.stackedDailyLine'), value1: this.measure, value2: this.groupBy })
                 );
                 if (!max) {
                     this.setEmpty(this.measure === 'time'
-                        ? `Tracked sessions from ${analytics.rangeLabel.toLowerCase()} will build this pile.`
-                        : `Tasks created during ${analytics.rangeLabel.toLowerCase()} will build this pile.`);
+                        ? t('ui.text.trackedSessionsFromValue0WillBuildThisPile', { value0: analytics.rangeLabel.toLowerCase() })
+                        : t('ui.text.tasksCreatedDuringValue0WillBuildThisPile', { value0: analytics.rangeLabel.toLowerCase() }));
                     return;
                 }
                 this.setEmpty('');
@@ -3461,16 +3467,16 @@
                     context.textAlign = 'center';
                     analytics.pile.labels.forEach((label, index) => {
                         const date = new Date(`${label}T12:00:00`);
-                        const text = analytics.days === 1 ? 'Today' : date.toLocaleDateString([], { weekday: 'short' });
+                        const text = analytics.days === 1 ? t('ui.text.today') : date.toLocaleDateString(window.i18n.currentLang, { weekday: 'short' });
                         context.fillText(text, padding.left + slotWidth * (index + .5), bounds.height - 6);
                     });
                 } else {
                     const first = new Date(`${analytics.pile.labels[0]}T12:00:00`);
                     const last = new Date(`${analytics.pile.labels.at(-1)}T12:00:00`);
                     context.textAlign = 'left';
-                    context.fillText(first.toLocaleDateString([], { month: 'short', day: 'numeric' }), padding.left, bounds.height - 6);
+                    context.fillText(first.toLocaleDateString(window.i18n.currentLang, { month: 'short', day: 'numeric' }), padding.left, bounds.height - 6);
                     context.textAlign = 'right';
-                    context.fillText(last.toLocaleDateString([], { month: 'short', day: 'numeric' }), bounds.width - padding.right, bounds.height - 6);
+                    context.fillText(last.toLocaleDateString(window.i18n.currentLang, { month: 'short', day: 'numeric' }), bounds.width - padding.right, bounds.height - 6);
                 }
             }
 
@@ -3478,8 +3484,8 @@
                 const series = analytics.timeline.series;
                 const max = Math.max(0, ...series.flatMap((item) => item.values));
                 this.renderLegend(series.map((item) => ({ label: item.label, value: item.values.at(-1) || 0 })));
-                canvasLabel(this.shadowRoot.querySelector('canvas'), `Timeline of cumulative ${this.measure} grouped by ${this.groupBy}`);
-                if (!max) { this.setEmpty(this.measure === 'time' ? 'Completed timer sessions will appear on this timeline.' : 'New tasks will build your growth timeline.'); return; }
+                canvasLabel(this.shadowRoot.querySelector('canvas'), t('ui.text.timelineOfCumulativeValue0GroupedByValue1', { value0: uiLabel(this.measure), value1: uiLabel(this.groupBy) }));
+                if (!max) { this.setEmpty(this.measure === 'time' ? t('ui.text.completedTimerSessionsWillAppearOnThisTimeline') : t('ui.text.newTasksWillBuildYourGrowthTimeline')); return; }
                 this.setEmpty('');
                 const padding = { top: 13, right: 8, bottom: 25, left: 39 };
                 const width = bounds.width - padding.left - padding.right;
@@ -3521,17 +3527,17 @@
                 context.textAlign = 'left';
                 const first = new Date(`${analytics.timeline.labels[0]}T12:00:00`);
                 const last = new Date(`${analytics.timeline.labels.at(-1)}T12:00:00`);
-                context.fillText(first.toLocaleDateString([], { month: 'short', day: 'numeric' }), padding.left, bounds.height - 6);
+                context.fillText(first.toLocaleDateString(window.i18n.currentLang, { month: 'short', day: 'numeric' }), padding.left, bounds.height - 6);
                 context.textAlign = 'right';
-                context.fillText(last.toLocaleDateString([], { month: 'short', day: 'numeric' }), bounds.width - padding.right, bounds.height - 6);
+                context.fillText(last.toLocaleDateString(window.i18n.currentLang, { month: 'short', day: 'numeric' }), bounds.width - padding.right, bounds.height - 6);
             }
         }
 
         function canvasLabel(canvas, label) { canvas.setAttribute('aria-label', label); }
         function compactAxisTime(seconds) {
-            if (seconds >= 3600) return `${Math.round(seconds / 3600)}h`;
-            if (seconds >= 60) return `${Math.round(seconds / 60)}m`;
-            return `${Math.round(seconds)}s`;
+            if (seconds >= 3600) return t('ui.text.hoursShort', { count: Math.round(seconds / 3600) });
+            if (seconds >= 60) return t('ui.text.minutesShort', { count: Math.round(seconds / 60) });
+            return t('ui.text.secondsShort', { count: Math.round(seconds) });
         }
         customElements.define('task-visualization', TaskVisualization);
         installSearcherElement();
@@ -3612,28 +3618,28 @@
                         @media (max-width: 520px) { .association-form { grid-template-columns: 1fr 1fr; } .association-form button { grid-column: 1 / -1; } }
                     </style>
                     <article>
-                        <label>${isPlan ? 'Plan' : 'Want'}<textarea class="text" rows="1" maxlength="1000" aria-label="${isPlan ? 'Plan' : 'Want'} title"></textarea></label>
+                        <label>${isPlan ? t('ui.text.plan') : t('ui.text.want')}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: isPlan ? t('ui.text.plan') : t('ui.text.want') }))}"></textarea></label>
                         ${isPlan ? `
-                            <div class="thinking-tabs" role="tablist" aria-label="Plan thinking">
-                                <button type="button" id="my-thinking-tab" role="tab" data-thinking-tab="myThinking" aria-controls="my-thinking-panel">My Thinking</button>
-                                <button type="button" id="ai-thinking-tab" role="tab" data-thinking-tab="aiThinking" aria-controls="ai-thinking-panel">AI Thinking</button>
+                            <div class="thinking-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.planThinking'))}">
+                                <button type="button" id="my-thinking-tab" role="tab" data-thinking-tab="myThinking" aria-controls="my-thinking-panel">${escapeHTML(t('ui.text.myThinking'))}</button>
+                                <button type="button" id="ai-thinking-tab" role="tab" data-thinking-tab="aiThinking" aria-controls="ai-thinking-panel">${escapeHTML(t('ui.text.aIThinking'))}</button>
                             </div>
-                            <div role="tabpanel" id="my-thinking-panel" data-thinking-panel="myThinking" aria-labelledby="my-thinking-tab"><label>My thinking, approach, and next steps<textarea class="my-thinking" rows="5" maxlength="50000" aria-label="My Thinking" placeholder="Make room for your thinking…"></textarea></label></div>
-                            <div role="tabpanel" id="ai-thinking-panel" data-thinking-panel="aiThinking" aria-labelledby="ai-thinking-tab"><label>AI thinking<textarea class="ai-thinking" rows="5" maxlength="50000" aria-label="AI Thinking" placeholder="Save text generated by AI…"></textarea></label></div>
-                        ` : '<label>Ideas, aspirations, and possibilities<textarea class="notes" rows="5" maxlength="10000" aria-label="Want notes" placeholder="Make room for your thinking…"></textarea></label>'}
-                        <label class="parent-label" ${isPlan ? '' : 'hidden'}>Want (optional)<span class="parent-row"><select class="parent" aria-label="Parent want"></select><button class="open-parent" type="button" ${this._record.wantId ? '' : 'hidden'}>Open want</button></span></label>
-                        <div class="chips" aria-label="Associations"></div>
+                            <div role="tabpanel" id="my-thinking-panel" data-thinking-panel="myThinking" aria-labelledby="my-thinking-tab"><label>${escapeHTML(t('ui.text.myThinkingApproachAndNextSteps'))}<textarea class="my-thinking" rows="5" maxlength="50000" aria-label="${escapeHTML(t('ui.text.myThinking'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label></div>
+                            <div role="tabpanel" id="ai-thinking-panel" data-thinking-panel="aiThinking" aria-labelledby="ai-thinking-tab"><label>${escapeHTML(t('ui.text.aIThinking2'))}<textarea class="ai-thinking" rows="5" maxlength="50000" aria-label="${escapeHTML(t('ui.text.aIThinking'))}" placeholder="${escapeHTML(t('ui.text.saveTextGeneratedByAI'))}"></textarea></label></div>
+                        ` : `<label>${escapeHTML(t('ui.text.ideasAspirationsAndPossibilities'))}<textarea class="notes" rows="5" maxlength="10000" aria-label="${escapeHTML(t('ui.text.wantNotes'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label>`}
+                        <label class="parent-label" ${isPlan ? '' : 'hidden'}>${escapeHTML(t('ui.text.wantOptional'))}<span class="parent-row"><select class="parent" aria-label="${escapeHTML(t('ui.text.parentWant'))}"></select><button class="open-parent" type="button" ${this._record.wantId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openWant'))}</button></span></label>
+                        <div class="chips" aria-label="${escapeHTML(t('ui.text.associations'))}"></div>
                         <form class="association-form">
-                            <input class="association-type" list="planning-types" maxlength="60" placeholder="property" aria-label="Association property" required>
+                            <input class="association-type" list="planning-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}" required>
                             <datalist id="planning-types"></datalist>
-                            <input class="association-value" list="planning-values" maxlength="120" placeholder="choose or type a value" aria-label="Association value" required>
+                            <input class="association-value" list="planning-values" maxlength="120" placeholder="${escapeHTML(t('ui.text.chooseOrTypeAValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}" required>
                             <datalist id="planning-values"></datalist>
-                            <button type="submit">Add association</button>
+                            <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                         </form>
-                        <h3>${isPlan ? 'Tasks in this plan' : 'Plans from this want'} · ${children.length}</h3>
+                        <h3>${isPlan ? t('ui.text.tasksInThisPlan') : t('ui.text.plansFromThisWant')} · ${children.length}</h3>
                         <div class="children"></div>
-                        <form class="child-form"><input class="child-text" maxlength="1000" aria-label="New ${isPlan ? 'task' : 'plan'}" placeholder="${isPlan ? 'Turn a next step into a task…' : 'Turn this want into a plan…'}" required><button type="submit">Add ${isPlan ? 'task' : 'plan'}</button></form>
-                        <div class="footer"><span class="age"></span><button class="delete" type="button">Delete ${isPlan ? 'plan' : 'want'}</button></div>
+                        <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(isPlan ? 'task' : 'plan') }))}" placeholder="${isPlan ? t('ui.text.turnANextStepIntoATask') : t('ui.text.turnThisWantIntoAPlan')}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(isPlan ? 'task' : 'plan') }))}</button></form>
+                        <div class="footer"><span class="age"></span><button class="delete" type="button">${escapeHTML(t('ui.text.deleteValue10', { value10: uiLabel(isPlan ? 'plan' : 'want') }))}</button></div>
                     </article>
                 `;
                 for (const field of isPlan ? ['text', 'myThinking', 'aiThinking'] : ['text', 'notes']) {
@@ -3669,7 +3675,7 @@
                 });
                 this.updateThinkingTabs();
                 const parent = this.shadowRoot.querySelector('.parent');
-                parent.append(new Option('No want', ''));
+                parent.append(new Option(t('error.messages.noWant'), ''));
                 for (const record of parents) parent.append(new Option(record.text, record.id));
                 parent.value = this._record.wantId || '';
                 parent.addEventListener('change', () => this.emit('planning-update', { patch: { wantId: parent.value || null } }));
@@ -3680,12 +3686,12 @@
                     const own = ownKeys.has(`${association.type}\u0000${association.value.toLowerCase()}`);
                     const chip = document.createElement('span');
                     chip.className = `chip${own ? '' : ' inherited'}`;
-                    chip.textContent = `${association.type}: ${association.value}${own ? '' : ` · from ${isPlan ? 'tasks' : 'plans'}`}`;
+                    chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(isPlan ? 'tasks' : 'plans') })}`;
                     if (own) {
                         const remove = document.createElement('button');
                         remove.type = 'button';
                         remove.textContent = '×';
-                        remove.setAttribute('aria-label', `Remove ${association.type}: ${association.value}`);
+                        remove.setAttribute('aria-label', t('ui.text.removeValue0Value1', { value0: association.type, value1: association.value }));
                         remove.addEventListener('click', () => this.emit('planning-association-remove', { association }));
                         chip.append(remove);
                     }
@@ -3719,16 +3725,16 @@
                     const parsed = parseQuickTask(input.value);
                     if (parsed.text) this.emit('planning-child-add', { input: parsed });
                 });
-                this.shadowRoot.querySelector('.age').textContent = `Created ${new Date(this._record.createdAt).toLocaleDateString()}`;
+                this.shadowRoot.querySelector('.age').textContent = t('ui.text.createdValue0', { value0: new Date(this._record.createdAt).toLocaleDateString() });
                 this.shadowRoot.querySelector('.delete').addEventListener('click', event => {
                     const button = event.currentTarget;
                     if (button.classList.contains('armed')) this.emit('planning-delete');
                     else {
                         button.classList.add('armed');
-                        button.textContent = `Confirm delete (keeps ${isPlan ? 'tasks' : 'plans'})`;
+                        button.textContent = t('ui.text.confirmDeleteKeepsValue0', { value0: uiLabel(isPlan ? 'tasks' : 'plans') });
                         this._confirmTimer = setTimeout(() => {
                             button.classList.remove('armed');
-                            button.textContent = `Delete ${isPlan ? 'plan' : 'want'}`;
+                            button.textContent = t('ui.text.deleteValue0', { value0: uiLabel(isPlan ? 'plan' : 'want') });
                         }, 3500);
                     }
                 });
@@ -3888,7 +3894,7 @@
                 invalidateDurationCache();
                 this.querySelector('backup-tracker').initializeData(WORKSPACE_COLLECTIONS.some(kind => this[kind].length > 0));
                 this.querySelector('.storage-state').dataset.mode = this.repository.mode;
-                this.querySelector('.storage-label').textContent = this.repository.mode === 'memory' ? 'Session only' : this.repository.mode === 'opfs' ? 'Saved locally · OPFS' : 'Saved locally · IndexedDB';
+                this.querySelector('.storage-label').textContent = this.repository.mode === 'memory' ? t('ui.text.sessionOnly') : this.repository.mode === 'opfs' ? t('ui.text.savedLocallyOPFS') : t('ui.text.savedLocallyIndexedDB');
                 this.renderAll();
                 this.resolveReady(this);
                 document.dispatchEvent(new CustomEvent('taskimatic:ready', { detail: { version: APP_VERSION, storage: this.repository.mode } }));
@@ -3949,9 +3955,9 @@
                         const dateStamp = this.querySelector('.date-stamp');
                         if (dateStamp?.dataset.day !== dayKey) {
                             dateStamp.replaceChildren(
-                                today.toLocaleDateString([], { weekday: 'long' }),
+                                today.toLocaleDateString(window.i18n.currentLang, { weekday: 'long' }),
                                 document.createElement('br'),
-                                today.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
+                                today.toLocaleDateString(window.i18n.currentLang, { month: 'long', day: 'numeric', year: 'numeric' })
                             );
                             dateStamp.dataset.day = dayKey;
                         }
@@ -3968,142 +3974,142 @@
                 this.innerHTML = `
                     <header class="topbar">
                         <div class="brand">
-                            <button type="button" class="brand-mark" popovertarget="brand-help" aria-label="Help and contact taskimatic" title="Questions?">T</button>
-                            <div class="brand-help" id="brand-help" popover aria-label="Help and contact">
-                                <p><strong>Question? Problem? Suggestion?</strong><br>
-                                email <a href="mailto:bot@taskimatic.com">bot@taskimatic.com</a></p>
-                                <p>We hope taskimatic helps you get more done.</p>
-                                <small><a href="https://mentic.com" target="_blank">brought you by ☯ MENTIC cognitive systems</a></small>
+                            <button type="button" class="brand-mark" popovertarget="brand-help" aria-label="${escapeHTML(t('ui.text.helpAndContactTaskimatic'))}" title="${escapeHTML(t('ui.text.questions'))}">${escapeHTML(t('ui.text.t'))}</button>
+                            <div class="brand-help" id="brand-help" popover aria-label="${escapeHTML(t('ui.text.helpAndContact'))}">
+                                <p><strong>${escapeHTML(t('ui.text.questionProblemSuggestion'))}</strong><br>
+                                ${escapeHTML(t('ui.text.email'))} <a href="mailto:bot@taskimatic.com">${escapeHTML(t('ui.text.botTaskimaticCom'))}</a></p>
+                                <p>${escapeHTML(t('ui.text.weHopeTaskimaticHelpsYouGetMoreDone'))}</p>
+                                <small><a href="https://mentic.com" target="_blank">${escapeHTML(t('ui.text.broughtYouByMENTICCognitiveSystems'))}</a></small>
                             </div>
-                            <div><div class="brand-name">taskimatic</div><div class="brand-sub">local work ledger</div></div>
+                            <div><div class="brand-name">${escapeHTML(t('ui.text.taskimatic'))}</div><div class="brand-sub">${escapeHTML(t('ui.text.localWorkLedger'))}</div></div>
                         </div>
                         <div class="top-actions">
-                            <div class="storage-state" data-mode="indexeddb" title="Your workspace is stored in this browser">
-                                <span class="storage-dot"></span><span class="storage-label">Opening storage…</span>
+                            <div class="storage-state" data-mode="indexeddb" title="${escapeHTML(t('ui.text.yourWorkspaceIsStoredInThisBrowser'))}">
+                                <span class="storage-dot"></span><span class="storage-label">${escapeHTML(t('ui.text.openingStorage'))}</span>
                             </div>
                             <backup-tracker storage-key="taskimatic:backuptracker" change-event="taskimatic:change">
-                                <button slot="before-button" class="pip-action" type="button" aria-pressed="false" title="Open an always-on-top task window">mini me</button>
-                                <button slot="action" data-backup-action class="export-action" type="button">export data</button>
+                                <button slot="before-button" class="pip-action" type="button" aria-pressed="false" title="${escapeHTML(t('ui.text.openAnAlwaysOnTopTaskWindow'))}">${escapeHTML(t('ui.text.miniMe'))}</button>
+                                <button slot="action" data-backup-action class="export-action" type="button">${escapeHTML(t('ui.text.exportData'))}</button>
                             </backup-tracker>
-                            <button class="import-action desktop-action" type="button">import</button>
-                            <button class="download-action primary" type="button">download app</button>
-                            <input class="import-input" type="file" accept="application/json,.json" hidden aria-label="Import task data">
+                            <button class="import-action desktop-action" type="button">${escapeHTML(t('ui.text.import'))}</button>
+                            <button class="download-action primary" type="button">${escapeHTML(t('ui.text.downloadApp'))}</button>
+                            <input class="import-input" type="file" accept="application/json,.json" hidden aria-label="${escapeHTML(t('ui.text.importTaskData'))}">
                         </div>
                     </header>
                     <div class="app-grid">
-                        <aside class="rail" aria-label="Task views and associations">
+                        <aside class="rail" aria-label="${escapeHTML(t('ui.text.taskViewsAndAssociations'))}">
                             <div class="rail-sticky">
-                                <div class="eyebrow rail-eyebrow">Views</div>
-                                <nav class="nav-list" aria-label="Task views">
-                                    <button class="nav-button active" type="button" data-status="open"><span>Active</span><span class="nav-count" data-count="open">0</span></button>
-                                    <button class="nav-button" type="button" data-status="tabled"><span>Tabled</span><span class="nav-count" data-count="tabled">0</span></button>
-                                    <button class="nav-button" type="button" data-status="all"><span>All tasks</span><span class="nav-count" data-count="all">0</span></button>
-                                    <button class="nav-button" type="button" data-status="done"><span>Completed</span><span class="nav-count" data-count="done">0</span></button>
+                                <div class="eyebrow rail-eyebrow">${escapeHTML(t('ui.text.views'))}</div>
+                                <nav class="nav-list" aria-label="${escapeHTML(t('ui.text.taskViews'))}">
+                                    <button class="nav-button active" type="button" data-status="open"><span>${escapeHTML(t('ui.text.active'))}</span><span class="nav-count" data-count="open">0</span></button>
+                                    <button class="nav-button" type="button" data-status="tabled"><span>${escapeHTML(t('ui.text.tabled'))}</span><span class="nav-count" data-count="tabled">0</span></button>
+                                    <button class="nav-button" type="button" data-status="all"><span>${escapeHTML(t('ui.text.allTasks'))}</span><span class="nav-count" data-count="all">0</span></button>
+                                    <button class="nav-button" type="button" data-status="done"><span>${escapeHTML(t('ui.text.completed'))}</span><span class="nav-count" data-count="done">0</span></button>
                                 </nav>
                                 <details class="association-group plans-nav" id="plans-nav" open>
-                                    <summary class="association-summary" aria-label="Toggle plans list">
+                                    <summary class="association-summary" aria-label="${escapeHTML(t('ui.text.togglePlansList'))}">
                                         <div class="association-summary-left">
                                             <span class="association-caret" aria-hidden="true">▶</span>
-                                            <span class="association-type-label">Plans</span>
+                                            <span class="association-type-label">${escapeHTML(t('ui.text.plans'))}</span>
                                         </div>
                                         <span class="nav-count" data-plans-count>0</span>
                                     </summary>
-                                    <div class="association-tree-children plans-list" role="group" aria-label="Plans"></div>
+                                    <div class="association-tree-children plans-list" role="group" aria-label="${escapeHTML(t('ui.text.plans'))}"></div>
                                 </details>
                                 <hr class="rail-rule">
                                 <div class="association-drawer" id="associations-drawer">
                                     <div class="drawer-header">
-                                        <div class="eyebrow">Associations</div>
-                                        <button type="button" class="drawer-close" id="associations-close" aria-label="Close associations">✕</button>
+                                        <div class="eyebrow">${escapeHTML(t('ui.text.associations'))}</div>
+                                        <button type="button" class="drawer-close" id="associations-close" aria-label="${escapeHTML(t('ui.text.closeAssociations'))}">✕</button>
                                     </div>
-                                    <div class="association-nav" role="tree" aria-label="Task associations tree"></div>
+                                    <div class="association-nav" role="tree" aria-label="${escapeHTML(t('ui.text.taskAssociationsTree'))}"></div>
                                 </div>
                             </div>
                         </aside>
                         <main class="main-column">
-                            <nav class="workspace-tabs" role="tablist" aria-label="Workspace">
-                                ${['tasks', 'plans', 'wants'].map((kind, index) => `<button class="workspace-tab" id="${kind}-tab" type="button" role="tab" aria-controls="${kind}-view" aria-selected="${index === 0}" tabindex="${index === 0 ? '0' : '-1'}" data-view="${kind}">${kind[0].toUpperCase() + kind.slice(1)}<span class="nav-count" data-workspace-count="${kind}">0</span></button>`).join('')}
+                            <nav class="workspace-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.workspace'))}">
+                                ${['tasks', 'plans', 'wants'].map((kind, index) => `<button class="workspace-tab" id="${kind}-tab" type="button" role="tab" aria-controls="${kind}-view" aria-selected="${index === 0}" tabindex="${index === 0 ? '0' : '-1'}" data-view="${kind}">${escapeHTML(uiLabel(kind, true))}<span class="nav-count" data-workspace-count="${kind}">0</span></button>`).join('')}
                             </nav>
                             <section id="tasks-view" role="tabpanel" aria-labelledby="tasks-tab">
                             <div class="welcome-row">
-                                <div><div class="eyebrow">Your workbench</div><h1>What needs doing?</h1></div>
-                                <div class="date-stamp" data-day="${dayKey}">${today.toLocaleDateString([], { weekday: 'long' })}<br>${today.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                                <div><div class="eyebrow">${escapeHTML(t('ui.text.yourWorkbench'))}</div><h1>${escapeHTML(t('ui.text.whatNeedsDoing'))}</h1></div>
+                                <div class="date-stamp" data-day="${dayKey}">${today.toLocaleDateString(window.i18n.currentLang, { weekday: 'long' })}<br>${today.toLocaleDateString(window.i18n.currentLang, { month: 'long', day: 'numeric', year: 'numeric' })}</div>
                             </div>
-                            <section class="capture-card" aria-label="Quick add task">
+                            <section class="capture-card" aria-label="${escapeHTML(t('ui.text.quickAddTask'))}">
                                 <form class="capture-form">
-                                    <input class="capture-input" name="task" maxlength="1000" autocomplete="off" placeholder="Add a task and press Enter…" aria-label="New task text">
-                                    <button class="add-button" type="submit">add task <span aria-hidden="true">↵</span></button>
+                                    <input class="capture-input" name="task" maxlength="1000" autocomplete="off" placeholder="${escapeHTML(t('ui.text.addATaskAndPressEnter'))}" aria-label="${escapeHTML(t('ui.text.newTaskText'))}">
+                                    <button class="add-button" type="submit">${escapeHTML(t('ui.text.addTask'))} <span aria-hidden="true">↵</span></button>
                                 </form>
-                                <div class="capture-help">Tag as you type: <code>#project:website</code> <code>#client:"North Wind"</code></div>
+                                <div class="capture-help">${escapeHTML(t('ui.text.tagAsYouType'))} <code>${escapeHTML(t('ui.text.projectWebsite'))}</code> <code>${escapeHTML(t('ui.text.clientNorthWind'))}</code></div>
                             </section>
                             <div class="list-toolbar">
-                                <div class="list-heading"><h2>Active tasks</h2><span class="list-count">0 shown</span><label class="table-toggle"><input class="table-checkbox" type="checkbox"> Table</label><button class="hierarchy-button" type="button" aria-haspopup="dialog" hidden>Hierarchy</button></div>
+                                <div class="list-heading"><h2>${escapeHTML(t('ui.text.activeTasks'))}</h2><span class="list-count">${escapeHTML(t('ui.text.0Shown'))}</span><label class="table-toggle"><input class="table-checkbox" type="checkbox"> ${escapeHTML(t('ui.text.table2'))}</label><button class="hierarchy-button" type="button" aria-haspopup="dialog" hidden>${escapeHTML(t('ui.text.hierarchy'))}</button></div>
                                 <div class="list-toolbar-right">
-                                    <task-sort-controls class="main-sort" aria-label="Sort main task list"></task-sort-controls>
-                                    <searcher-element on-now-filter class="task-search" aria-label="Search tasks"></searcher-element>
+                                    <task-sort-controls class="main-sort" aria-label="${escapeHTML(t('ui.text.sortMainTaskList'))}"></task-sort-controls>
+                                    <searcher-element on-now-filter class="task-search" aria-label="${escapeHTML(t('ui.text.searchTasks'))}"></searcher-element>
                                 </div>
                             </div>
-                            <div class="active-filter" hidden><span></span><button type="button">Clear grouping</button></div>
+                            <div class="active-filter" hidden><span></span><button type="button">${escapeHTML(t('ui.text.clearGrouping'))}</button></div>
                             <section class="task-list" aria-live="polite"></section>
                             </section>
                             ${['plans', 'wants'].map(kind => `
                                 <section id="${kind}-view" role="tabpanel" aria-labelledby="${kind}-tab" hidden>
-                                    <div class="welcome-row"><div><div class="eyebrow">${kind === 'plans' ? 'From thinking to doing' : 'Room for possibilities'}</div><h1>${kind === 'plans' ? 'Shape a plan.' : 'What would you like to have or achieve?'}</h1></div></div>
-                                    <p class="planning-help">${kind === 'plans' ? 'Develop your approach and link the tasks that make it happen. Associations on those tasks roll up into their plan. A plan can stand alone or grow from a Want.' : 'Capture vague desires and aspirations, then turn them into plans when they take shape.'}</p>
-                                    <section class="capture-card"><form class="planning-capture capture-form" data-kind="${kind}"><input class="capture-input" maxlength="1000" aria-label="New ${kind === 'plans' ? 'plan' : 'want'} title" placeholder="${kind === 'plans' ? 'Give your plan a name…' : 'Capture a desire or aspiration…'}" required><button class="add-button" type="submit">add ${kind === 'plans' ? 'plan' : 'want'}</button></form></section>
-                                    <div class="planning-search"><input type="search" data-planning-search="${kind}" aria-label="Search ${kind}" placeholder="Search ${kind}, thinking, and associations…"></div>
-                                    <div class="active-filter planning-filter" data-kind="${kind}" hidden><span></span><button type="button" data-clear-planning-filter>Clear grouping</button></div>
+                                    <div class="welcome-row"><div><div class="eyebrow">${kind === 'plans' ? t('ui.text.fromThinkingToDoing') : t('ui.text.roomForPossibilities')}</div><h1>${kind === 'plans' ? t('ui.text.shapeAPlan') : t('ui.text.whatWouldYouLikeToHaveOrAchieve')}</h1></div></div>
+                                    <p class="planning-help">${kind === 'plans' ? t('ui.text.developYourApproachAndLinkTheTasksThatMakeItHappenAssociationsOnThoseTasksRollUpIntoT') : t('ui.text.captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape')}</p>
+                                    <section class="capture-card"><form class="planning-capture capture-form" data-kind="${kind}"><input class="capture-input" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue6Title', { value6: uiLabel(kind === 'plans' ? 'plan' : 'want') }))}" placeholder="${kind === 'plans' ? t('ui.text.giveYourPlanAName') : t('ui.text.captureADesireOrAspiration')}" required><button class="add-button" type="submit">${escapeHTML(t('ui.text.addValue8', { value8: uiLabel(kind === 'plans' ? 'plan' : 'want') }))}</button></form></section>
+                                    <div class="planning-search"><input type="search" data-planning-search="${kind}" aria-label="${escapeHTML(t('ui.text.searchValue10', { value10: kind }))}" placeholder="${escapeHTML(t('ui.text.searchValue11ThinkingAndAssociations', { value11: kind }))}"></div>
+                                    <div class="active-filter planning-filter" data-kind="${kind}" hidden><span></span><button type="button" data-clear-planning-filter>${escapeHTML(t('ui.text.clearGrouping'))}</button></div>
                                     <section class="planning-list" data-kind="${kind}" aria-live="polite"></section>
                                 </section>
                             `).join('')}
                         </main>
-                        <aside class="insights-column" id="insights-drawer" aria-label="Work analytics">
+                        <aside class="insights-column" id="insights-drawer" aria-label="${escapeHTML(t('ui.text.workAnalytics'))}">
                             <div class="insights-sticky">
-                            <section class="stats-row" aria-label="Task summary">
-                                <div class="stat"><span class="eyebrow">Human Time</span><span class="stat-value" data-stat="human-today">0s</span></div>
-                                <div class="stat"><span class="eyebrow">Agent Time</span><span class="stat-value" data-stat="agent-today">0s</span></div>
-                                <div class="stat"><span class="eyebrow">Open Tasks</span><span class="stat-value" data-stat="open">0</span></div>
+                            <section class="stats-row" aria-label="${escapeHTML(t('ui.text.taskSummary'))}">
+                                <div class="stat"><span class="eyebrow">${escapeHTML(t('ui.text.humanTime'))}</span><span class="stat-value" data-stat="human-today">${escapeHTML(t('ui.text.0s'))}</span></div>
+                                <div class="stat"><span class="eyebrow">${escapeHTML(t('ui.text.agentTime'))}</span><span class="stat-value" data-stat="agent-today">${escapeHTML(t('ui.text.0s'))}</span></div>
+                                <div class="stat"><span class="eyebrow">${escapeHTML(t('ui.text.openTasks'))}</span><span class="stat-value" data-stat="open">0</span></div>
                             </section>
                                 <div class="insights-heading">
-                                    <h2>Work composition</h2>
+                                    <h2>${escapeHTML(t('ui.text.workComposition'))}</h2>
                                     <div class="insights-heading-right">
-                                        <span class="live-label">Live</span>
-                                        <button type="button" class="drawer-close" id="insights-close" aria-label="Close work composition">✕</button>
+                                        <span class="live-label">${escapeHTML(t('ui.text.live'))}</span>
+                                        <button type="button" class="drawer-close" id="insights-close" aria-label="${escapeHTML(t('ui.text.closeWorkComposition'))}">✕</button>
                                     </div>
                                 </div>
                                 <task-visualization></task-visualization>
-                                <div class="portable-card"><strong>the page is the app</strong><p>Download a working HTML copy with your Wants, Plans, and Tasks embedded. Edits stay private in this browser’s local storage.</p></div>
+                                <div class="portable-card"><strong>${escapeHTML(t('ui.text.thePageIsTheApp'))}</strong><p>${escapeHTML(t('ui.text.downloadAWorkingHTMLCopyWithYourWantsPlansAndTasksEmbeddedEditsStayPrivateInThisBrows'))}</p></div>
                             </div>
                         </aside>
                     </div>
                     <aside class="today-drawer" id="today-drawer" tabindex="-1" aria-labelledby="today-heading" aria-hidden="true" inert>
                         <div class="drawer-header">
-                            <div class="list-heading"><h2 id="today-heading">Today</h2><span class="today-count list-count">0 tasks</span></div>
-                            <button type="button" class="drawer-close" id="today-close" aria-label="Close Today">✕</button>
+                            <div class="list-heading"><h2 id="today-heading">${escapeHTML(t('ui.text.today'))}</h2><span class="today-count list-count">${escapeHTML(t('ui.text.0Tasks'))}</span></div>
+                            <button type="button" class="drawer-close" id="today-close" aria-label="${escapeHTML(t('ui.text.closeToday'))}">✕</button>
                         </div>
                         <lock-in-controls></lock-in-controls>
-                        <p class="today-lock" id="today-lock" role="status" hidden>Human timer running — stop it to close Today.</p>
-                        <task-sort-controls class="today-sort" aria-label="Sort Today tasks"></task-sort-controls>
-                        <section class="today-task-list" aria-label="Today tasks" aria-live="polite"></section>
+                        <p class="today-lock" id="today-lock" role="status" hidden>${escapeHTML(t('ui.text.humanTimerRunningStopItToCloseToday'))}</p>
+                        <task-sort-controls class="today-sort" aria-label="${escapeHTML(t('ui.text.sortTodayTasks'))}"></task-sort-controls>
+                        <section class="today-task-list" aria-label="${escapeHTML(t('ui.text.todayTasks'))}" aria-live="polite"></section>
                     </aside>
-                    <button type="button" class="panel-grab-tab today-tab" id="today-tab" aria-label="Toggle Today panel" aria-controls="today-drawer" aria-describedby="today-lock" aria-expanded="false" title="Today — drag up or down to move; arrow keys also move the tab">
-                        <span class="tab-text">Today</span>
+                    <button type="button" class="panel-grab-tab today-tab" id="today-tab" aria-label="${escapeHTML(t('ui.text.toggleTodayPanel'))}" aria-controls="today-drawer" aria-describedby="today-lock" aria-expanded="false" title="${escapeHTML(t('ui.text.todayDragUpOrDownToMoveArrowKeysAlsoMoveTheTab'))}">
+                        <span class="tab-text">${escapeHTML(t('ui.text.today'))}</span>
                     </button>
-                    <button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">Lock In? <span class="lock-in-emoji">🔓</span></button>
-                    <button type="button" class="panel-grab-tab left-tab" id="associations-tab" aria-label="Toggle Associations panel" aria-expanded="false" title="Associations">
-                        <span class="tab-text">Associations</span>
+                    <button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">${escapeHTML(t('ui.text.lockIn3'))} <span class="lock-in-emoji">🔓</span></button>
+                    <button type="button" class="panel-grab-tab left-tab" id="associations-tab" aria-label="${escapeHTML(t('ui.text.toggleAssociationsPanel'))}" aria-expanded="false" title="${escapeHTML(t('ui.text.associations'))}">
+                        <span class="tab-text">${escapeHTML(t('ui.text.associations'))}</span>
                     </button>
-                    <button type="button" class="panel-grab-tab right-tab" id="insights-tab" aria-label="Toggle Analytics panel" aria-expanded="false" title="Analytics">
-                        <span class="tab-text">Analytics</span>
+                    <button type="button" class="panel-grab-tab right-tab" id="insights-tab" aria-label="${escapeHTML(t('ui.text.toggleAnalyticsPanel'))}" aria-expanded="false" title="${escapeHTML(t('ui.text.analytics'))}">
+                        <span class="tab-text">${escapeHTML(t('ui.text.analytics'))}</span>
                     </button>
                     <div class="drawer-scrim" id="drawer-scrim" aria-hidden="true"></div>
                     <div class="protect-modal" id="protect-modal" role="dialog" aria-modal="true" aria-labelledby="protect-modal-task" aria-hidden="true" inert tabindex="-1">
                         <div class="protect-modal-content">
                             <form class="protect-new-task">
-                                <label for="protect-new-task-text">New Task</label>
+                                <label for="protect-new-task-text">${escapeHTML(t('ui.text.newTask'))}</label>
                                 <div class="protect-new-task-row">
-                                    <input id="protect-new-task-text" name="text" maxlength="1000" placeholder="Capture a new task" required>
-                                    <button type="submit" class="protect-btn protect-btn-secondary">Add task</button>
+                                    <input id="protect-new-task-text" name="text" maxlength="1000" placeholder="${escapeHTML(t('ui.text.captureANewTask'))}" required>
+                                    <button type="submit" class="protect-btn protect-btn-secondary">${escapeHTML(t('ui.text.addTask2'))}</button>
                                 </div>
                                 <p class="protect-form-status" role="status"></p>
                             </form>
@@ -4115,17 +4121,17 @@
                                 </svg>
                                 <div class="protect-modal-center">
                                     <div class="protect-modal-time">22:00</div>
-                                    <div class="protect-modal-plan-label">Sprint (22min)</div>
+                                    <div class="protect-modal-plan-label">${escapeHTML(t('ui.text.sprint22min'))}</div>
                                 </div>
                             </div>
                             <div class="protect-modal-actions">
-                                <button type="button" class="protect-btn protect-btn-pause">Pause</button>
-                                <button type="button" class="protect-btn protect-btn-stop">Stop</button>
+                                <button type="button" class="protect-btn protect-btn-pause">${escapeHTML(t('ui.text.pause'))}</button>
+                                <button type="button" class="protect-btn protect-btn-stop">${escapeHTML(t('ui.text.stop'))}</button>
                             </div>
                             <form class="protect-notes-form">
-                                <label for="protect-task-notes">Task Notes (changes are ephemeral, press save to keep them)</label>
+                                <label for="protect-task-notes">${escapeHTML(t('ui.text.taskNotesChangesAreEphemeralPressSaveToKeepThem'))}</label>
                                 <textarea id="protect-task-notes" maxlength="10000"></textarea>
-                                <button type="submit" class="protect-btn protect-btn-secondary">Save</button>
+                                <button type="submit" class="protect-btn protect-btn-secondary">${escapeHTML(t('ui.text.save'))}</button>
                                 <p class="protect-form-status" role="status"></p>
                             </form>
                         </div>
@@ -4133,12 +4139,12 @@
                     <div class="toast-region" role="status" aria-live="polite"></div>
                     <task-hierarchy-editor></task-hierarchy-editor>
                     <dialog class="agent-manager" id="agent-manager" aria-labelledby="agent-manager-title">
-                        <h2 id="agent-manager-title">Named agents</h2>
-                        <p>Agent names are shared across all tasks. An agent can be deleted when no tasks are assigned to it.</p>
-                        <form class="global-agent-form"><input class="global-agent-name" maxlength="120" aria-label="Agent name" placeholder="Add a named agent" required><button type="submit">Add</button></form>
+                        <h2 id="agent-manager-title">${escapeHTML(t('ui.text.namedAgents'))}</h2>
+                        <p>${escapeHTML(t('ui.text.agentNamesAreSharedAcrossAllTasksAnAgentCanBeDeletedWhenNoTasksAreAssignedToIt'))}</p>
+                        <form class="global-agent-form"><input class="global-agent-name" maxlength="120" aria-label="${escapeHTML(t('ui.text.agentName'))}" placeholder="${escapeHTML(t('ui.text.addANamedAgent'))}" required><button type="submit">${escapeHTML(t('ui.text.add'))}</button></form>
                         <p class="agent-error" role="status"></p>
                         <div class="agent-list"></div>
-                        <button type="button" id="agent-manager-close">Close</button>
+                        <button type="button" id="agent-manager-close">${escapeHTML(t('ui.text.close'))}</button>
                     </dialog>
                 `;
             }
@@ -4186,13 +4192,13 @@
                     const name = document.createElement('strong');
                     name.textContent = agent.name;
                     const usage = document.createElement('span');
-                    usage.textContent = `${count} ${count === 1 ? 'task' : 'tasks'}`;
+                    usage.textContent = `${count} ${uiLabel(count === 1 ? 'task' : 'tasks')}`;
                     const remove = document.createElement('button');
                     remove.type = 'button';
-                    remove.textContent = 'Delete';
+                    remove.textContent = t('ui.text.delete');
                     remove.disabled = count > 0;
-                    remove.title = count > 0 ? 'Unassign this agent from its tasks before deleting it' : `Delete ${agent.name}`;
-                    remove.setAttribute('aria-label', `Delete ${agent.name}`);
+                    remove.title = count > 0 ? t('ui.text.unassignThisAgentFromItsTasksBeforeDeletingIt') : t('ui.text.deleteValue0', { value0: agent.name });
+                    remove.setAttribute('aria-label', t('ui.text.deleteValue0', { value0: agent.name }));
                     remove.addEventListener('click', async () => {
                         try { await this.deleteAgent(agent.id); }
                         catch (error) { this.querySelector('.agent-error').textContent = error.message; }
@@ -4202,15 +4208,15 @@
                 }
                 if (!this.agents.length) {
                     const empty = document.createElement('p');
-                    empty.textContent = 'Add an agent name here or from a task’s dropdown.';
+                    empty.textContent = t('ui.text.addAnAgentNameHereOrFromATaskSDropdown');
                     list.append(empty);
                 }
             }
 
             async createAgent(input) {
                 const record = normalizeAgent(typeof input === 'string' ? { name: input } : input);
-                if (!record.name) throw new Error('An agent name is required.');
-                if (this.agents.some(agent => agent.id === record.id)) throw new Error(`Agent already exists: ${record.id}`);
+                if (!record.name) throw new Error(t('error.messages.anAgentNameIsRequired'));
+                if (this.agents.some(agent => agent.id === record.id)) throw new Error(t('error.messages.agentAlreadyExistsValue0', { value0: record.id }));
                 const existing = this.agents.find(agent => agent.name.toLowerCase() === record.name.toLowerCase());
                 if (existing) return cloneValue(existing);
                 await this.repository.put(record, 'agents');
@@ -4222,9 +4228,9 @@
 
             async deleteAgent(id) {
                 const agent = this.agents.find(agent => agent.id === id);
-                if (!agent) throw new Error(`Agent not found: ${id}`);
+                if (!agent) throw new Error(t('error.messages.agentNotFoundValue0', { value0: id }));
                 const references = agentTaskReferences(this.tasks, id);
-                if (references.length) throw new Error(`Cannot delete ${agent.name}: ${references.length} ${references.length === 1 ? 'task is' : 'tasks are'} still assigned.`);
+                if (references.length) throw new Error(t('error.messages.cannotDeleteValue0Value1Value2StillAssigned', { value0: agent.name, value1: references.length, value2: references.length === 1 ? 'task is' : 'tasks are' }));
                 await this.repository.delete(id, 'agents');
                 this.agents = this.agents.filter(agent => agent.id !== id);
                 this.renderAll();
@@ -4341,9 +4347,9 @@
                         const empty = document.createElement('div');
                         empty.className = 'empty-state';
                         const title = document.createElement('h3');
-                        title.textContent = this[kind].length ? 'No matches' : kind === 'plans' ? 'Make space for a plan' : 'Let an idea take shape';
+                        title.textContent = this[kind].length ? t('ui.text.noMatches') : kind === 'plans' ? t('ui.text.makeSpaceForAPlan') : t('ui.text.letAnIdeaTakeShape');
                         const copy = document.createElement('p');
-                        copy.textContent = this[kind].length ? 'Try another search or association.' : kind === 'plans' ? 'Name your plan above, explore it in My Thinking, and turn next steps into linked tasks.' : 'Capture an aspiration above. It can grow into plans when you are ready.';
+                        copy.textContent = this[kind].length ? t('ui.text.tryAnotherSearchOrAssociation') : kind === 'plans' ? t('ui.text.nameYourPlanAboveExploreItInMyThinkingAndTurnNextStepsIntoLinkedTasks') : t('ui.text.captureAnAspirationAboveItCanGrowIntoPlansWhenYouAreReady');
                         empty.append(title, copy);
                         list.append(empty);
                     }
@@ -4351,7 +4357,7 @@
             }
 
             listPlanning(kind, query = {}) {
-                if (!['plans', 'wants'].includes(kind)) throw new Error('Expected plans or wants.');
+                if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
                 const search = String(query.search || '').toLowerCase();
                 const [association] = normalizeAssociations(query.association ? [query.association] : []);
                 return cloneValue(this[kind].map(record => ({ ...record, effectiveAssociations: planningAssociations(kind, record, this) }))
@@ -4362,12 +4368,12 @@
             }
 
             async createPlanning(kind, input) {
-                if (!['plans', 'wants'].includes(kind)) throw new Error('Expected plans or wants.');
+                if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
                 const payload = typeof input === 'string' ? { text: input } : input;
-                if (!payload || !cleanString(payload.text ?? payload.title ?? payload.name, 1000)) throw new Error('A title is required.');
+                if (!payload || !cleanString(payload.text ?? payload.title ?? payload.name, 1000)) throw new Error(t('error.messages.aTitleIsRequired'));
                 const record = normalizePlanningRecord(kind, payload);
-                if (this[kind].some(item => item.id === record.id)) throw new Error(`Record already exists: ${record.id}`);
-                if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(`Want not found: ${record.wantId}`);
+                if (this[kind].some(item => item.id === record.id)) throw new Error(t('error.messages.recordAlreadyExistsValue0', { value0: record.id }));
+                if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(t('error.messages.wantNotFoundValue0', { value0: record.wantId }));
                 await this.repository.put(record, kind);
                 this[kind].push(record);
                 this.renderAll();
@@ -4376,13 +4382,13 @@
             }
 
             async updatePlanning(kind, id, patch = {}, options = {}) {
-                if (!['plans', 'wants'].includes(kind)) throw new Error('Expected plans or wants.');
+                if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
                 const index = this[kind].findIndex(record => record.id === id);
-                if (index < 0) throw new Error(`Record not found: ${id}`);
-                if ('text' in patch && !cleanString(patch.text, 1000)) throw new Error('A title is required.');
+                if (index < 0) throw new Error(t('error.messages.recordNotFoundValue0', { value0: id }));
+                if ('text' in patch && !cleanString(patch.text, 1000)) throw new Error(t('error.messages.aTitleIsRequired'));
                 if (kind === 'plans' && 'notes' in patch && !('myThinking' in patch)) patch = { ...patch, myThinking: patch.notes };
                 const record = normalizePlanningRecord(kind, { ...this[kind][index], ...patch, id, createdAt: this[kind][index].createdAt, updatedAt: nowISO() });
-                if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(`Want not found: ${record.wantId}`);
+                if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(t('error.messages.wantNotFoundValue0', { value0: record.wantId }));
                 await this.repository.put(record, kind);
                 this[kind].splice(index, 1, record);
                 if (options.quiet) {
@@ -4392,7 +4398,7 @@
                     this.querySelectorAll('task-item').forEach(item => {
                         item.planCatalog = this.plans;
                         const select = item.shadowRoot.querySelector('.plan-select');
-                        select.replaceChildren(new Option('No plan', ''), ...this.plans.map(plan => new Option(plan.text, plan.id)));
+                        select.replaceChildren(new Option(t('error.messages.noPlan'), ''), ...this.plans.map(plan => new Option(plan.text, plan.id)));
                         select.value = item.task.planId || '';
                     });
                 } else this.renderAll();
@@ -4401,9 +4407,9 @@
             }
 
             async deletePlanning(kind, id) {
-                if (!['plans', 'wants'].includes(kind)) throw new Error('Expected plans or wants.');
+                if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
                 const record = this[kind].find(record => record.id === id);
-                if (!record) throw new Error(`Record not found: ${id}`);
+                if (!record) throw new Error(t('error.messages.recordNotFoundValue0', { value0: id }));
                 const snapshot = { tasks: this.tasks, plans: this.plans, wants: this.wants, agents: this.agents, [kind]: this[kind].filter(record => record.id !== id) };
                 if (kind === 'plans') snapshot.tasks = snapshot.tasks.map(task => task.planId === id ? { ...task, planId: null, updatedAt: nowISO() } : task);
                 else snapshot.plans = snapshot.plans.map(plan => plan.wantId === id ? { ...plan, wantId: null, updatedAt: nowISO() } : plan);
@@ -4480,12 +4486,12 @@
                 const pills = [this.querySelector('#lock-in-pill')];
                 if (this.pipWindow && !this.pipWindow.closed) pills.push(this.pipWindow.document.querySelector('#lock-in-pill'));
                 for (const pill of pills.filter(Boolean)) {
-                    pill.innerHTML = `Lock In${this.lockInEnabled ? '!' : '?'} <span class="lock-in-emoji">${this.lockInEnabled ? '🔒' : '🔓'}</span>`;
+                    pill.innerHTML = `${escapeHTML(t('ui.text.lockInValue0', { value0: this.lockInEnabled ? '!' : '?' }))} <span class="lock-in-emoji">${this.lockInEnabled ? '🔒' : '🔓'}</span>`;
                     pill.classList.toggle('is-locked', this.lockInEnabled);
                     pill.setAttribute('aria-pressed', String(this.lockInEnabled));
                     pill.title = this.lockInEnabled
-                        ? 'Lock In on — human timers open the focus timer. Click to turn off; drag to move.'
-                        : 'Lock In off — click to turn on; drag to move.';
+                        ? t('ui.text.lockInOnHumanTimersOpenTheFocusTimerClickToTurnOffDragToMove')
+                        : t('ui.text.lockInOffClickToTurnOnDragToMove');
                 }
             }
 
@@ -4579,7 +4585,7 @@
                 const locked = this.isTodayLocked();
                 const close = this.querySelector('#today-close');
                 close.disabled = locked;
-                close.title = locked ? 'Stop the Today task’s human timer to close this panel' : 'Close Today';
+                close.title = locked ? t('ui.text.stopTheTodayTaskSHumanTimerToCloseThisPanel') : t('ui.text.closeToday');
                 this.querySelector('#today-lock').hidden = !locked;
                 if (locked && this.activeDrawer !== 'today') this.openDrawer('today');
             }
@@ -4720,9 +4726,9 @@
                     if (!file) return;
                     try {
                         await this.importData(await file.text(), { strategy: 'merge' });
-                        this.toast(`Imported tasks from ${file.name}`);
+                        this.toast(t('ui.text.importedTasksFromValue0', { value0: file.name }));
                     } catch (error) {
-                        this.toast(`Import failed: ${error.message}`);
+                        this.toast(t('ui.text.importFailedValue0', { value0: error.message }));
                     } finally { event.target.value = ''; }
                 });
 
@@ -4797,7 +4803,7 @@
 
             saveTablePreferences() {
                 try { localStorage.setItem('taskimatic-table-preferences', JSON.stringify(this.tablePreferences)); }
-                catch (error) { this.toast('Table settings will last for this session only.'); }
+                catch (error) { this.toast(t('ui.text.tableSettingsWillLastForThisSessionOnly')); }
             }
 
             sortedTasks(tasks = this.tasks, sortKey = this.sortKey, sortDir = this.sortDir) {
@@ -4967,7 +4973,7 @@
 
             async openPipWindow() {
                 if (!('documentPictureInPicture' in window)) {
-                    this.toast('Mini window requires a browser with Document Picture-in-Picture support.');
+                    this.toast(t('ui.text.miniWindowRequiresABrowserWithDocumentPictureInPictureSupport'));
                     return null;
                 }
                 if (this.pipWindow && !this.pipWindow.closed) {
@@ -4983,7 +4989,7 @@
                     pipWindow.document.head.innerHTML = `
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>mini taskimatic</title>
+                        <title>${escapeHTML(t('ui.text.miniTaskimatic'))}</title>
                         <style>
                             :root { --paper: #f3efe4; --panel: #fffdf7; --ink: #18242b; --muted: #697177; --line: #cfc8b8; --accent: #e65135; --green: #28785c; --blue: #315f91; color-scheme: light; }
                             * { box-sizing: border-box; }
@@ -5042,8 +5048,8 @@
                             .restore { grid-column: 1 / -1; font-size: 11px; font-weight: 800; }
                             .empty { padding: 38px 18px; border: 1px dashed #a9a292; border-radius: 10px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
                         </style>`;
-                    pipWindow.document.body.innerHTML = '<header><div class="brand-row"><h1>taskimatic</h1><span class="live">Live</span></div>' +
-                        '<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="Search tasks in mini window"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main><button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">Lock In? <span class="lock-in-emoji">🔓</span></button>';
+                    pipWindow.document.body.innerHTML = `<header><div class="brand-row"><h1>${escapeHTML(t('ui.text.taskimatic'))}</h1><span class="live">${escapeHTML(t('ui.text.live'))}</span></div>` +
+                        `<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="${escapeHTML(t('ui.text.searchTasksInMiniWindow'))}"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main><button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">${escapeHTML(t('ui.text.lockIn3'))} <span class="lock-in-emoji">🔓</span></button>`;
                     this.bindLockInPill(pipWindow);
                     pipWindow.document.querySelector('#lock-in-pill').addEventListener('click', event => {
                         if (this.suppressPipLockInPillClick && event.detail !== 0) {
@@ -5080,18 +5086,18 @@
                         this.pipWindow = null;
                         this.pipClockElements.clear();
                         const button = this.querySelector('.pip-action');
-                        if (button) { button.setAttribute('aria-pressed', 'false'); button.textContent = 'mini me'; }
+                        if (button) { button.setAttribute('aria-pressed', 'false'); button.textContent = t('ui.text.miniMe'); }
                         this.syncClock();
                     }, { once: true });
                     const button = this.querySelector('.pip-action');
                     button.setAttribute('aria-pressed', 'true');
-                    button.textContent = 'mini me out';
+                    button.textContent = t('ui.text.miniMeOut');
                     this.renderPipWindow();
                     this.syncClock();
                     return pipWindow;
                 } catch (error) {
                     this.pipWindow = null;
-                    this.toast(`Could not open mini window: ${error.message}`);
+                    this.toast(t('ui.text.couldNotOpenMiniWindowValue0', { value0: error.message }));
                     return null;
                 }
             }
@@ -5138,8 +5144,8 @@
                 const activeTasks = sortTasksForPip(this.tasks.filter((task) => task.status === 'open' && !task.tabled && matchesPipSearch(task)));
                 const tabledTasks = sortTasksForPip(this.tasks.filter((task) => task.tabled && matchesPipSearch(task)));
                 const views = [
-                    { id: 'open', label: 'Active', tasks: activeTasks },
-                    { id: 'tabled', label: 'Tabled', tasks: tabledTasks }
+                    { id: 'open', label: t('ui.text.active'), tasks: activeTasks },
+                    { id: 'tabled', label: t('ui.text.tabled'), tasks: tabledTasks }
                 ];
                 tabs.replaceChildren();
                 for (const view of views) {
@@ -5157,7 +5163,7 @@
                 if (!tasks.length) {
                     const empty = pipDocument.createElement('div');
                     empty.className = 'empty';
-                    empty.textContent = this.pipTab === 'tabled' ? 'No tabled tasks.' : 'No active tasks.';
+                    empty.textContent = this.pipTab === 'tabled' ? t('ui.text.noTabledTasks') : t('ui.text.noActiveTasks');
                     list.append(empty);
                     return;
                 }
@@ -5177,12 +5183,12 @@
                     complete.type = 'button';
                     complete.className = `task-check${done ? ' checked' : ''}`;
                     complete.textContent = done ? '✓' : '';
-                    complete.title = done ? 'Reopen task' : 'Complete task';
-                    complete.setAttribute('aria-label', `${done ? 'Reopen' : 'Complete'} ${task.text}`);
+                    complete.title = done ? t('ui.text.reopenTask') : t('ui.text.completeTask');
+                    complete.setAttribute('aria-label', `${done ? t('ui.text.reopen') : t('ui.text.complete')} ${task.text}`);
                     complete.addEventListener('click', () => this.updateTask(task.id, { status: done ? 'open' : 'done' }));
                     const priority = pipDocument.createElement('label');
                     priority.className = 'priority-picker';
-                    priority.textContent = 'Priority';
+                    priority.textContent = t('ui.text.priority');
                     const priorityInput = pipDocument.createElement('input');
                     priorityInput.type = 'number';
                     priorityInput.min = '1';
@@ -5191,7 +5197,7 @@
                     priorityInput.inputMode = 'numeric';
                     priorityInput.value = task.priority ?? '';
                     priorityInput.disabled = done;
-                    priorityInput.setAttribute('aria-label', `Priority for ${task.text}; 1 is highest`);
+                    priorityInput.setAttribute('aria-label', t('ui.text.priorityForValue01IsHighest', { value0: task.text }));
                     priorityInput.addEventListener('change', () => {
                         const raw = priorityInput.value.trim();
                         this.setTaskPriority(task.id, raw === '' ? null : Number(raw));
@@ -5209,7 +5215,7 @@
                             chip.className = 'chip';
                             chip.style.setProperty('--chip-color', colorFor(association.type));
                             chip.textContent = `${association.type}: ${association.value}`;
-                            const hint = `Show ${association.type}: ${association.value} in the main window`;
+                            const hint = t('ui.text.showValue0Value1InTheMainWindow', { value0: association.type, value1: association.value });
                             chip.title = hint;
                             chip.setAttribute('aria-label', hint);
                             chip.addEventListener('click', () => this.revealAssociation(association));
@@ -5220,8 +5226,8 @@
                     const meta = pipDocument.createElement('div');
                     meta.className = 'task-meta';
                     meta.textContent = runningActors.length
-                        ? `${runningActors.map((actor) => `${actor} ${formatDuration(durationForTask(task, actor, true, now))}`).join(' · ')} running`
-                        : `Human ${formatDuration(durationForTask(task, 'human', true, now), true)} · Agent ${formatDuration(durationForTask(task, 'agent', true, now), true)}`;
+                        ? t('ui.text.runningSummary', { timers: runningActors.map(actor => `${uiLabel(actor)} ${formatDuration(durationForTask(task, actor, true, now))}`).join(' · ') })
+                        : t('ui.text.humanValue0AgentValue1', { value0: formatDuration(durationForTask(task, 'human', true, now), true), value1: formatDuration(durationForTask(task, 'agent', true, now), true) });
                     const controls = pipDocument.createElement('div');
                     controls.className = 'controls';
                     const clockElements = { task, meta, timers: new Map() };
@@ -5229,7 +5235,7 @@
                         const restore = pipDocument.createElement('button');
                         restore.type = 'button';
                         restore.className = 'restore';
-                        restore.textContent = 'Move to Active';
+                        restore.textContent = t('ui.text.moveToActive');
                         restore.addEventListener('click', () => this.updateTask(task.id, { tabled: false }));
                         controls.append(restore);
                     } else {
@@ -5238,8 +5244,8 @@
                             const timer = pipDocument.createElement('button');
                             timer.type = 'button';
                             timer.className = `${actor} timer${running ? ' running' : ''}`;
-                            timer.textContent = `${running ? '■' : '▶'} ${actor[0].toUpperCase()}${actor.slice(1)} ${formatDuration(durationTodayForTask(task, actor, now))}`;
-                            timer.setAttribute('aria-label', `${running ? 'Stop' : 'Start'} ${actor} timer for ${task.text}`);
+                            timer.textContent = `${running ? '■' : '▶'} ${uiLabel(actor, true)} ${formatDuration(durationTodayForTask(task, actor, now))}`;
+                            timer.setAttribute('aria-label', t('ui.text.value0Value1TimerForValue2', { value0: running ? t('ui.text.stop') : t('ui.text.start'), value1: uiLabel(actor), value2: task.text }));
                             timer.addEventListener('click', () => running ? this.stopTimer(task.id, actor) : this.startTimer(task.id, actor));
                             controls.append(timer);
                             clockElements.timers.set(actor, timer);
@@ -5257,12 +5263,12 @@
                     if (!runningActors.length) continue;
                     setText(
                         meta,
-                        `${runningActors.map((actor) => `${actor} ${formatDuration(durationForTask(task, actor, true, now))}`).join(' · ')} running`
+                        t('ui.text.runningSummary', { timers: runningActors.map(actor => `${uiLabel(actor)} ${formatDuration(durationForTask(task, actor, true, now))}`).join(' · ') })
                     );
                     for (const actor of runningActors) {
                         setText(
                             timers.get(actor),
-                            `■ ${actor[0].toUpperCase()}${actor.slice(1)} ${formatDuration(durationTodayForTask(task, actor, now))}`
+                            `■ ${uiLabel(actor, true)} ${formatDuration(durationTodayForTask(task, actor, now))}`
                         );
                     }
                 }
@@ -5276,17 +5282,17 @@
             renderTasks() {
                 const tasks = this.filteredTasks();
                 const list = this.querySelector('.task-list');
-                const heading = this.statusFilter === 'all' ? 'All tasks' : this.statusFilter === 'done' ? 'Completed tasks' : this.statusFilter === 'tabled' ? 'Tabled tasks' : 'Active tasks';
+                const heading = this.statusFilter === 'all' ? t('ui.text.allTasks') : this.statusFilter === 'done' ? t('ui.text.completedTasks') : this.statusFilter === 'tabled' ? t('ui.text.tabledTasks') : t('ui.text.activeTasks');
                 this.querySelector('.list-heading h2').textContent = heading;
-                this.querySelector('.list-count').textContent = `${tasks.length} shown`;
+                this.querySelector('.list-count').textContent = t('ui.text.shown', { count: tasks.length });
                 const hierarchyButton = this.querySelector('.hierarchy-button');
                 hierarchyButton.hidden = !this.tablePreferences.enabled;
-                hierarchyButton.textContent = this.tablePreferences.selected || 'Hierarchy';
+                hierarchyButton.textContent = this.tablePreferences.selected || t('ui.text.hierarchy');
                 const filterBar = this.querySelector('.active-filter');
                 const filterPlan = this.planFilter ? this.plans.find(plan => plan.id === this.planFilter) : null;
                 filterBar.hidden = !this.associationFilter && !filterPlan;
                 const filterBits = [];
-                if (filterPlan) filterBits.push(`Plan: ${filterPlan.text}`);
+                if (filterPlan) filterBits.push(t('ui.text.planFilter', { plan: filterPlan.text }));
                 if (this.associationFilter) filterBits.push(`${this.associationFilter.type}: ${this.associationFilter.value}`);
                 filterBar.querySelector('span').textContent = filterBits.join(' · ');
                 list.replaceChildren();
@@ -5299,7 +5305,7 @@
                 }
                 const detailTasks = this.tablePreferences.enabled ? tasks.filter(task => task.id === this.tableTaskId) : tasks;
                 if (!this.tablePreferences.enabled && tasks.some(task => task.today)) {
-                    for (const [name, members] of [['Today', tasks.filter(task => task.today)], ['Other tasks', tasks.filter(task => !task.today)]]) {
+                    for (const [name, members] of [[t('ui.text.today'), tasks.filter(task => task.today)], [t('ui.text.otherTasks'), tasks.filter(task => !task.today)]]) {
                         if (!members.length) continue;
                         const group = document.createElement('section');
                         group.className = 'task-group';
@@ -5323,9 +5329,9 @@
                     mark.className = 'empty-mark';
                     mark.textContent = this.tasks.length ? '⌕' : '✓';
                     const title = document.createElement('h3');
-                    title.textContent = this.tasks.length ? 'No tasks match this view' : 'A clear desk. Nice.';
+                    title.textContent = this.tasks.length ? t('ui.text.noTasksMatchThisView') : t('ui.text.aClearDeskNice');
                     const copy = document.createElement('p');
-                    copy.textContent = this.tasks.length ? 'Try another view, grouping, or search.' : 'Type the next useful action above. You can add project or client associations now—or anytime later.';
+                    copy.textContent = this.tasks.length ? t('ui.text.tryAnotherViewGroupingOrSearch') : t('ui.text.typeTheNextUsefulActionAboveYouCanAddProjectOrClientAssociationsNowOrAnytimeLater');
                     empty.append(mark, title, copy);
                     list.append(empty);
                 }
@@ -5349,16 +5355,16 @@
                 const controls = this.querySelector('.today-sort');
                 const tasks = this.sortedTasks(this.tasks.filter(task => task.today), controls.sortKey, controls.sortDir);
                 const list = this.querySelector('.today-task-list');
-                this.querySelector('.today-count').textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
+                this.querySelector('.today-count').textContent = `${tasks.length} ${uiLabel(tasks.length === 1 ? 'task' : 'tasks')}`;
                 list.replaceChildren();
                 tasks.forEach(task => list.append(this.createTaskItem(task)));
                 if (!tasks.length) {
                     const empty = document.createElement('div');
                     empty.className = 'empty-state';
                     const title = document.createElement('h3');
-                    title.textContent = 'Plan your day';
+                    title.textContent = t('ui.text.planYourDay');
                     const copy = document.createElement('p');
-                    copy.textContent = 'Check Today on a task to add it here.';
+                    copy.textContent = t('ui.text.checkTodayOnATaskToAddItHere');
                     empty.append(title, copy);
                     list.append(empty);
                 }
@@ -5424,7 +5430,7 @@
                 if (!grouped.size) {
                     const empty = document.createElement('p');
                     empty.className = 'no-associations';
-                    empty.textContent = 'Projects, clients, work areas, and any custom property will appear here.';
+                    empty.textContent = t('ui.text.projectsClientsWorkAreasAndAnyCustomPropertyWillAppearHere');
                     container.append(empty);
                     return;
                 }
@@ -5452,7 +5458,7 @@
                     const summary = document.createElement('summary');
                     summary.className = 'association-summary';
                     summary.setAttribute('role', 'button');
-                    summary.setAttribute('aria-label', `Toggle ${type} associations`);
+                    summary.setAttribute('aria-label', t('ui.text.toggleValue0Associations', { value0: type }));
 
                     const left = document.createElement('div');
                     left.className = 'association-summary-left';
@@ -5468,7 +5474,7 @@
 
                     const label = document.createElement('span');
                     label.className = 'association-type-label';
-                    label.textContent = type;
+                    label.textContent = uiLabel(type);
 
                     left.append(caret, color, label);
 
@@ -5476,7 +5482,7 @@
                     const totalBadge = document.createElement('span');
                     totalBadge.className = 'nav-count';
                     totalBadge.textContent = totalCount;
-                    totalBadge.title = `${totalCount} task${totalCount === 1 ? '' : 's'} with ${type}`;
+                    totalBadge.title = t('ui.text.value0TaskValue1WithValue2', { value0: totalCount, value1: totalCount === 1 ? '' : 's', value2: type });
 
                     summary.append(left, totalBadge);
                     details.append(summary);
@@ -5527,7 +5533,7 @@
                 if (!this.plans.length) {
                     const empty = document.createElement('p');
                     empty.className = 'no-associations';
-                    empty.textContent = 'Add a plan from the Plans tab and it will show up here.';
+                    empty.textContent = t('ui.text.addAPlanFromThePlansTabAndItWillShowUpHere');
                     list.append(empty);
                     return;
                 }
@@ -5538,14 +5544,14 @@
                     button.type = 'button';
                     button.className = 'association-button';
                     if (this.planFilter === plan.id) button.classList.add('active');
-                    button.title = `Show tasks attached to ${plan.text}`;
+                    button.title = t('ui.text.showTasksAttachedToValue0', { value0: plan.text });
                     const name = document.createElement('span');
                     name.className = 'association-button-label';
                     name.textContent = plan.text;
                     const number = document.createElement('span');
                     number.className = 'nav-count';
                     number.textContent = openCount;
-                    number.title = `${openCount} open task${openCount === 1 ? '' : 's'}`;
+                    number.title = t('ui.text.value0OpenTaskValue1', { value0: openCount, value1: openCount === 1 ? '' : 's' });
                     button.append(name, number);
                     button.addEventListener('click', () => {
                         const isSame = this.planFilter === plan.id;
@@ -5564,11 +5570,11 @@
 
             async createTask(input) {
                 const payload = typeof input === 'string' ? { text: input } : input;
-                if (!payload || !cleanString(payload.text ?? payload.name, 1000)) throw new Error('Task text is required.');
+                if (!payload || !cleanString(payload.text ?? payload.name, 1000)) throw new Error(t('error.messages.taskTextIsRequired'));
                 const task = normalizeTask(payload);
-                if (task.agentId && !this.agents.some(agent => agent.id === task.agentId)) throw new Error(`Agent not found: ${task.agentId}`);
-                if (task.planId && !this.plans.some(plan => plan.id === task.planId)) throw new Error(`Plan not found: ${task.planId}`);
-                if (this.tasks.some(item => item.id === task.id)) throw new Error(`Task already exists: ${task.id}`);
+                if (task.agentId && !this.agents.some(agent => agent.id === task.agentId)) throw new Error(t('error.messages.agentNotFoundValue0', { value0: task.agentId }));
+                if (task.planId && !this.plans.some(plan => plan.id === task.planId)) throw new Error(t('error.messages.planNotFoundValue0', { value0: task.planId }));
+                if (this.tasks.some(item => item.id === task.id)) throw new Error(t('error.messages.taskAlreadyExistsValue0', { value0: task.id }));
                 task.updatedAt = nowISO();
                 await this.repository.put(task);
                 invalidateDurationCache(task.id);
@@ -5586,7 +5592,7 @@
 
             async reprioritize({ taskId = null, requestedPriority = null } = {}) {
                 const task = taskId ? this.tasks.find((item) => item.id === taskId) : null;
-                if (taskId && !task) throw new Error(`Task not found: ${taskId}`);
+                if (taskId && !task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: taskId }));
                 const shouldInsert = task?.status !== 'done' && requestedPriority !== null;
                 const ranked = this.tasks
                     .filter((item) => item.status !== 'done' && item.id !== taskId)
@@ -5616,11 +5622,11 @@
 
             async setTaskPriority(id, value) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 if (task.status === 'done') return cloneValue(task);
                 const requestedPriority = value === null || value === '' ? null : Number(value);
                 if (requestedPriority !== null && (!Number.isInteger(requestedPriority) || requestedPriority < 1)) {
-                    throw new Error('Priority must be a whole number starting at 1.');
+                    throw new Error(t('error.messages.priorityMustBeAWholeNumberStartingAt1'));
                 }
 
                 const updated = await this.reprioritize({ taskId: id, requestedPriority });
@@ -5631,7 +5637,7 @@
 
             async updateTask(id, patch = {}, options = {}) {
                 let index = this.tasks.findIndex((task) => task.id === id);
-                if (index < 0) throw new Error(`Task not found: ${id}`);
+                if (index < 0) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 let current = this.tasks[index];
                 if (patch.status === 'done' || patch.tabled === true) {
                     for (const actor of TIMER_ACTORS) {
@@ -5643,29 +5649,29 @@
                 const updated = cloneValue(current);
                 if ('text' in patch) {
                     const text = cleanString(patch.text, 1000);
-                    if (!text) throw new Error('Task text cannot be empty.');
+                    if (!text) throw new Error(t('error.messages.taskTextCannotBeEmpty'));
                     updated.text = text;
                 }
                 if ('planId' in patch) {
                     updated.planId = cleanString(patch.planId, 120) || null;
-                    if (updated.planId && !this.plans.some(plan => plan.id === updated.planId)) throw new Error(`Plan not found: ${updated.planId}`);
+                    if (updated.planId && !this.plans.some(plan => plan.id === updated.planId)) throw new Error(t('error.messages.planNotFoundValue0', { value0: updated.planId }));
                 }
                 if ('today' in patch) updated.today = patch.today === true;
                 if ('agentId' in patch) {
                     updated.agentId = cleanString(patch.agentId, 120) || null;
-                    if (updated.agentId && !this.agents.some(agent => agent.id === updated.agentId)) throw new Error(`Agent not found: ${updated.agentId}`);
+                    if (updated.agentId && !this.agents.some(agent => agent.id === updated.agentId)) throw new Error(t('error.messages.agentNotFoundValue0', { value0: updated.agentId }));
                 }
                 if ('estimatedMinutes' in patch) {
                     const estimate = patch.estimatedMinutes === null ? null : Number(patch.estimatedMinutes);
                     if (estimate !== null && ![10, 30, 60, 90].includes(estimate)) {
-                        throw new Error('Estimated minutes must be 10, 30, 60, 90, or null.');
+                        throw new Error(t('error.messages.estimatedMinutesMustBe10306090OrNull'));
                     }
                     updated.estimatedMinutes = estimate;
                 }
                 if ('prompts' in patch) updated.prompts = String(patch.prompts ?? '').slice(0, 50000);
                 if ('notes' in patch) updated.notes = cleanString(patch.notes, 10000);
                 if ('status' in patch) {
-                    if (!['open', 'done'].includes(patch.status)) throw new Error('Status must be open or done.');
+                    if (!['open', 'done'].includes(patch.status)) throw new Error(t('error.messages.statusMustBeOpenOrDone'));
                     updated.status = patch.status;
                     updated.completedAt = patch.status === 'done' ? (current.completedAt || nowISO()) : null;
                     if (patch.status === 'done') updated.priority = null;
@@ -5698,22 +5704,22 @@
 
             async deleteTask(id) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 await this.repository.delete(id);
                 this.tasks = this.tasks.filter((item) => item.id !== id);
                 invalidateDurationCache(id);
                 this.renderAll();
-                this.toast('Task deleted');
+                this.toast(t('ui.text.taskDeleted'));
                 this.emitChange('deleted', task);
                 return { id, deleted: true };
             }
 
             async startTimer(id, actor = 'human') {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
-                if (!TIMER_ACTORS.includes(actor)) throw new Error('Timer actor must be human or agent.');
-                if (task.status === 'done') throw new Error('Reopen the task before starting its timer.');
-                if (task.tabled) throw new Error('Untable the task before starting a timer.');
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
+                if (!TIMER_ACTORS.includes(actor)) throw new Error(t('error.messages.timerActorMustBeHumanOrAgent'));
+                if (task.status === 'done') throw new Error(t('error.messages.reopenTheTaskBeforeStartingItsTimer'));
+                if (task.tabled) throw new Error(t('error.messages.untableTheTaskBeforeStartingATimer'));
                 if (task.activeTimers[actor]) return cloneValue(task);
                 if (actor === 'human') {
                     const otherRunning = this.tasks.find((item) => item.activeTimers?.human && item.id !== id);
@@ -5732,8 +5738,8 @@
 
             async stopTimer(id, actor = 'human', options = {}) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
-                if (!TIMER_ACTORS.includes(actor)) throw new Error('Timer actor must be human or agent.');
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
+                if (!TIMER_ACTORS.includes(actor)) throw new Error(t('error.messages.timerActorMustBeHumanOrAgent'));
                 if (!task.activeTimers[actor]) return cloneValue(task);
                 const endedAt = nowISO();
                 const durationSeconds = Math.max(1, Math.round((Date.parse(endedAt) - Date.parse(task.activeTimers[actor])) / 1000));
@@ -5743,7 +5749,7 @@
                 invalidateDurationCache(id);
                 await this.repository.put(task);
                 this.renderAll();
-                if (!options.silent) this.toast(`Logged ${formatDuration(durationSeconds, true)} for ${actor}`);
+                if (!options.silent) this.toast(t('ui.text.loggedValue0ForValue1', { value0: formatDuration(durationSeconds, true), value1: uiLabel(actor) }));
                 this.emitChange(`${actor}-timer-stopped`, task);
                 if (actor === 'human' && this.protectTaskId === id && !options.protectPause) {
                     this.closeProtectModal();
@@ -5753,13 +5759,13 @@
 
             async updateSession(id, sessionId, patch = {}) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 const session = task.sessions.find((item) => item.id === sessionId);
-                if (!session) throw new Error(`Session not found: ${sessionId}`);
+                if (!session) throw new Error(t('error.messages.sessionNotFoundValue0', { value0: sessionId }));
                 const startedAt = Date.parse(patch.startedAt);
                 const endedAt = Date.parse(patch.endedAt);
-                if (Number.isNaN(startedAt) || Number.isNaN(endedAt)) throw new Error('Session times must be valid dates.');
-                if (endedAt < startedAt) throw new Error('Session end must be at or after its start.');
+                if (Number.isNaN(startedAt) || Number.isNaN(endedAt)) throw new Error(t('error.messages.sessionTimesMustBeValidDates'));
+                if (endedAt < startedAt) throw new Error(t('error.messages.sessionEndMustBeAtOrAfterItsStart'));
                 session.startedAt = new Date(startedAt).toISOString();
                 session.endedAt = new Date(endedAt).toISOString();
                 session.durationSeconds = Math.max(0, Math.round((endedAt - startedAt) / 1000));
@@ -5767,36 +5773,36 @@
                 invalidateDurationCache(id);
                 await this.repository.put(task);
                 this.renderAll();
-                this.toast(`Updated time entry (${formatDuration(session.durationSeconds, true)})`);
+                this.toast(t('ui.text.updatedTimeEntryValue0', { value0: formatDuration(session.durationSeconds, true) }));
                 this.emitChange('updated', task);
                 return cloneValue(task);
             }
 
             async deleteSession(id, sessionId) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 const idx = task.sessions.findIndex((item) => item.id === sessionId);
-                if (idx === -1) throw new Error(`Session not found: ${sessionId}`);
+                if (idx === -1) throw new Error(t('error.messages.sessionNotFoundValue0', { value0: sessionId }));
                 const [removed] = task.sessions.splice(idx, 1);
                 task.updatedAt = nowISO();
                 invalidateDurationCache(id);
                 await this.repository.put(task);
                 this.renderAll();
-                this.toast(`Deleted time entry (${formatDuration(removed.durationSeconds, true)})`);
+                this.toast(t('ui.text.deletedTimeEntryValue0', { value0: formatDuration(removed.durationSeconds, true) }));
                 this.emitChange('updated', task);
                 return cloneValue(task);
             }
 
             async addAssociation(id, association) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 const associations = normalizeAssociations([...task.associations, association]);
                 return this.updateTask(id, { associations });
             }
 
             async removeAssociation(id, association) {
                 const task = this.tasks.find((item) => item.id === id);
-                if (!task) throw new Error(`Task not found: ${id}`);
+                if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
                 const target = normalizeAssociations([association])[0];
                 const associations = task.associations.filter((item) => !(item.type === target?.type && item.value.toLowerCase() === target.value.toLowerCase()));
                 return this.updateTask(id, { associations });
@@ -5838,14 +5844,14 @@
                 const data = JSON.stringify(this.exportData(), null, 2);
                 downloadBlob(new Blob([data], { type: 'application/json' }), `taskimatic-data-${new Date().toISOString().slice(0, 10)}.json`);
                 this.querySelector('backup-tracker')?.recordBackup();
-                this.toast('Workspace data exported');
+                this.toast(t('ui.text.workspaceDataExported'));
                 return this.exportData();
             }
 
             async importData(input, options = {}) {
                 const incoming = normalizeWorkspaceSnapshot(input, normalizeTask);
                 const strategy = options.strategy || 'merge';
-                if (!['merge', 'replace'].includes(strategy)) throw new Error('Import strategy must be merge or replace.');
+                if (!['merge', 'replace'].includes(strategy)) throw new Error(t('error.messages.importStrategyMustBeMergeOrReplace'));
                 const snapshot = strategy === 'replace' ? incoming : Object.fromEntries(WORKSPACE_COLLECTIONS.map(kind => {
                     const merged = new Map(this[kind].map(record => [record.id, record]));
                     for (const record of incoming[kind]) merged.set(record.id, record);
@@ -5863,6 +5869,21 @@
             async downloadApp() {
                 const clone = document.documentElement.cloneNode(true);
                 clone.querySelector('[data-taskimatic-offline]')?.remove();
+                await window.i18n.ready;
+                const localeSeed = document.createElement('script');
+                localeSeed.type = 'application/json';
+                localeSeed.id = 'taskimatic-i18n';
+                localeSeed.textContent = JSON.stringify({ data: window.i18n.data, languages: window.i18n.languages,
+                    defaultLang: window.i18n.defaultLang, currentLang: window.i18n.currentLang }).replace(/</g, '\\u003c');
+                clone.querySelector('#taskimatic-i18n')?.remove();
+                const service = clone.querySelector('[data-taskimatic-i18n-service]');
+                if (service.hasAttribute('src')) {
+                    const response = await fetch(new URL('./js/i18n.js', document.baseURI));
+                    if (!response.ok) throw new Error(t('error.messages.couldNotEmbedI18n'));
+                    service.removeAttribute('src');
+                    service.textContent = (await response.text()).replace(/<\/script/gi, '<\\/script');
+                }
+                service.before(localeSeed);
                 const workspace = clone.querySelector('task-workspace');
                 if (workspace) { workspace.replaceChildren(); workspace.removeAttribute('data-mounted'); }
                 // Embed the small imported components and model so the download works offline.
@@ -5871,7 +5892,7 @@
                 const imports = [...moduleCode.matchAll(/^\s*import\s+.*?\s+from\s+(['"])([^'"]+)\1;[ \t]*$/gm)];
                 const sources = await Promise.all(imports.map(async match => {
                     const response = await fetch(new URL(match[2], import.meta.url));
-                    if (!response.ok) throw new Error(`Could not embed ${match[2]} in the download.`);
+                    if (!response.ok) throw new Error(t('error.messages.couldNotEmbedValue0InTheDownload', { value0: match[2] }));
                     return (await response.text()).replace(/^export\s+/gm, '');
                 }));
                 imports.forEach((match, index) => { moduleCode = moduleCode.replace(match[0], `\n${sources[index]}\n`); });
@@ -5880,7 +5901,7 @@
                 if (seed) seed.textContent = JSON.stringify(this.exportData()).replace(/</g, '\\u003c');
                 const html = `<!DOCTYPE html>\n${clone.outerHTML}`;
                 downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), `taskimatic-app-${new Date().toISOString().slice(0, 10)}.html`);
-                this.toast('Portable app downloaded with the current workspace');
+                this.toast(t('ui.text.portableAppDownloadedWithTheCurrentWorkspace'));
                 return { filename: `taskimatic-app-${new Date().toISOString().slice(0, 10)}.html`, taskCount: this.tasks.length, planCount: this.plans.length, wantCount: this.wants.length, agentCount: this.agents.length };
             }
 
@@ -5934,7 +5955,7 @@
                         await this.createTask({ text: input.value });
                         for (const other of this.protectModals()) {
                             other.querySelector('#protect-new-task-text').value = '';
-                            other.querySelector('.protect-new-task [role="status"]').textContent = 'Task added.';
+                            other.querySelector('.protect-new-task [role="status"]').textContent = t('ui.text.taskAdded');
                         }
                         input.focus();
                     } catch (error) { status.textContent = error.message; }
@@ -5950,7 +5971,7 @@
                     try {
                         await this.updateTask(this.protectTaskId, { notes: form.querySelector('textarea').value });
                         for (const other of this.protectModals()) {
-                            other.querySelector('.protect-notes-form [role="status"]').textContent = 'Notes saved.';
+                            other.querySelector('.protect-notes-form [role="status"]').textContent = t('ui.text.notesSaved');
                         }
                     } catch (error) { status.textContent = error.message; }
                     finally { button.disabled = false; }
@@ -5960,7 +5981,7 @@
                         for (const other of this.protectModals()) {
                             if (other !== modal) other.querySelector(`#${field.id}`).value = field.value;
                             if (field.id === 'protect-task-notes') {
-                                other.querySelector('.protect-notes-form [role="status"]').textContent = 'Unsaved changes';
+                                other.querySelector('.protect-notes-form [role="status"]').textContent = t('ui.text.unsavedChanges');
                             }
                         }
                     });
@@ -6007,10 +6028,10 @@
                     flow: 88 * 60
                 };
                 const labels = {
-                    now: 'Now (8min)',
-                    sprint: 'Sprint (22min)',
-                    focus: 'Focus (44min)',
-                    flow: 'Flow (88min)'
+                    now: t('ui.text.now8min'),
+                    sprint: t('ui.text.sprint22min'),
+                    focus: t('ui.text.focus44min'),
+                    flow: t('ui.text.flow88min')
                 };
                 this.protectTaskId = task.id;
                 // A today-panel plan (Now/Sprint/Focus/Flow) overrides the task's estimated time.
@@ -6026,9 +6047,9 @@
                 if (notes) notes.value = task.notes || '';
                 modal.querySelectorAll?.('.protect-form-status').forEach(status => { status.textContent = ''; });
                 const planLabel = modal.querySelector('.protect-modal-plan-label');
-                if (planLabel) planLabel.textContent = labels[this.protectPlan] || (task.estimatedMinutes ? `Estimate (< ${task.estimatedMinutes}min)` : '🔒 Lock In');
+                if (planLabel) planLabel.textContent = labels[this.protectPlan] || (task.estimatedMinutes ? t('ui.text.estimateValue0Min', { value0: task.estimatedMinutes }) : t('ui.text.lockIn2'));
                 const pauseBtn = modal.querySelector('.protect-btn-pause');
-                if (pauseBtn) pauseBtn.textContent = 'Pause';
+                if (pauseBtn) pauseBtn.textContent = t('ui.text.pause');
                 const center = modal.querySelector('.protect-modal-center');
                 if (center) center.classList.remove('is-paused');
 
@@ -6064,11 +6085,11 @@
                     const arc = modal.querySelector('.protect-donut-arc');
                     if (arc) arc.style.strokeDashoffset = String(offset);
 
-                    modal.querySelector('.protect-btn-pause').textContent = this.protectIsPaused ? 'Resume' : 'Pause';
+                    modal.querySelector('.protect-btn-pause').textContent = this.protectIsPaused ? t('ui.text.resume') : t('ui.text.pause');
                     modal.querySelector('.protect-modal-center').classList.toggle('is-paused', this.protectIsPaused);
                     if (remaining === 0) {
                         const planLabel = modal.querySelector('.protect-modal-plan-label');
-                        if (planLabel) planLabel.textContent = 'Goal reached!';
+                        if (planLabel) planLabel.textContent = t('ui.text.goalReached');
                     }
                 }
             }
@@ -6082,7 +6103,7 @@
                 if (this.protectIsPaused) {
                     this.protectIsPaused = false;
                     this.protectSessionStartedAt = Date.now();
-                    if (pauseBtn) pauseBtn.textContent = 'Pause';
+                    if (pauseBtn) pauseBtn.textContent = t('ui.text.pause');
                     if (center) center.classList.remove('is-paused');
                     await this.startTimer(this.protectTaskId, 'human');
                 } else {
@@ -6092,7 +6113,7 @@
                         this.protectAccumulatedSeconds += (now - this.protectSessionStartedAt) / 1000;
                         this.protectSessionStartedAt = null;
                     }
-                    if (pauseBtn) pauseBtn.textContent = 'Resume';
+                    if (pauseBtn) pauseBtn.textContent = t('ui.text.resume');
                     if (center) center.classList.add('is-paused');
                     await this.stopTimer(this.protectTaskId, 'human', { silent: true, protectPause: true });
                 }
@@ -6179,7 +6200,7 @@
         const getWorkspace = async () => {
             await customElements.whenDefined('task-workspace');
             const workspace = document.querySelector('task-workspace');
-            if (!workspace) throw new Error('taskimatic workspace is not mounted.');
+            if (!workspace) throw new Error(t('error.messages.taskimaticWorkspaceIsNotMounted'));
             await workspace.ready;
             return workspace;
         };

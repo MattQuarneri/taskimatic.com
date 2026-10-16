@@ -13,15 +13,15 @@ export function getBackupTrackerView(state, now = Date.now()) {
     const dirty = dirtySince !== null;
     const due = dirty && age >= 86400000;
     const heartbeat = dirty && age >= 3 * 86400000;
-    let text = 'last export never';
+    let text = t('ui.text.lastExportNever');
     if (lastExportAt !== null) {
         const elapsed = Math.max(0, now - lastExportAt);
         const [unit, duration] = elapsed >= 86400000 ? ['day', 86400000]
             : elapsed >= 3600000 ? ['hour', 3600000] : ['minute', 60000];
         const count = Math.floor(elapsed / duration);
-        text = `last export ${count} ${unit}${count === 1 ? '' : 's'} ago`;
+        text = t('ui.text.lastExportCountUnitAgo', { count: count, unit: t('ui.text.' + unit + (count === 1 ? '' : 's')) });
     }
-    return { text, dirty, due, heartbeat, buttonText: due ? 'backup data' : 'export data' };
+    return { text, dirty, due, heartbeat, buttonText: due ? t('ui.text.backupData') : t('ui.text.exportData') };
 }
 
 export function installBackupTracker(targetWindow = window) {
@@ -53,7 +53,7 @@ export function installBackupTracker(targetWindow = window) {
                 </style>
                 <span class="last-export" part="status"></span>
                 <slot name="before-button"></slot>
-                <slot name="action"><button type="button" part="button">export data</button></slot>`;
+                <slot name="action"><button type="button" part="button">${escapeHTML(t('ui.text.exportData'))}</button></slot>`;
             this._handleChange = () => this.markChanged();
             this._handleRefresh = () => this.refresh();
             this._handleStorage = event => {
@@ -133,11 +133,11 @@ export function installBackupTracker(targetWindow = window) {
             const view = getBackupTrackerView(this._backupState, now);
             const status = this.shadowRoot.querySelector('.last-export');
             status.textContent = view.text;
-            status.title = view.dirty ? 'Changes since the last export need a backup.' : 'No changes waiting for backup.';
+            status.title = view.dirty ? t('ui.text.changesSinceTheLastExportNeedABackup') : t('ui.text.noChangesWaitingForBackup');
             this.toggleAttribute('backup-due', view.due);
             this.toggleAttribute('heartbeat', view.heartbeat);
             this.actionButton.textContent = view.buttonText;
-            this.actionButton.title = view.due ? 'Back up your changes by exporting your data.' : 'Export a backup of your data.';
+            this.actionButton.title = view.due ? t('ui.text.backUpYourChangesByExportingYourData') : t('ui.text.exportABackupOfYourData');
         }
     }
     registry.define('backup-tracker', BackupTracker);

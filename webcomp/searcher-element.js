@@ -22,10 +22,10 @@ export function installSearcherElement(targetWindow = window) {
             const input = document.createElement('input');
             input.className = 'searcher-input search-input';
             input.type = 'search';
-            input.placeholder = this._placeholder ?? this.getAttribute('placeholder') ?? 'Search';
+            input.placeholder = this._placeholder ?? this.getAttribute('placeholder') ?? t('ui.text.search');
             input.disabled = this._disabled || this.hasAttribute('disabled');
             input.autocomplete = 'off';
-            input.setAttribute('aria-label', this.getAttribute('aria-label') || 'Search');
+            input.setAttribute('aria-label', this.getAttribute('aria-label') || t('ui.text.search'));
             input.setAttribute('aria-expanded', 'false');
             field.append(input);
             this.append(field);
@@ -36,13 +36,13 @@ export function installSearcherElement(targetWindow = window) {
                 button.type = 'button';
                 button.className = 'searcher-on-now';
                
-                button.title = 'Show only tasks with running clocks';
+                button.title = t('ui.text.showOnlyTasksWithRunningClocks');
                 this.onNowButton = button;
                 this.onNow = this._onNow || false;
-                button.textContent = this.onNow ? '🟢 On Now' : '⚫️ On Now';
+                button.textContent = this.onNow ? t('ui.text.onNow') : t('ui.text.onNow2');
                 button.addEventListener('click', () => {
                     this.onNow = !this.onNow;
-                    button.textContent = this.onNow ? '🟢 On Now' : '⚫️ On Now';
+                    button.textContent = this.onNow ? t('ui.text.onNow') : t('ui.text.onNow2');
                     this.dispatchEvent(new targetWindow.CustomEvent('searcher:on-now', {bubbles: true, detail: {active: this.onNow}}));
                 });
                 field.append(button);
@@ -170,7 +170,7 @@ export function installSearcherElement(targetWindow = window) {
                 remove.type = 'button';
                 remove.className = 'searcher-remove';
                 remove.textContent = '×';
-                remove.setAttribute('aria-label', `Remove recent search: ${item}`);
+                remove.setAttribute('aria-label', t('ui.text.removeRecentSearchQuery', { query: item }));
                 remove.addEventListener('mousedown', (event) => event.preventDefault());
                 remove.addEventListener('click', (event) => {
                     event.stopPropagation();

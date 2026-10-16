@@ -1,0 +1,6 @@
+{
+  "defaultLang": "en",
+  "languages": {
+    "en": { "Lang": "English", "file": "./data/i18n/en.json" }
+  }
+}

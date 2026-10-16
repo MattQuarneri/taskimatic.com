@@ -40,8 +40,8 @@ export function installSessionTimes(formatDuration, targetWindow = window) {
         renderShortSession(session, saved) {
             const row = this.ownerDocument.createElement('div');
             row.className = 'session';
-            row.innerHTML = `<span class="when"></span><div class="session-editor"><span class="start-time"></span><dual-range-slider hide-labels start-label="Session start" end-label="Session stop"></dual-range-slider><span class="end-time"></span></div><div class="actions"><span class="duration" role="status"></span><button class="confirm" type="button" hidden>OK</button><button class="delete" type="button">Delete</button></div>`;
-            row.querySelector('.when').textContent = `${session.actor === 'agent' ? 'Agent' : 'Human'} · ${new Date(saved.start).toLocaleString()}`;
+            row.innerHTML = `<span class="when"></span><div class="session-editor"><span class="start-time"></span><dual-range-slider hide-labels start-label="${escapeHTML(t('ui.text.sessionStart'))}" end-label="${escapeHTML(t('ui.text.sessionStop'))}"></dual-range-slider><span class="end-time"></span></div><div class="actions"><span class="duration" role="status"></span><button class="confirm" type="button" hidden>${escapeHTML(t('ui.text.oK'))}</button><button class="delete" type="button">${escapeHTML(t('ui.text.delete'))}</button></div>`;
+            row.querySelector('.when').textContent = `${session.actor === 'agent' ? t('ui.text.agent') : t('ui.text.human')} · ${new Date(saved.start).toLocaleString()}`;
             row.querySelector('.session-editor').classList.add('short-session');
             const slider = row.querySelector('dual-range-slider');
             const formatTime = seconds => new Date(seconds * 1000).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
@@ -89,7 +89,7 @@ export function installSessionTimes(formatDuration, targetWindow = window) {
                 .confirm { background: var(--green, #28785c); color: white; }
                 .delete { color: var(--accent, #e65135); }
                 [hidden] { display: none !important; }
-            </style><div class="sessions" role="region" aria-label="Work sessions" tabindex="0"></div>`;
+            </style><div class="sessions" role="region" aria-label="${escapeHTML(t('ui.text.workSessions'))}" tabindex="0"></div>`;
             const document = this.ownerDocument;
             for (const session of [...this._sessions].reverse()) {
                 const draft = sessionDraft(session);
@@ -101,8 +101,8 @@ export function installSessionTimes(formatDuration, targetWindow = window) {
                 }
                 const row = document.createElement('div');
                 row.className = 'session';
-                row.innerHTML = `<span class="when"></span><div class="session-editor"><label>Start<input class="start-time" type="time" step="1" aria-label="Session start time"><input class="start-slider" type="range" min="0" max="86399" step="60" aria-label="Session start time slider"></label><span><button class="days" type="button"></button><input class="days-input" type="number" min="0" step="1" aria-label="Days after start date" hidden></span><label>Stop<input class="end-time" type="time" step="1" aria-label="Session stop time"><input class="end-slider" type="range" min="0" max="86399" step="60" aria-label="Session stop time slider"></label></div><div class="actions"><span class="duration" role="status"></span><button class="confirm" type="button" hidden>OK</button><button class="delete" type="button">Delete</button></div>`;
-                row.querySelector('.when').textContent = `${session.actor === 'agent' ? 'Agent' : 'Human'} · ${draft.anchor.toLocaleString()}`;
+                row.innerHTML = `<span class="when"></span><div class="session-editor"><label>${escapeHTML(t('ui.text.start'))}<input class="start-time" type="time" step="1" aria-label="${escapeHTML(t('ui.text.sessionStartTime'))}"><input class="start-slider" type="range" min="0" max="86399" step="60" aria-label="${escapeHTML(t('ui.text.sessionStartTimeSlider'))}"></label><span><button class="days" type="button"></button><input class="days-input" type="number" min="0" step="1" aria-label="${escapeHTML(t('ui.text.daysAfterStartDate'))}" hidden></span><label>${escapeHTML(t('ui.text.stop'))}<input class="end-time" type="time" step="1" aria-label="${escapeHTML(t('ui.text.sessionStopTime'))}"><input class="end-slider" type="range" min="0" max="86399" step="60" aria-label="${escapeHTML(t('ui.text.sessionStopTimeSlider'))}"></label></div><div class="actions"><span class="duration" role="status"></span><button class="confirm" type="button" hidden>${escapeHTML(t('ui.text.oK'))}</button><button class="delete" type="button">${escapeHTML(t('ui.text.delete'))}</button></div>`;
+                row.querySelector('.when').textContent = `${session.actor === 'agent' ? t('ui.text.agent') : t('ui.text.human')} · ${draft.anchor.toLocaleString()}`;
                 const daysButton = row.querySelector('.days');
                 const daysInput = row.querySelector('.days-input');
                 const confirm = row.querySelector('.confirm');
@@ -113,10 +113,10 @@ export function installSessionTimes(formatDuration, targetWindow = window) {
                         row.querySelector(`.${side}-time`).value = timeText(draft[side]);
                         row.querySelector(`.${side}-slider`).value = draft[side];
                     }
-                    daysButton.textContent = `[${draft.days} ${draft.days === 1 ? 'day' : 'days'}]`;
-                    daysButton.setAttribute('aria-label', `Edit days after start date: ${draft.days}`);
+                    daysButton.textContent = t('ui.text.countUnit', { count: draft.days, unit: t(draft.days === 1 ? 'ui.text.day' : 'ui.text.days') });
+                    daysButton.setAttribute('aria-label', t('ui.text.editDaysAfterStartDateDays', { days: draft.days }));
                     daysInput.value = draft.days;
-                    row.querySelector('.duration').textContent = end < start ? 'Stop must be after start; adjust days or time.' : formatDuration((end - start) / 1000);
+                    row.querySelector('.duration').textContent = end < start ? t('ui.text.stopMustBeAfterStartAdjustDaysOrTime') : formatDuration((end - start) / 1000);
                     confirm.hidden = start === saved.start && end === saved.end;
                     confirm.disabled = end < start || !Number.isFinite(end);
                 };

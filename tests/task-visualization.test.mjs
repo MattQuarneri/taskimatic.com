@@ -1,3 +1,4 @@
+import {t, escapeHTML, uiLabel, i18n} from './i18n-test-context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,6 +13,7 @@ class Clock extends Date {
     static now() { return now; }
 }
 const { analyticsFor, TaskVisualization } = vm.runInNewContext(`${functions}\n${component}\n({ analyticsFor, TaskVisualization })`, {
+    t, escapeHTML, uiLabel, window: {i18n},
     Date: Clock,
     canonicalType: value => value,
     TIMER_ACTORS: ['human', 'agent'],
