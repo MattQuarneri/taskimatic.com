@@ -1870,7 +1870,7 @@
                         .sort-arrow { margin-left: 3px; font-style: normal; }
                     </style>
                     <div class="sort-controls" role="group" aria-label="Sort tasks">
-                        ${Object.entries({ name: 'Name', time: 'Time', human: 'Human', agent: 'Agent', lastActive: 'Last Active', priority: 'Priority' }).map(([key, label]) => `<button type="button" class="sort-btn" data-sort="${key}" data-label="${label}">${label}</button>`).join('')}
+                        ${Object.entries({ name: 'Name', age: 'Age', time: 'Time', human: 'Human', agent: 'Agent', lastActive: 'Last Active', priority: 'Priority' }).map(([key, label]) => `<button type="button" class="sort-btn" data-sort="${key}" data-label="${label}">${label}</button>`).join('')}
                     </div>
                 `;
                 this.shadowRoot.addEventListener('click', (event) => {
@@ -1899,7 +1899,13 @@
                     const active = button.dataset.sort === this.sortKey;
                     button.classList.toggle('active', active);
                     button.setAttribute('aria-pressed', String(active));
-                    button.setAttribute('aria-label', `${button.dataset.label}${active ? `, ${this.sortDir === 'asc' ? 'ascending' : 'descending'}` : ''}`);
+                    const description = button.dataset.sort === 'age'
+                        ? 'Task age since creation (ascending: newest first)'
+                        : button.dataset.sort === 'time'
+                            ? 'Total tracked time, including running clocks (ascending: least time first)'
+                            : button.dataset.label;
+                    button.title = description;
+                    button.setAttribute('aria-label', `${description}${active ? `, ${this.sortDir === 'asc' ? 'ascending' : 'descending'}` : ''}`);
                     button.innerHTML = `${button.dataset.label}${active ? `<i class="sort-arrow" aria-hidden="true">${this.sortDir === 'asc' ? '↑' : '↓'}</i>` : ''}`;
                 });
             }
@@ -2844,17 +2850,21 @@
             const rankedDailySeries = [...dailyByGroup.entries()]
                 .map(([label, values]) => ({ label, values, total: values.reduce((sum, value) => sum + value, 0) }))
                 .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
-            const visiblePileSeries = rankedDailySeries.slice(0, 6);
-            if (rankedDailySeries.length > visiblePileSeries.length) {
+            const assignedDailySeries = rankedDailySeries.filter(item => item.label !== 'Unassigned');
+            const unassignedSeries = rankedDailySeries.find(item => item.label === 'Unassigned');
+            const visiblePileSeries = assignedDailySeries.slice(0, 6);
+            if (assignedDailySeries.length > visiblePileSeries.length) {
                 const otherValues = new Array(dates.length).fill(0);
-                for (const item of rankedDailySeries.slice(visiblePileSeries.length)) {
+                for (const item of assignedDailySeries.slice(visiblePileSeries.length)) {
                     item.values.forEach((value, index) => { otherValues[index] += value; });
                 }
-                visiblePileSeries.push({ label: 'Other', values: otherValues, total: otherValues.reduce((sum, value) => sum + value, 0), associationValues: rankedDailySeries.slice(visiblePileSeries.length).map(item => item.label) });
+                visiblePileSeries.push({ label: 'Other', values: otherValues, total: otherValues.reduce((sum, value) => sum + value, 0), associationValues: assignedDailySeries.slice(visiblePileSeries.length).map(item => item.label) });
                 visiblePileSeries.sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
             }
 
-            const timelineSeries = rankedDailySeries.slice(0, 5).map((item) => {
+            // Every group contributes to both dated charts, including unassigned work.
+            if (unassignedSeries) visiblePileSeries.push(unassignedSeries);
+            const timelineSeries = [...assignedDailySeries, ...(unassignedSeries ? [unassignedSeries] : [])].map((item) => {
                 const values = [...item.values];
                 for (let index = 1; index < values.length; index += 1) values[index] += values[index - 1];
                 return { label: item.label, values };
@@ -2872,9 +2882,9 @@
                 rangeLabel: windowRange.rangeLabel,
                 shortPeriod: windowRange.shortPeriod,
                 partWhole: [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value })),
-                pile: { labels, series: visiblePileSeries },
+                pile: { labels, series: visiblePileSeries, unassigned: unassignedSeries },
                 taskPile: { labels, days: tasksByDay },
-                timeline: { labels, series: timelineSeries }
+                timeline: { labels, series: timelineSeries, unassigned: unassignedSeries }
             };
         }
 
@@ -3004,15 +3014,15 @@
                 const subtitle = this.shadowRoot.querySelector('.chart-subtitle');
                 if (this.mode === 'parts') {
                     title.textContent = `${this.measure === 'time' ? 'Time' : 'Tasks'} by ${this.groupBy}`;
-                    subtitle.textContent = 'Multi-associated work is divided evenly, preserving the whole.';
+                    subtitle.textContent = 'Associated work is divided evenly. Unassigned work is listed below and excluded from the chart.';
                 } else if (this.mode === 'pile') {
                     title.textContent = `Time Pile · ${this.measure === 'time' ? 'Tracked time' : 'Task count'} by ${this.groupBy || 'task'}`;
                     subtitle.textContent = this.groupBy
-                        ? `${windowRange.rangeLabel}; largest period total at the base.`
+                        ? `${windowRange.rangeLabel}; largest assigned period total at the base. Includes unassigned work.`
                         : `${windowRange.rangeLabel}; individual tasks ordered by time of day, earliest at the base.`;
                 } else {
                     title.textContent = `Cumulative ${this.measure === 'time' ? 'tracked time' : 'task growth'}`;
-                    subtitle.textContent = `${windowRange.rangeLabel}, attributed by ${this.groupBy}.`;
+                    subtitle.textContent = `${windowRange.rangeLabel}, attributed by ${this.groupBy}. Includes unassigned work.`;
                 }
                 queueMicrotask(() => this.draw());
             }
@@ -3091,7 +3101,10 @@
 
             renderLegend(items) {
                 const legend = this.shadowRoot.querySelector('.legend');
-                legend.replaceChildren(...items.slice(0, 8).map((item, index) => {
+                const unassigned = items.find(item => item.label === 'Unassigned');
+                const listed = items.filter(item => item.label !== 'Unassigned');
+                if (unassigned) listed.push(unassigned);
+                legend.replaceChildren(...listed.map((item, index) => {
                     const row = document.createElement('button');
                     row.type = 'button';
                     row.className = 'legend-item';
@@ -3106,7 +3119,7 @@
                     })));
                     const swatch = document.createElement('span');
                     swatch.className = 'swatch';
-                    swatch.style.background = COLOR_PALETTE[index % COLOR_PALETTE.length];
+                    swatch.style.background = item.label === 'Unassigned' ? '#cfc8b8' : COLOR_PALETTE[index % COLOR_PALETTE.length];
                     const name = document.createElement('span');
                     name.className = 'legend-name';
                     name.textContent = item.label;
@@ -3119,11 +3132,12 @@
             }
 
             drawPie(context, bounds, analytics) {
-                const data = analytics.partWhole.filter((item) => item.value > 0);
+                const listed = analytics.partWhole.filter(item => item.value > 0);
+                const data = listed.filter(item => item.label !== 'Unassigned');
                 const total = data.reduce((sum, item) => sum + item.value, 0);
-                this.renderLegend(data);
+                this.renderLegend(listed);
                 canvasLabel(this.shadowRoot.querySelector('canvas'), `Part-whole chart of ${this.measure} grouped by ${this.groupBy}`);
-                if (!total) { this.setEmpty(this.measure === 'time' ? 'Start a timer to build your time picture.' : 'Add and associate a task to build this chart.'); return; }
+                if (!total) { this.setEmpty(listed.length ? `Associate tasks with ${this.groupBy} to build this chart.` : this.measure === 'time' ? 'Start a timer to build your time picture.' : 'Add and associate a task to build this chart.'); return; }
                 this.setEmpty('');
                 const centerX = bounds.width / 2;
                 const centerY = bounds.height / 2;
@@ -3152,7 +3166,7 @@
                 context.fillText(this.measure === 'time' ? formatDuration(total, true) : String(Math.round(total)), centerX, centerY - 1);
                 context.fillStyle = '#697177';
                 context.font = '700 9px ui-monospace, monospace';
-                context.fillText(this.measure === 'time' ? 'TOTAL TIME' : 'TOTAL TASKS', centerX, centerY + 15);
+                context.fillText(this.measure === 'time' ? 'ASSIGNED TIME' : 'ASSIGNED TASKS', centerX, centerY + 15);
             }
 
             drawPile(context, bounds, analytics) {
@@ -3203,7 +3217,7 @@
                         let bottom = padding.top + height;
                         const stackItems = taskView
                             ? analytics.taskPile.days[dayIndex].map((item) => ({ ...item, amount: item.value, color: colorFor(item.taskId) }))
-                            : series.map((item, seriesIndex) => ({ ...item, amount: item.values[dayIndex], color: COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length] }));
+                            : series.map((item, seriesIndex) => ({ ...item, amount: item.values[dayIndex], color: item.label === 'Unassigned' ? '#cfc8b8' : COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length] }));
                         stackItems.forEach((item) => {
                             const segmentHeight = (item.amount / max) * height;
                             if (segmentHeight <= 0) return;
@@ -3242,7 +3256,7 @@
                         context.closePath();
                         context.save();
                         context.globalAlpha = .22;
-                        context.fillStyle = COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length];
+                        context.fillStyle = item.label === 'Unassigned' ? '#cfc8b8' : COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length];
                         context.fill();
                         context.restore();
                         context.beginPath();
@@ -3251,7 +3265,7 @@
                             const y = yFor(value);
                             if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
                         });
-                        context.strokeStyle = COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length];
+                        context.strokeStyle = item.label === 'Unassigned' ? '#cfc8b8' : COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length];
                         context.lineWidth = 1.7;
                         context.lineJoin = 'round';
                         context.stroke();
@@ -3306,14 +3320,20 @@
                 series.forEach((item, seriesIndex) => {
                     context.beginPath();
                     item.values.forEach((value, index) => {
-                        const x = padding.left + (index / Math.max(1, item.values.length - 1)) * width;
+                        const x = padding.left + (item.values.length === 1 ? .5 : index / (item.values.length - 1)) * width;
                         const y = padding.top + height - (value / max) * height;
                         if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
                     });
-                    context.strokeStyle = COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length];
+                    context.strokeStyle = item.label === 'Unassigned' ? '#cfc8b8' : COLOR_PALETTE[seriesIndex % COLOR_PALETTE.length];
                     context.lineWidth = 2;
                     context.lineJoin = 'round';
                     context.stroke();
+                    if (item.values.length === 1) {
+                        context.beginPath();
+                        context.arc(padding.left + width / 2, padding.top + height - (item.values[0] / max) * height, 3, 0, Math.PI * 2);
+                        context.fillStyle = context.strokeStyle;
+                        context.fill();
+                    }
                 });
                 context.fillStyle = '#697177';
                 context.font = '8px ui-monospace, monospace';
@@ -4593,6 +4613,7 @@
 
             sortedTasks(tasks = this.tasks, sortKey = this.sortKey, sortDir = this.sortDir) {
                 const dir = sortDir === 'desc' ? -1 : 1;
+                const now = Date.now();
                 return [...tasks].sort((a, b) => {
                     const aRunning = TIMER_ACTORS.some((actor) => a.activeTimers?.[actor]);
                     const bRunning = TIMER_ACTORS.some((actor) => b.activeTimers?.[actor]);
@@ -4606,9 +4627,14 @@
                     if (sortKey === 'name') {
                         return dir * a.text.localeCompare(b.text, undefined, { sensitivity: 'base', numeric: true });
                     }
+                    if (sortKey === 'age') {
+                        const ageDifference = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+                        if (ageDifference) return dir * ageDifference;
+                        return a.text.localeCompare(b.text, undefined, { sensitivity: 'base', numeric: true });
+                    }
                     if (sortKey === 'time') {
-                        const aDur = durationForTask(a, null, false);
-                        const bDur = durationForTask(b, null, false);
+                        const aDur = durationForTask(a, null, true, now);
+                        const bDur = durationForTask(b, null, true, now);
                         if (aDur !== bDur) return dir * (aDur - bDur);
                         return a.text.localeCompare(b.text, undefined, { sensitivity: 'base', numeric: true });
                     }
