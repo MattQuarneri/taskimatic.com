@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const source = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const code = source.match(/<script data-taskimatic-offline>([\s\S]*?)<\/script>/)[1];
+const source = fs.readFileSync(new URL('../js/offline.js', import.meta.url), 'utf8');
+const code = source;
 function launch({ua = 'iPhone', installed = false, storage = new Map(), blocked = false, platform = '', touch = 0} = {}) {
     const events = {}, timers = [], panels = [];
     const document = {

@@ -1,9 +1,29 @@
 // Bump this version whenever index.html or one of its dependencies changes.
 // A new worker waits for existing tabs to close before switching the whole shell.
 const CACHE_PREFIX = 'taskimatic-tasks-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v14`;
+const CACHE_NAME = `${CACHE_PREFIX}v15`;
 const SHELL_ASSETS = [
     './index.html',
+    './css/tasks.css',
+    './css/protect-modal.css',
+    './js/download.js',
+    './js/workspace-tabs.js',
+    './js/offline.js',
+    './js/portable-app.js',
+    './js/tasks-app.js',
+    './js/task-api.js',
+    './js/task-model.js',
+    './js/task-repository.js',
+    './js/task-analytics.js',
+    './webcomp/task-item.js',
+    './webcomp/planning-item.js',
+    './webcomp/task-table.js',
+    './webcomp/task-hierarchy-editor.js',
+    './webcomp/lock-in-controls.js',
+    './webcomp/task-sort-controls.js',
+    './webcomp/task-workspace.js',
+    './webcomp/dual-range-slider.js',
+    './webcomp/task-visualization.js',
     './js/i18n.js',
     './data/i18n.json',
     './data/i18n/en.json',

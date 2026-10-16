@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const source = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const functions = source.slice(source.indexOf('        function localDateKey('), source.indexOf('        class TaskVisualization'));
-const component = source.slice(source.indexOf('        class TaskVisualization'), source.indexOf('        function canvasLabel('));
+const source = fs.readFileSync(new URL('../webcomp/task-visualization.js', import.meta.url), 'utf8');
+const functions = fs.readFileSync(new URL('../js/task-analytics.js', import.meta.url), 'utf8').replace(/^import .*$/gm, '').replace(/^export .*$/gm, '');
+const component = source.slice(source.indexOf('class TaskVisualization'), source.indexOf('function canvasLabel('));
 const now = new Date(2026, 9, 15, 12).getTime();
 class Clock extends Date {
     constructor(...args) { super(...(args.length ? args : [now])); }

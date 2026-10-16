@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { installSearcherElement } from '../webcomp/searcher-element.js';
-const source = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const source = fs.readFileSync(new URL('../webcomp/task-workspace.js', import.meta.url), 'utf8');
 const tasks = [
     {id:'human',status:'open',activeTimers:{human:'2026-10-01T12:00:00Z'}},
     {id:'agent',status:'open',activeTimers:{agent:'2026-10-01T13:00:00Z'}},
@@ -16,7 +16,7 @@ const tasks = [
 const ids = items => Array.from(items, item => item.id).sort();
 
 test('main On Now includes either running clock and combines with the selected task view', () => {
-    const method = source.slice(source.indexOf('            filteredTasks() {'), source.indexOf('            associationFromHash('));
+    const method = source.slice(source.indexOf('    filteredTasks() {'), source.indexOf('    associationFromHash('));
     const {filteredTasks} = vm.runInNewContext('({' + method + '})', {TIMER_ACTORS:['human','agent']});
     const app = {sortedTasks:()=>tasks,statusFilter:'all',onNow:true};
     assert.deepEqual(ids(filteredTasks.call(app)), ['agent','human','tabled']);
@@ -27,8 +27,8 @@ test('main On Now includes either running clock and combines with the selected t
 });
 
 test('Mini Me On Now filters out idle tasks instead of only sorting them', () => {
-    const start = source.indexOf('                const sortTasksForPip =');
-    const end = source.indexOf('                const activeTasks =',start);
+    const start = source.indexOf('        const sortTasksForPip =');
+    const end = source.indexOf('        const activeTasks =',start);
     const sort = new Function('TIMER_ACTORS',source.slice(start,end) + 'return sortTasksForPip;').call({pipOnNow:true,sortedTasks:value=>value},['human','agent']);
     assert.deepEqual(ids(sort(tasks)), ['agent','human','tabled']);
 });

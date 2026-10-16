@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const source = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const code = source.slice(source.indexOf('        class TaskRepository {'), source.indexOf('        // Inlined copy of /webcomp/dual-range-slider'));
+const source = fs.readFileSync(new URL('../js/task-repository.js', import.meta.url), 'utf8');
+const code = source.slice(source.indexOf('class TaskRepository {'), source.indexOf('export {'));
 const kinds = ['tasks', 'plans', 'wants', 'agents'];
 const empty = () => Object.fromEntries(kinds.map(kind => [kind, []]));
 function environment({available = true, writable = true, initial = '', idbAvailable = true} = {}) {

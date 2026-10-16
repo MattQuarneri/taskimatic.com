@@ -116,7 +116,8 @@ test('a missing translated entry falls back to English and translated markup is 
 test('the service worker caches every language offered by the picker', () => {
     const worker = fs.readFileSync(new URL('../tasks-sw.js', import.meta.url), 'utf8');
     for (const lang of Object.keys(manifest.languages)) assert.ok(worker.includes(`./data/i18n/${lang}.json`));
-    const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    const html = fs.readFileSync(new URL('../webcomp/task-workspace.js', import.meta.url), 'utf8')
+        + fs.readFileSync(new URL('../js/portable-app.js', import.meta.url), 'utf8');
     assert.match(html, /class="language-picker"/);
     assert.match(html, /getAvailableLanguages\(\)\.map\(lang => window\.i18n\.loadLocale\(lang\)\)/);
 });
