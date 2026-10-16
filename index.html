@@ -558,7 +558,10 @@
         .list-toolbar-right { display: flex; align-items: center; gap: 8px; }
         task-sort-controls { display: block; min-width: 0; }
         searcher-element { position: relative; display: block; width: min(230px, 42%); }
-        .searcher-field { position: relative; }
+        .searcher-field { position: relative; display: flex; align-items: center; gap: 6px; }
+        .searcher-field .searcher-input { min-width: 0; flex: 1; }
+        .searcher-on-now { flex: none; white-space: nowrap; min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 11px; cursor: pointer; }
+        .searcher-on-now[aria-pressed="true"] { background: var(--accent); color: white; border-color: var(--accent); }
         .searcher-field::before { content: "⌕"; position: absolute; left: 11px; top: 7px; color: var(--muted); font-size: 20px; pointer-events: none; }
         .searcher-input { width: 100%; height: 37px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,253,247,.72); padding: 0 10px 0 34px; color: var(--ink); font-size: 13px; }
         .searcher-menu { position: absolute; z-index: 30; top: calc(100% + 5px); left: 0; right: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); box-shadow: var(--shadow); }
@@ -1067,6 +1070,7 @@
     <script type="module">
         import { installBackupTracker } from './webcomp/backuptracker.js';
         import { installSearcherElement } from './webcomp/searcher-element.js';
+        import { installSessionTimes } from './webcomp/session-times.js';
         import { WORKSPACE_COLLECTIONS, normalizeAssociations, normalizePlanningRecord, normalizeAgent, agentTaskReferences, normalizeWorkspaceSnapshot, validateWorkspaceLinks, planningAssociations } from './js/task-planning-model.js';
         import { associationDimensions, automaticHierarchy, buildTaskTable } from './js/task-table-model.js';
 
@@ -2136,23 +2140,6 @@
                         summary::-webkit-details-marker { display: none; }
                         summary::before { content: '›'; font-size: 16px; transition: transform 120ms ease; }
                         details[open] summary::before { transform: rotate(90deg); }
-                        .sessions { display: grid; gap: 10px; margin-top: 7px; }
-                        .session { display: grid; gap: 5px; color: var(--muted, #697177); font: 650 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
-                        .session-editor { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
-                        .session-editor dual-range-slider {
-                            flex: 1 1 150px;
-                            min-width: 130px;
-                            --dual-range-track-color: #d6d0c3;
-                            --dual-range-selection-color: #315f91;
-                            --dual-range-active-color: #e65135;
-                            --dual-range-thumb-color: #fffdf7;
-                            --dual-range-thumb-border-color: #18242b;
-                        }
-                        .session-end-side { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-                        .session-duration { color: var(--ink, #18242b); font-weight: 800; }
-                        .session-start-time { white-space: nowrap; }
-                        .session-confirm { min-height: 24px; border: 1px solid var(--ink, #18242b); border-radius: 6px; background: var(--green, #28785c); color: white; padding: 0 9px; font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
-                        .session-delete { min-height: 24px; border: 1px solid var(--accent, #e65135); border-radius: 6px; background: transparent; color: var(--accent, #e65135); padding: 0 9px; font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
                         .footer { display: flex; align-items: end; justify-content: space-between; gap: 5px; margin: 5px 0 0 5px; }
                         .age { color: var(--muted, #697177); font: 650 9px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
                         :host([table-detail]) .footer { margin-left: 0; flex-wrap: wrap; }
@@ -2219,7 +2206,7 @@
                         
                         <details class="details" ${this._task.sessions.length ? '' : 'hidden'} ${this._sessionsOpen ? 'open' : ''}>
                             <summary>${this._task.sessions.length} time ${this._task.sessions.length === 1 ? 'entry' : 'entries'}</summary>
-                            <div class="sessions"></div>
+                            <session-times></session-times>
                         </details>
                         <div class="footer">
                             ${this.hasAttribute('table-detail') ? '<button class="table-back" type="button" aria-label="Back to task table">← Table</button>' : ''}
@@ -2409,115 +2396,7 @@
                     this.emit('task-sessions-toggle', { open: details.open });
                 });
 
-                const sessionsContainer = this.shadowRoot.querySelector('.sessions');
-                const formatTime = (value) => new Date(value * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                const displayedSessions = [...this._task.sessions].reverse().slice(0, 5);
-
-                let minStartMs = Infinity;
-                let maxEndMs = -Infinity;
-                const validSessionData = [];
-
-                for (const session of displayedSessions) {
-                    const startMs = Date.parse(session.startedAt);
-                    const endMs = session.endedAt && !Number.isNaN(Date.parse(session.endedAt))
-                        ? Date.parse(session.endedAt)
-                        : startMs + Number(session.durationSeconds || 0) * 1000;
-                    if (!Number.isNaN(startMs) && !Number.isNaN(endMs)) {
-                        validSessionData.push({ session, startMs, endMs });
-                        if (startMs < minStartMs) minStartMs = startMs;
-                        if (endMs > maxEndMs) maxEndMs = endMs;
-                    }
-                }
-
-                let normMinSec = 0;
-                let normMaxSec = 0;
-
-                if (validSessionData.length > 0) {
-                    const ONE_HOUR_MS = 3600 * 1000;
-                    const TWENTY_FOUR_HOURS_MS = 24 * 3600 * 1000;
-                    const spanMs = maxEndMs - minStartMs;
-
-                    if (spanMs >= TWENTY_FOUR_HOURS_MS) {
-                        const startDay = new Date(minStartMs);
-                        startDay.setHours(0, 0, 0, 0);
-                        const endDay = new Date(maxEndMs);
-                        endDay.setHours(0, 0, 0, 0);
-                        normMinSec = Math.floor(startDay.getTime() / 1000);
-                        normMaxSec = Math.ceil((endDay.getTime() + TWENTY_FOUR_HOURS_MS) / 1000);
-                    } else if (spanMs + 2 * ONE_HOUR_MS > TWENTY_FOUR_HOURS_MS) {
-                        normMinSec = Math.floor(minStartMs / 1000);
-                        normMaxSec = Math.ceil(maxEndMs / 1000);
-                    } else {
-                        normMinSec = Math.floor((minStartMs - ONE_HOUR_MS) / 1000);
-                        normMaxSec = Math.ceil((maxEndMs + ONE_HOUR_MS) / 1000);
-                    }
-                }
-
-                for (const { session, startMs, endMs } of validSessionData) {
-                    const row = document.createElement('div');
-                    row.className = 'session';
-                    const when = document.createElement('span');
-                    when.textContent = `${session.actor === 'agent' ? 'Agent' : 'Human'} · ${new Date(session.startedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
-                    row.append(when);
-
-                    const savedStart = Math.round(startMs / 1000);
-                    const savedEnd = Math.round(endMs / 1000);
-
-                    const editor = document.createElement('div');
-                    editor.className = 'session-editor';
-                    
-                    const startLabel = document.createElement('span');
-                    startLabel.className = 'session-start-time';
-
-                    const slider = document.createElement('dual-range-slider');
-                    slider.setAttribute('hide-labels', '');
-                    slider.setAttribute('start-label', 'Session start');
-                    slider.setAttribute('end-label', 'Session end');
-                    slider.valueFormatter = formatTime;
-                    slider.setRange({ min: normMinSec, max: normMaxSec, step: 60, start: savedStart, end: savedEnd });
-                    const endLabel = document.createElement('span');
-                    endLabel.className = 'session-end-time';
-                    const endSide = document.createElement('span');
-                    endSide.className = 'session-end-side';
-                    const durationLabel = document.createElement('span');
-                    durationLabel.className = 'session-duration';
-                    endSide.append(endLabel, durationLabel);
-                    const confirm = document.createElement('button');
-                    confirm.type = 'button';
-                    confirm.className = 'session-confirm';
-                    confirm.textContent = 'OK';
-                    confirm.hidden = true;
-                    const deleteSession = document.createElement('button');
-                    deleteSession.type = 'button';
-                    deleteSession.className = 'session-delete';
-                    deleteSession.textContent = 'Delete';
-                    const updateLabels = (start, end) => {
-                        startLabel.textContent = formatTime(start);
-                        endLabel.textContent = formatTime(end);
-                        durationLabel.textContent = `(${formatDuration(end - start)})`;
-                    };
-                    updateLabels(savedStart, savedEnd);
-                    slider.addEventListener('input', (event) => updateLabels(event.detail.start, event.detail.end));
-                    slider.addEventListener('change', (event) => {
-                        updateLabels(event.detail.start, event.detail.end);
-                        confirm.hidden = event.detail.start === savedStart && event.detail.end === savedEnd;
-                    });
-                    confirm.addEventListener('click', () => {
-                        this.emit('task-session-update', {
-                            sessionId: session.id,
-                            startedAt: new Date(slider.startValue * 1000).toISOString(),
-                            endedAt: new Date(slider.endValue * 1000).toISOString()
-                        });
-                    });
-                    deleteSession.addEventListener('click', () => {
-                        if (window.confirm('Delete this work session? This cannot be undone.')) {
-                            this.emit('task-session-delete', { sessionId: session.id });
-                        }
-                    });
-                    editor.append(startLabel, slider, endSide, confirm, deleteSession);
-                    row.append(editor);
-                    sessionsContainer.append(row);
-                }
+                this.shadowRoot.querySelector('session-times').data = { taskId: this._task.id, sessions: this._task.sessions };
 
                 const deleteButton = this.shadowRoot.querySelector('.delete');
                 deleteButton.addEventListener('click', () => {
@@ -3455,6 +3334,7 @@
         }
         customElements.define('task-visualization', TaskVisualization);
         installSearcherElement();
+        installSessionTimes(formatDuration);
         installBackupTracker();
 
         class PlanningItem extends HTMLElement {
@@ -3959,7 +3839,7 @@
                                 <div class="list-heading"><h2>Active tasks</h2><span class="list-count">0 shown</span><label class="table-toggle"><input class="table-checkbox" type="checkbox"> Table</label><button class="hierarchy-button" type="button" aria-haspopup="dialog" hidden>Hierarchy</button></div>
                                 <div class="list-toolbar-right">
                                     <task-sort-controls class="main-sort" aria-label="Sort main task list"></task-sort-controls>
-                                    <searcher-element class="task-search" aria-label="Search tasks"></searcher-element>
+                                    <searcher-element on-now-filter class="task-search" aria-label="Search tasks"></searcher-element>
                                 </div>
                             </div>
                             <div class="active-filter" hidden><span></span><button type="button">Clear grouping</button></div>
@@ -4601,6 +4481,7 @@
                     this.querySelectorAll('.nav-button').forEach((candidate) => candidate.classList.toggle('active', candidate === button));
                     this.renderTasks();
                 }));
+                this.querySelector('.task-search').addEventListener('searcher:on-now', (event) => { this.onNow = event.detail.active; this.renderTasks(); });
                 this.querySelector('.task-search').addEventListener('searcher:input', (event) => { this.search = event.detail.query.toLowerCase(); this.renderTasks(); });
                 this.querySelector('.task-search').addEventListener('searcher:search', (event) => { this.search = event.detail.query.toLowerCase(); this.renderTasks(); });
                 this.querySelector('.main-sort').addEventListener('task-sort-change', (event) => {
@@ -4686,6 +4567,8 @@
                 this.addEventListener('task-chart-filter', (event) => {
                     this.setMainView('tasks');
                     this.statusFilter = 'all';
+                    this.onNow = false;
+                    this.querySelector('.task-search').onNow = false;
                     this.planFilter = null;
                     this.search = '';
                     const searcher = this.querySelector('.task-search');
@@ -4751,6 +4634,7 @@
 
             filteredTasks() {
                 return this.sortedTasks().filter((task) => {
+                    if (this.onNow && !TIMER_ACTORS.some(actor => task.activeTimers?.[actor])) return false;
                     if (this.statusFilter === 'open' && (task.status !== 'open' || task.tabled)) return false;
                     if (this.statusFilter === 'tabled' && !task.tabled) return false;
                     if (this.statusFilter === 'done' && task.status !== 'done') return false;
@@ -4820,6 +4704,8 @@
                 const task = this.tasks.find((item) => item.id === taskId);
                 if (!task) return;
                 if (this.tablePreferences.enabled) this.tableTaskId = taskId;
+                this.onNow = false;
+                this.querySelector('.task-search').onNow = false;
                 this.statusFilter = task.tabled ? 'tabled' : task.status === 'done' ? 'done' : 'open';
                 this.associationFilter = null;
                 this.planFilter = null;
@@ -4896,7 +4782,10 @@
                             .live { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font: 750 10px ui-monospace, monospace; text-transform: uppercase; }
                             .live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
                             searcher-element { position: relative; display: block; width: 100%; margin-top: 11px; }
-                            .searcher-field { position: relative; }
+                            .searcher-field { position: relative; display: flex; align-items: center; gap: 6px; }
+                            .searcher-field .searcher-input { min-width: 0; flex: 1; }
+                            .searcher-on-now { flex: none; white-space: nowrap; min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 11px; cursor: pointer; }
+                            .searcher-on-now[aria-pressed="true"] { background: var(--accent); color: white; border-color: var(--accent); }
                             .searcher-field::before { content: '⌕'; position: absolute; left: 11px; top: 6px; color: var(--muted); font-size: 18px; pointer-events: none; }
                             .searcher-input { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 0 9px 0 32px; color: var(--ink); font: inherit; font-size: 12px; }
                             .searcher-menu { position: absolute; z-index: 4; top: calc(100% + 5px); left: 0; right: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 2px 2px 0 rgba(24,36,43,.12); }
@@ -4929,15 +4818,12 @@
                             .timer.running { border-color: var(--accent); background: var(--accent); }
                             .human.timer.running { background: var(--green); }
                             lock-in-controls { margin-top: 9px; }
-                            .pip-controls { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: -8px; }
-                            .pip-fieldset { margin: 9px 0 0; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); display: flex; align-items: center; }
-                            .pip-fieldset label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 650; color: var(--ink); user-select: none; }
-                            .pip-fieldset input[type="checkbox"] { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+                            .pip-controls { display: grid; grid-template-columns: 1fr; gap: 7px; margin-top: -8px; }
                             .restore { grid-column: 1 / -1; font-size: 11px; font-weight: 800; }
                             .empty { padding: 38px 18px; border: 1px dashed #a9a292; border-radius: 10px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
                         </style>`;
                     pipWindow.document.body.innerHTML = '<header><div class="brand-row"><h1>taskimatic</h1><span class="live">Live</span></div>' +
-                        '<div class="pip-controls"><searcher-element class="pip-search" aria-label="Search tasks in mini window"></searcher-element><fieldset class="pip-fieldset"><label><input type="checkbox" class="pip-on-now"> On Now</label></fieldset></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main>';
+                        '<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="Search tasks in mini window"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main>';
                     pipWindow.document.querySelector('lock-in-controls').addEventListener('lock-in:change', event => {
                         this.setProtectPlan(event.detail.plan);
                     });
@@ -4950,14 +4836,12 @@
                         this.pipSearch = event.detail.query.toLowerCase();
                         this.renderPipWindow();
                     });
-                    const onNowCheckbox = pipWindow.document.querySelector('.pip-on-now');
-                    if (onNowCheckbox) {
-                        onNowCheckbox.checked = Boolean(this.pipOnNow);
-                        onNowCheckbox.addEventListener('change', (event) => {
-                            this.pipOnNow = event.target.checked;
-                            this.renderPipWindow();
-                        });
-                    }
+                    const pipSearcher = pipWindow.document.querySelector('.pip-search');
+                    pipSearcher.onNow = Boolean(this.pipOnNow);
+                    pipSearcher.addEventListener('searcher:on-now', event => {
+                        this.pipOnNow = event.detail.active;
+                        this.renderPipWindow();
+                    });
                     pipWindow.document.head.append(document.querySelector('#protect-modal-styles').cloneNode(true));
                     this.syncPipProtectModal();
                     pipWindow.addEventListener('keydown', this.handleGlobalKeyDown);
@@ -4990,13 +4874,12 @@
                 const tabs = pipDocument.querySelector('.tabs');
                 const list = pipDocument.querySelector('main');
                 if (!tabs || !list) return;
-                const onNowCheckbox = pipDocument.querySelector('.pip-on-now');
-                if (onNowCheckbox) onNowCheckbox.checked = Boolean(this.pipOnNow);
+                pipDocument.querySelector('.pip-search').onNow = Boolean(this.pipOnNow);
                 const now = Date.now();
                 this.pipClockElements.clear();
                 const matchesPipSearch = (task) => !this.pipSearch || `${task.text} ${task.notes || ''} ${task.prompts || ''}`.toLowerCase().includes(this.pipSearch);
                 const sortTasksForPip = (taskList) => {
-                    const baseSorted = this.sortedTasks(taskList);
+                    const baseSorted = this.sortedTasks(this.pipOnNow ? taskList.filter(task => TIMER_ACTORS.some(actor => task.activeTimers?.[actor])) : taskList);
                     if (!this.pipOnNow) return baseSorted;
 
                     return [...baseSorted].sort((a, b) => {

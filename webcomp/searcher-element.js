@@ -30,6 +30,23 @@ export function installSearcherElement(targetWindow = window) {
             field.append(input);
             this.append(field);
             this.input = input;
+            input.value = this._value;
+            if (this.hasAttribute('on-now-filter')) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'searcher-on-now';
+               
+                button.title = 'Show only tasks with running clocks';
+                this.onNowButton = button;
+                this.onNow = this._onNow || false;
+                button.textContent = this.onNow ? '🟢 On Now' : '⚫️ On Now';
+                button.addEventListener('click', () => {
+                    this.onNow = !this.onNow;
+                    button.textContent = this.onNow ? '🟢 On Now' : '⚫️ On Now';
+                    this.dispatchEvent(new targetWindow.CustomEvent('searcher:on-now', {bubbles: true, detail: {active: this.onNow}}));
+                });
+                field.append(button);
+            }
             input.addEventListener('input', () => {
                 this._value = input.value;
                 this.dispatchSearchEvent('searcher:input');
@@ -51,6 +68,12 @@ export function installSearcherElement(targetWindow = window) {
 
         disconnectedCallback() {
             targetWindow.clearTimeout(this._hideTimer);
+        }
+
+        get onNow() { return Boolean(this._onNow); }
+        set onNow(value) {
+            this._onNow = Boolean(value);
+            this.onNowButton?.setAttribute('aria-pressed', String(this._onNow));
         }
 
         get value() {
