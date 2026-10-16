@@ -1,9 +1,9 @@
-// Bump this version whenever tasks.html or one of its dependencies changes.
+// Bump this version whenever index.html or one of its dependencies changes.
 // A new worker waits for existing tabs to close before switching the whole shell.
 const CACHE_PREFIX = 'taskimatic-tasks-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const SHELL_ASSETS = [
-    './tasks.html',
+    './index.html',
     './webcomp/backuptracker.js',
     './webcomp/searcher-element.js',
     './webcomp/session-times.js',
@@ -13,12 +13,13 @@ const SHELL_ASSETS = [
     './favicon.ico',
     './favicon-16x16.png',
     './favicon-32x32.png',
-    './favicon-96x96.png',
     './apple-touch-icon.png',
-    './android-icon-144x144.png'
+    './android-icon-144x144.png',
+    './android-icon-192x192.png',
+    './android-icon-512x512.png'
 ].map(path => new URL(path, self.location.href).href);
 const SHELL_URLS = new Set(SHELL_ASSETS);
-const PAGE_URL = new URL('./tasks.html', self.location.href).href;
+const PAGE_URL = new URL('./index.html', self.location.href).href;
 
 self.addEventListener('install', event => {
     // addAll is atomic: a failed download never activates an incomplete shell.

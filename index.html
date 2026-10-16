@@ -408,6 +408,14 @@
         .panel-grab-tab.today-tab:hover { background: var(--accent); color: white; border-color: var(--accent); }
         .panel-grab-tab.today-tab[aria-expanded="true"] { background: var(--accent); color: white; border-color: var(--accent); }
 
+        .phone-install-guide { position: fixed; z-index: 90; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); max-width: 420px; max-height: 65dvh; overflow: auto; margin: 0 auto; padding: 18px; border: 1px solid var(--ink); border-radius: 14px; background: var(--panel); color: var(--ink); box-shadow: 0 8px 32px rgba(24,36,43,.25); }
+        .phone-install-guide h2 { margin: 0 0 8px; font-size: 17px; }
+        .phone-install-guide p { margin: 8px 0; font-size: 13px; line-height: 1.5; }
+        .phone-install-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+        .phone-install-actions button { min-height: 44px; padding: 0 14px; border: 1px solid var(--ink); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+        .phone-install-actions .phone-install-button { background: var(--ink); color: var(--panel); }
+        .phone-install-actions button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
         .lock-in-pill {
             position: fixed;
             left: 12px;
@@ -1066,6 +1074,77 @@
             navigator.serviceWorker.register('./tasks-sw.js', { updateViaCache: 'none' })
                 .catch(error => console.warn('Taskimatic offline setup failed:', error));
         }
+
+        // Offer installation once per browser. Skip portable copies and installed windows.
+        (() => {
+            const isIOS = /iPhone|iPod|iPad/.test(navigator.userAgent)
+                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            if ((!isIOS && !isAndroid) || !window.isSecureContext || location.protocol === 'file:') return;
+            const seenKey = 'taskimatic-install-guide-seen';
+            const isInstalled = () => navigator.standalone === true
+                || ['standalone', 'fullscreen', 'minimal-ui'].some(mode => window.matchMedia(`(display-mode: ${mode})`).matches);
+            let deferredPrompt = null;
+            let guide = null;
+            let installButton = null;
+            let timer;
+            const markSeen = () => {
+                try { localStorage.setItem(seenKey, 'true'); return true; }
+                catch { return false; }
+            };
+            const dismiss = () => { guide?.remove(); guide = null; installButton = null; };
+            window.addEventListener('beforeinstallprompt', event => {
+                // Keep installation user initiated, including after our one-time offer.
+                event.preventDefault();
+                deferredPrompt = event;
+                if (installButton) installButton.hidden = false;
+            });
+            window.addEventListener('appinstalled', () => {
+                markSeen();
+                clearTimeout(timer);
+                deferredPrompt = null;
+                dismiss();
+            });
+            if (isInstalled()) { markSeen(); return; }
+            try { if (localStorage.getItem(seenKey)) return; }
+            catch { return; } // Without durable storage we cannot promise a one-time offer.
+            const showGuide = () => {
+                try { if (isInstalled() || localStorage.getItem(seenKey)) return; }
+                catch { return; }
+                if (!markSeen()) return;
+                guide = document.createElement('section');
+                guide.className = 'phone-install-guide';
+                guide.setAttribute('aria-labelledby', 'phone-install-title');
+                guide.innerHTML = `
+                    <h2 id="phone-install-title">Keep Taskimatic on your phone</h2>
+                    <p>Open your tasks straight from your Home Screen.</p>
+                    <p>${isIOS
+                        ? 'Tap Share, then Add to Home Screen and Add. If the option is missing, open this page in Safari and try again.'
+                        : 'Open your browser’s menu (⋮) and choose Install app or Add to Home screen, then confirm. If the option is missing, open this page in Chrome.'}</p>
+                    <div class="phone-install-actions">
+                        <button type="button" class="phone-install-button" hidden>Install app</button>
+                        <button type="button" class="phone-install-dismiss">Got it</button>
+                    </div>`;
+                installButton = guide.querySelector('.phone-install-button');
+                installButton.hidden = !deferredPrompt;
+                installButton.addEventListener('click', async () => {
+                    const prompt = deferredPrompt;
+                    if (!prompt) return;
+                    deferredPrompt = null;
+                    installButton.hidden = true;
+                    try {
+                        await prompt.prompt();
+                        const choice = await prompt.userChoice;
+                        if (choice.outcome === 'accepted') dismiss();
+                    } catch { /* The manual instructions remain available. */ }
+                });
+                guide.querySelector('.phone-install-dismiss').addEventListener('click', dismiss);
+                document.body.append(guide);
+            };
+            const scheduleGuide = () => { timer = setTimeout(showGuide, 2000); };
+            if (document.readyState === 'complete') scheduleGuide();
+            else window.addEventListener('load', scheduleGuide, { once: true });
+        })();
     </script>
     <script type="module">
         import { installBackupTracker } from './webcomp/backuptracker.js';
@@ -4296,73 +4375,81 @@
             }
 
             updateLockInPill() {
-                const pill = this.querySelector('#lock-in-pill');
-                if (!pill) return;
-                pill.innerHTML = `Lock In${this.lockInEnabled ? '!' : '?'} <span class="lock-in-emoji">${this.lockInEnabled ? '🔒' : '🔓'}</span>`;
-                pill.classList.toggle('is-locked', this.lockInEnabled);
-                pill.setAttribute('aria-pressed', String(this.lockInEnabled));
-                pill.title = this.lockInEnabled
-                    ? 'Lock In on — human timers open the focus timer. Click to turn off; drag to move.'
-                    : 'Lock In off — click to turn on; drag to move.';
+                const pills = [this.querySelector('#lock-in-pill')];
+                if (this.pipWindow && !this.pipWindow.closed) pills.push(this.pipWindow.document.querySelector('#lock-in-pill'));
+                for (const pill of pills.filter(Boolean)) {
+                    pill.innerHTML = `Lock In${this.lockInEnabled ? '!' : '?'} <span class="lock-in-emoji">${this.lockInEnabled ? '🔒' : '🔓'}</span>`;
+                    pill.classList.toggle('is-locked', this.lockInEnabled);
+                    pill.setAttribute('aria-pressed', String(this.lockInEnabled));
+                    pill.title = this.lockInEnabled
+                        ? 'Lock In on — human timers open the focus timer. Click to turn off; drag to move.'
+                        : 'Lock In off — click to turn on; drag to move.';
+                }
             }
 
-            positionLockInPill() {
-                const pill = this.querySelector('#lock-in-pill');
+            positionLockInPill(targetWindow = window) {
+                const positionKey = targetWindow === window ? 'lockInPillPos' : 'pipLockInPillPos';
+                const pill = targetWindow === window ? this.querySelector('#lock-in-pill') : targetWindow.document.querySelector('#lock-in-pill');
                 if (!pill) return;
-                if (!this.lockInPillPos) {
+                if (!this[positionKey]) {
                     pill.style.left = '';
                     pill.style.top = '';
                     pill.style.bottom = '';
                     return;
                 }
-                const maxX = Math.max(8, window.innerWidth - pill.offsetWidth - 8);
-                const maxY = Math.max(8, window.innerHeight - pill.offsetHeight - 8);
-                this.lockInPillPos = {
-                    x: Math.max(8, Math.min(maxX, this.lockInPillPos.x)),
-                    y: Math.max(8, Math.min(maxY, this.lockInPillPos.y))
+                const maxX = Math.max(8, targetWindow.innerWidth - pill.offsetWidth - 8);
+                const maxY = Math.max(8, targetWindow.innerHeight - pill.offsetHeight - 8);
+                this[positionKey] = {
+                    x: Math.max(8, Math.min(maxX, this[positionKey].x)),
+                    y: Math.max(8, Math.min(maxY, this[positionKey].y))
                 };
-                pill.style.left = `${this.lockInPillPos.x}px`;
-                pill.style.top = `${this.lockInPillPos.y}px`;
+                pill.style.left = `${this[positionKey].x}px`;
+                pill.style.top = `${this[positionKey].y}px`;
                 pill.style.bottom = 'auto';
             }
 
-            saveLockInPillPosition() {
+            saveLockInPillPosition(targetWindow = window) {
+                // Mini Me keeps its own position for the lifetime of the app.
+                if (targetWindow !== window) return;
                 if (!this.lockInPillPos) return;
                 try { localStorage.setItem('taskimatic-lock-in-pill-pos', JSON.stringify(this.lockInPillPos)); }
                 catch (error) { /* Keep the position for this session when storage is unavailable. */ }
             }
 
-            bindLockInPill() {
-                const pill = this.querySelector('#lock-in-pill');
+            bindLockInPill(targetWindow = window) {
+                const positionKey = targetWindow === window ? 'lockInPillPos' : 'pipLockInPillPos';
+                const dragKey = targetWindow === window ? 'lockInPillDrag' : 'pipLockInPillDrag';
+                const suppressKey = targetWindow === window ? 'suppressLockInPillClick' : 'suppressPipLockInPillClick';
+                const pill = targetWindow === window ? this.querySelector('#lock-in-pill') : targetWindow.document.querySelector('#lock-in-pill');
                 if (!pill) return;
-                this.positionLockInPill();
+                this.positionLockInPill(targetWindow);
                 this.updateLockInPill();
                 pill.addEventListener('pointerdown', (event) => {
                     if (!event.isPrimary || event.button !== 0) return;
-                    this.suppressLockInPillClick = false;
+                    this[suppressKey] = false;
                     const rect = pill.getBoundingClientRect();
-                    this.lockInPillDrag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startPos: { x: rect.left, y: rect.top }, moved: false };
+                    this[dragKey] = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startPos: { x: rect.left, y: rect.top }, moved: false };
                     pill.setPointerCapture(event.pointerId);
                 });
                 pill.addEventListener('pointermove', (event) => {
-                    const drag = this.lockInPillDrag;
+                    const drag = this[dragKey];
                     if (!drag || drag.pointerId !== event.pointerId) return;
                     const deltaX = event.clientX - drag.startX;
                     const deltaY = event.clientY - drag.startY;
                     if (Math.abs(deltaX) + Math.abs(deltaY) >= 4) drag.moved = true;
                     if (!drag.moved) return;
                     pill.classList.add('is-dragging');
-                    this.lockInPillPos = { x: drag.startPos.x + deltaX, y: drag.startPos.y + deltaY };
-                    this.positionLockInPill();
+                    this[positionKey] = { x: drag.startPos.x + deltaX, y: drag.startPos.y + deltaY };
+                    this.positionLockInPill(targetWindow);
                 });
                 const finishDrag = (event) => {
-                    const drag = this.lockInPillDrag;
+                    const drag = this[dragKey];
                     if (!drag || drag.pointerId !== event.pointerId) return;
-                    this.suppressLockInPillClick = drag.moved;
-                    this.lockInPillDrag = null;
+                    this[suppressKey] = drag.moved;
+                    this[dragKey] = null;
                     pill.classList.remove('is-dragging');
                     if (pill.hasPointerCapture(event.pointerId)) pill.releasePointerCapture(event.pointerId);
-                    if (drag.moved) this.saveLockInPillPosition();
+                    if (drag.moved) this.saveLockInPillPosition(targetWindow);
                 };
                 pill.addEventListener('pointerup', finishDrag);
                 pill.addEventListener('pointercancel', finishDrag);
@@ -4372,13 +4459,13 @@
                     event.preventDefault();
                     const step = event.shiftKey ? 60 : 20;
                     const rect = pill.getBoundingClientRect();
-                    const current = this.lockInPillPos || { x: rect.left, y: rect.top };
-                    this.lockInPillPos = {
+                    const current = this[positionKey] || { x: rect.left, y: rect.top };
+                    this[positionKey] = {
                         x: current.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
                         y: current.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0)
                     };
-                    this.positionLockInPill();
-                    this.saveLockInPillPosition();
+                    this.positionLockInPill(targetWindow);
+                    this.saveLockInPillPosition(targetWindow);
                 });
             }
 
@@ -4824,7 +4911,12 @@
                             .tab { border-color: var(--line); box-shadow: none; font-size: 12px; font-weight: 800; }
                             .tab[aria-selected="true"] { border-color: var(--ink); background: var(--ink); color: white; }
                             button[role="tab"]:hover { background: var(--panel); color: var(--ink); }
-                            main { display: grid; gap: 8px; padding: 12px; }
+                            main { display: grid; gap: 8px; padding: 12px 12px 60px; }
+                            .lock-in-pill { position: fixed; left: 12px; bottom: 12px; z-index: 62; padding: 0 14px; border-radius: 999px; background: var(--panel); color: var(--muted); box-shadow: 2px 2px 6px rgba(24,36,43,.12); font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; }
+                            .lock-in-pill:hover { border-color: var(--accent); color: var(--ink); }
+                            .lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
+                            .lock-in-pill.is-dragging { cursor: grabbing; }
+                            .lock-in-emoji { font-size: 22px; line-height: 1; vertical-align: -2px; }
                             .task { position: relative; display: grid; gap: 9px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: 2px 2px 0 rgba(24,36,43,.09); }
                             .task.running { border-left: 5px solid var(--accent); padding-left: 7px; }
                             .task.done { opacity: .7; }
@@ -4849,7 +4941,16 @@
                             .empty { padding: 38px 18px; border: 1px dashed #a9a292; border-radius: 10px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
                         </style>`;
                     pipWindow.document.body.innerHTML = '<header><div class="brand-row"><h1>taskimatic</h1><span class="live">Live</span></div>' +
-                        '<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="Search tasks in mini window"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main>';
+                        '<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="Search tasks in mini window"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main><button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">Lock In? <span class="lock-in-emoji">🔓</span></button>';
+                    this.bindLockInPill(pipWindow);
+                    pipWindow.document.querySelector('#lock-in-pill').addEventListener('click', event => {
+                        if (this.suppressPipLockInPillClick && event.detail !== 0) {
+                            this.suppressPipLockInPillClick = false;
+                            return;
+                        }
+                        this.setLockInEnabled(!this.lockInEnabled);
+                    });
+                    pipWindow.addEventListener('resize', () => this.positionLockInPill(pipWindow));
                     pipWindow.document.querySelector('lock-in-controls').addEventListener('lock-in:change', event => {
                         this.setProtectPlan(event.detail.plan);
                     });
