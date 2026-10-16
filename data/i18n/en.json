@@ -108,7 +108,7 @@
       "timePile": "Time Pile",
       "measure": "Measure",
       "trackedTime": "Tracked time",
-      "taskCount": "{count} {unit}",
+      "taskCount": "Task count",
       "groupBy": "Group by",
       "window": "Window",
       "14Days": "14 days",
@@ -394,7 +394,12 @@
       "daysAfterStartDate": "Days after start date",
       "sessionStopTime": "Session stop time",
       "sessionStopTimeSlider": "Session stop time slider",
-      "stopMustBeAfterStartAdjustDaysOrTime": "Stop must be after start; adjust days or time."
+      "stopMustBeAfterStartAdjustDaysOrTime": "Stop must be after start; adjust days or time.",
+      "language": "Language",
+      "assignedTaskIs": "task is",
+      "assignedTasksAre": "tasks are",
+      "pluralSuffix": "s",
+      "pageTitle": "taskimatic — private +@$< management | No Sign-Up Required"
     }
   },
   "error": {

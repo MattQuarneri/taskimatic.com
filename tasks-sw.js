@@ -1,12 +1,26 @@
 // Bump this version whenever index.html or one of its dependencies changes.
 // A new worker waits for existing tabs to close before switching the whole shell.
 const CACHE_PREFIX = 'taskimatic-tasks-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v5`;
+const CACHE_NAME = `${CACHE_PREFIX}v14`;
 const SHELL_ASSETS = [
     './index.html',
     './js/i18n.js',
     './data/i18n.json',
     './data/i18n/en.json',
+    './data/i18n/zh.json',
+    './data/i18n/es.json',
+    './data/i18n/hi.json',
+    './data/i18n/pt.json',
+    './data/i18n/ja.json',
+    './data/i18n/de.json',
+    './data/i18n/fr.json',
+    './data/i18n/ko.json',
+    './data/i18n/it.json',
+    './data/i18n/ru.json',
+    './data/i18n/id.json',
+    './data/i18n/uk.json',
+    './data/i18n/tr.json',
+    './data/i18n/nl.json',
     './webcomp/backuptracker.js',
     './webcomp/searcher-element.js',
     './webcomp/session-times.js',

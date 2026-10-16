@@ -21,7 +21,9 @@ class I18nService {
             this.data = saved.data;
             this.languages = saved.languages;
             this.defaultLang = saved.defaultLang;
-            this.currentLang = saved.currentLang;
+            const params = new URLSearchParams(window.location.search);
+            this.currentLang = this.resolveLanguage(params.get('lang') || params.get('Lang'))
+                || this.resolveLanguage(this.getCookie(this.cookieName)) || saved.currentLang;
             this.loadedLocales = new Set(Object.keys(this.data));
             return true;
         }
@@ -193,7 +195,7 @@ class I18nService {
 
         // 2. Check URL parameter
         const urlParams = new URLSearchParams(window.location.search);
-        const urlLang = this.resolveLanguage(urlParams.get('lang'));
+        const urlLang = this.resolveLanguage(urlParams.get('lang') || urlParams.get('Lang'));
         if (urlLang) {
             this.setCookie(this.cookieName, urlLang, this.cookieExpireDays);
             return urlLang;
@@ -374,13 +376,13 @@ class I18nService {
         // Set cookie with appropriate flags
         const isSecure = window.location.protocol === 'https:';
         let cookieString = `${name}=${value}${expires}; path=/`;
-        
+
         if (isSecure) {
             cookieString += '; Secure; SameSite=Lax';
         } else {
             cookieString += '; SameSite=Lax';
         }
-        
+
         document.cookie = cookieString;
     }
 

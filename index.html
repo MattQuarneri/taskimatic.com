@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f3efe4">
-    <title>taskimatic — private +@$< management | No Sign-Up Required</title>
+    <title data-i18n="ui.text.pageTitle">taskimatic — private +@$&lt; management | No Sign-Up Required</title>
     <meta name="description" content="private task and time management with zero sign-up. 100% local browser storage (OPFS or IndexedDB), offline-ready, with no cloud tracking or accounts.">
     <link rel="canonical" href="https://taskimatic.com/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -256,6 +256,7 @@
         .brand-sub { color: var(--muted); font: 650 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; }
         .top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
         .top-actions button { padding: 0 13px; font-weight: 720; font-size: 13px; }
+        .language-picker { min-height: 40px; max-width: 150px; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); font-size: 13px; }
         .top-actions .primary { background: var(--ink); color: white; }
         .top-actions .primary:hover { background: #2c3d46; }
         .top-actions .pip-action[aria-pressed="true"] { background: var(--green); color: white; }
@@ -2881,7 +2882,7 @@
                     check.type = 'checkbox';
                     check.checked = item.enabled;
                     check.onchange = () => { item.enabled = check.checked; };
-                    label.append(check, ` ${item.type}`);
+                    label.append(check, ` ${uiLabel(item.type)}`);
                     const count = document.createElement('span');
                     count.className = 'count';
                     count.textContent = t('ui.text.values', { count: this.dimensions.find(dimension => dimension.type === item.type)?.count || 0 });
@@ -3185,7 +3186,7 @@
                 const options = types.map((type) => {
                     const option = document.createElement('option');
                     option.value = type;
-                    option.textContent = type;
+                    option.textContent = uiLabel(type);
                     return option;
                 });
                 if (allowTaskView) {
@@ -3990,10 +3991,14 @@
                             <backup-tracker storage-key="taskimatic:backuptracker" change-event="taskimatic:change">
                                 <button slot="before-button" class="pip-action" type="button" aria-pressed="false" title="${escapeHTML(t('ui.text.openAnAlwaysOnTopTaskWindow'))}">${escapeHTML(t('ui.text.miniMe'))}</button>
                                 <button slot="action" data-backup-action class="export-action" type="button">${escapeHTML(t('ui.text.exportData'))}</button>
+                                
                             </backup-tracker>
                             <button class="import-action desktop-action" type="button">${escapeHTML(t('ui.text.import'))}</button>
                             <button class="download-action primary" type="button">${escapeHTML(t('ui.text.downloadApp'))}</button>
                             <input class="import-input" type="file" accept="application/json,.json" hidden aria-label="${escapeHTML(t('ui.text.importTaskData'))}">
+                            <select class="language-picker" aria-label="${escapeHTML(t('ui.text.language'))}">
+                                ${window.i18n.getAvailableLanguages().map(lang => `<option value="${escapeHTML(lang)}" ${lang === window.i18n.currentLang ? 'selected' : ''}>${escapeHTML(window.i18n.languages[lang].Lang)}</option>`).join('')}
+                            </select>
                         </div>
                     </header>
                     <div class="app-grid">
@@ -4057,7 +4062,7 @@
                                     <div class="welcome-row"><div><div class="eyebrow">${kind === 'plans' ? t('ui.text.fromThinkingToDoing') : t('ui.text.roomForPossibilities')}</div><h1>${kind === 'plans' ? t('ui.text.shapeAPlan') : t('ui.text.whatWouldYouLikeToHaveOrAchieve')}</h1></div></div>
                                     <p class="planning-help">${kind === 'plans' ? t('ui.text.developYourApproachAndLinkTheTasksThatMakeItHappenAssociationsOnThoseTasksRollUpIntoT') : t('ui.text.captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape')}</p>
                                     <section class="capture-card"><form class="planning-capture capture-form" data-kind="${kind}"><input class="capture-input" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue6Title', { value6: uiLabel(kind === 'plans' ? 'plan' : 'want') }))}" placeholder="${kind === 'plans' ? t('ui.text.giveYourPlanAName') : t('ui.text.captureADesireOrAspiration')}" required><button class="add-button" type="submit">${escapeHTML(t('ui.text.addValue8', { value8: uiLabel(kind === 'plans' ? 'plan' : 'want') }))}</button></form></section>
-                                    <div class="planning-search"><input type="search" data-planning-search="${kind}" aria-label="${escapeHTML(t('ui.text.searchValue10', { value10: kind }))}" placeholder="${escapeHTML(t('ui.text.searchValue11ThinkingAndAssociations', { value11: kind }))}"></div>
+                                    <div class="planning-search"><input type="search" data-planning-search="${kind}" aria-label="${escapeHTML(t('ui.text.searchValue10', { value10: uiLabel(kind) }))}" placeholder="${escapeHTML(t('ui.text.searchValue11ThinkingAndAssociations', { value11: uiLabel(kind) }))}"></div>
                                     <div class="active-filter planning-filter" data-kind="${kind}" hidden><span></span><button type="button" data-clear-planning-filter>${escapeHTML(t('ui.text.clearGrouping'))}</button></div>
                                     <section class="planning-list" data-kind="${kind}" aria-live="polite"></section>
                                 </section>
@@ -4230,7 +4235,7 @@
                 const agent = this.agents.find(agent => agent.id === id);
                 if (!agent) throw new Error(t('error.messages.agentNotFoundValue0', { value0: id }));
                 const references = agentTaskReferences(this.tasks, id);
-                if (references.length) throw new Error(t('error.messages.cannotDeleteValue0Value1Value2StillAssigned', { value0: agent.name, value1: references.length, value2: references.length === 1 ? 'task is' : 'tasks are' }));
+                if (references.length) throw new Error(t('error.messages.cannotDeleteValue0Value1Value2StillAssigned', { value0: agent.name, value1: references.length, value2: t(references.length === 1 ? 'ui.text.assignedTaskIs' : 'ui.text.assignedTasksAre') }));
                 await this.repository.delete(id, 'agents');
                 this.agents = this.agents.filter(agent => agent.id !== id);
                 this.renderAll();
@@ -4638,6 +4643,20 @@
             }
 
             bindEvents() {
+                this.querySelector('.language-picker').addEventListener('change', async event => {
+                    const picker = event.currentTarget;
+                    picker.disabled = true;
+                    try {
+                        if (!await window.i18n.setLanguage(picker.value)) return;
+                        // Reload the shell so generated text, shadow DOM, and charts share one locale.
+                        const url = new URL(location.href);
+                        url.searchParams.set('lang', window.i18n.currentLang);
+                        location.assign(url.href);
+                    } catch (error) {
+                        picker.value = window.i18n.currentLang;
+                        this.toast(error.message);
+                    } finally { picker.disabled = false; }
+                });
                 this.querySelector('#brand-help').addEventListener('beforetoggle', (event) => {
                     if (event.newState === 'open') this.positionBrandHelp();
                 });
@@ -5482,7 +5501,7 @@
                     const totalBadge = document.createElement('span');
                     totalBadge.className = 'nav-count';
                     totalBadge.textContent = totalCount;
-                    totalBadge.title = t('ui.text.value0TaskValue1WithValue2', { value0: totalCount, value1: totalCount === 1 ? '' : 's', value2: type });
+                    totalBadge.title = t('ui.text.value0TaskValue1WithValue2', { value0: totalCount, value1: totalCount === 1 ? '' : t('ui.text.pluralSuffix'), value2: type });
 
                     summary.append(left, totalBadge);
                     details.append(summary);
@@ -5551,7 +5570,7 @@
                     const number = document.createElement('span');
                     number.className = 'nav-count';
                     number.textContent = openCount;
-                    number.title = t('ui.text.value0OpenTaskValue1', { value0: openCount, value1: openCount === 1 ? '' : 's' });
+                    number.title = t('ui.text.value0OpenTaskValue1', { value0: openCount, value1: openCount === 1 ? '' : t('ui.text.pluralSuffix') });
                     button.append(name, number);
                     button.addEventListener('click', () => {
                         const isSame = this.planFilter === plan.id;
@@ -5870,6 +5889,7 @@
                 const clone = document.documentElement.cloneNode(true);
                 clone.querySelector('[data-taskimatic-offline]')?.remove();
                 await window.i18n.ready;
+                await Promise.all(window.i18n.getAvailableLanguages().map(lang => window.i18n.loadLocale(lang)));
                 const localeSeed = document.createElement('script');
                 localeSeed.type = 'application/json';
                 localeSeed.id = 'taskimatic-i18n';

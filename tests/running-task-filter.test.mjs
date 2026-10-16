@@ -1,3 +1,6 @@
+import {t, escapeHTML} from './i18n-test-context.mjs';
+globalThis.t = t;
+globalThis.escapeHTML = escapeHTML;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
