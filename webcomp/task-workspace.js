@@ -1512,11 +1512,6 @@ class TaskWorkspace extends HTMLElement {
                     .tab[aria-selected="true"] { border-color: var(--ink); background: var(--ink); color: white; }
                     button[role="tab"]:hover { background: var(--panel); color: var(--ink); }
                     main { display: grid; gap: 8px; padding: 12px 12px 60px; }
-                    .lock-in-pill { position: fixed; left: 12px; bottom: 12px; z-index: 62; padding: 0 14px; border-radius: 999px; background: var(--panel); color: var(--muted); box-shadow: 2px 2px 6px rgba(24,36,43,.12); font: 800 var(--font-sm)/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; min-height: 32px; height: auto; }
-                    .lock-in-pill:hover { border-color: var(--accent); color: var(--ink); }
-                    .lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
-                    .lock-in-pill.is-dragging { cursor: grabbing; }
-                    .lock-in-emoji { font-size: calc(22px * var(--font-scale, 1)); line-height: 1; vertical-align: -2px; }
                     .task { position: relative; display: grid; gap: 9px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: 2px 2px 0 rgba(24,36,43,.09); }
                     .task.running { border-left: 5px solid var(--accent); padding-left: 7px; }
                     .task.done { opacity: .7; }
@@ -1542,6 +1537,16 @@ class TaskWorkspace extends HTMLElement {
                 </style>`;
             pipWindow.document.body.innerHTML = `<header><div class="brand-row"><h1>${escapeHTML(t('ui.text.taskimatic'))}</h1><span class="live">${escapeHTML(t('ui.text.live'))}</span></div>` +
                 `<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="${escapeHTML(t('ui.text.searchTasksInMiniWindow'))}"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main><button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">${escapeHTML(t('ui.text.lockIn3'))} <span class="lock-in-emoji">🔓</span></button>`;
+            // Clone the shared stylesheet, including the embedded style in portable downloads.
+            const sharedPillStyles = document.getElementById('lock-in-pill-styles');
+            const pipPillStyles = sharedPillStyles.cloneNode(true);
+            if (sharedPillStyles.href) pipPillStyles.href = sharedPillStyles.href;
+            pipWindow.document.head.append(pipPillStyles);
+            const mainPillStyle = window.getComputedStyle(this.querySelector('#lock-in-pill'));
+            const pipPill = pipWindow.document.querySelector('#lock-in-pill');
+            for (const property of ['--panel', '--ink', '--muted', '--accent', '--chalk', '--font-scale', '--font-sm', '--font-5xl']) {
+                pipPill.style.setProperty(property, mainPillStyle.getPropertyValue(property));
+            }
             this.bindLockInPill(pipWindow);
             pipWindow.document.querySelector('#lock-in-pill').addEventListener('click', event => {
                 if (this.suppressPipLockInPillClick && event.detail !== 0) {

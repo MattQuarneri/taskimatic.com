@@ -1,0 +1,27 @@
+.lock-in-pill {
+    position: fixed;
+    left: 12px;
+    bottom: 26px;
+    z-index: 62;
+    height: auto;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    min-height: max(34px, 2.2em);
+    padding: 0 14px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--muted);
+    box-shadow: 2px 2px 6px rgba(24, 36, 43, .12);
+    font: 800 var(--font-sm)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+.lock-in-pill:hover { background: var(--accent); border-color: var(--accent); color: var(--chalk); }
+.lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
+.lock-in-pill.is-dragging { cursor: grabbing; transition: none; }
+.lock-in-pill:focus-visible { outline: 3px solid rgba(208, 14, 0, .28); outline-offset: 2px; }
+.lock-in-pill .lock-in-emoji { font-size: var(--font-5xl); line-height: 1; vertical-align: -2px; }
+.lock-in-pill:active { transform: translate(2px, 2px); box-shadow: none; }
