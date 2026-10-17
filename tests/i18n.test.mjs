@@ -193,10 +193,10 @@ test('task workspace template includes settings gear button, font size controls,
     assert.match(workspaceCode, /settings:\s*\{[^}]*language:[^}]*fontScale:/s);
 });
 
-test('font scale supports up to 300% and defines full CSS variable scale', () => {
+test('font scale supports 50% to 300% and defines full CSS variable scale', () => {
     const workspaceCode = fs.readFileSync(new URL('../webcomp/task-workspace.js', import.meta.url), 'utf8');
     assert.match(workspaceCode, /3\.0/);
-    assert.match(workspaceCode, /\[0\.85, 0\.92, 1\.0, 1\.15, 1\.3, 1\.5, 1\.75, 2\.0, 2\.25, 2\.5, 2\.75, 3\.0\]/);
+    assert.match(workspaceCode, /\[0\.5, 0\.6, 0\.7, 0\.85, 0\.92, 1\.0, 1\.15, 1\.3, 1\.5, 1\.75, 2\.0, 2\.25, 2\.5, 2\.75, 3\.0\]/);
 
     const tasksCss = fs.readFileSync(new URL('../css/tasks.css', import.meta.url), 'utf8');
     assert.match(tasksCss, /--font-scale:\s*1/);

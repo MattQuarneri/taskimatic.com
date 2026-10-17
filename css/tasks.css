@@ -7,7 +7,7 @@
     --muted: #697177;
     --line: #cfc8b8;
     --accent: #D00E00;
-    --accent-light: #e65135;
+    --accent-light: #DC7A73;
     --green: #28785c;
     --green-soft: #dcebe3;
     --blue: #315f91;
@@ -821,6 +821,27 @@ task-item { display: block; }
 }
 
 @media (max-width: 888px) {
+    html, body {
+        overflow-x: clip;
+        overscroll-behavior-x: none;
+        touch-action: pan-y pinch-zoom;
+    }
+    html:has(.today-drawer.is-open), body:has(.today-drawer.is-open) {
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+    .today-drawer {
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: none;
+        touch-action: pan-y pinch-zoom;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .workspace-tabs { margin-bottom: 4px; }
+
+    body:has(.today-drawer.is-open) .drawer-scrim { touch-action: none; }
+    .eyebrow, .workspace-tab-list, .pip-action, .download-action { display: none; }
     .topbar { position: static; min-height: auto; align-items: flex-start; flex-wrap: wrap; padding: 12px 14px; }
     .workspace-tabs {
         position: sticky;
@@ -831,6 +852,7 @@ task-item { display: block; }
     backup-tracker::part(status) { display: none; }
     .top-actions button { padding: 0 10px; }
     .app-grid { display: block; }
+    .task-list, .task-list .task-group-list { grid-template-columns: minmax(0, 1fr); }
 
     /* Mobile Bottom Views Rail */
     .rail { display: contents; }
@@ -861,13 +883,14 @@ task-item { display: block; }
         box-shadow: 0 -3px 12px rgba(24, 36, 43, 0.09);
         overflow: visible;
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 5px;
         margin: 0;
         box-sizing: border-box;
     }
     .nav-button {
         width: 100%;
+        min-width: 0;
         min-height: 44px;
         display: flex;
         flex-direction: column;
@@ -953,6 +976,12 @@ task-item { display: block; }
     }
     .panel-grab-tab:not(.today-tab).left-tab .tab-text {
         transform: rotate(90deg);
+    }
+    #associations-tab, #insights-tab {
+        touch-action: pan-y pinch-zoom;
+    }
+    #associations-tab:active, #insights-tab:active {
+        transform: none;
     }
     .panel-grab-tab:not(.today-tab)[aria-expanded="true"],
     .panel-grab-tab:not(.today-tab).active {

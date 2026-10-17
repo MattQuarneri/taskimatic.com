@@ -250,12 +250,13 @@ class TaskItem extends HTMLElement {
                 [hidden] { display: none !important; }
                 @media (max-width: 520px) {
                     .main-row { grid-template-columns: auto minmax(0, 1fr); }
-                    .timers { grid-column: 2; justify-self: stretch; grid-template-columns: 1fr 1fr; }
+                    .timers { grid-column: 2; justify-self: stretch; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                    .timer { min-width: 0; padding-inline: 4px; overflow-wrap: anywhere; }
                     .agent-picker, .agent-form { grid-column: 2; max-width: none; }
                     .plan-control, .meta-row, .group-editor, .details, .footer { margin-left: 5px; }
                     .notes, .prompts, .group-editor input, .plan-select, .agent-select, .agent-form input { font-size: max(16px, var(--font-base)); }
                     .notes-wrap { margin-left: 0; }
-                    .group-editor { grid-template-columns: 1fr 1fr; }
+                    .group-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     .group-editor button { grid-column: 1 / -1; }
                 }
                 @media (prefers-reduced-motion: reduce) { :host([clock-active]) .timer.running { animation: none; } }
@@ -276,9 +277,8 @@ class TaskItem extends HTMLElement {
                                 <button id="task-prompts-tab" type="button" role="tab" data-editor-tab="prompts" aria-controls="task-prompts-panel">${escapeHTML(t('ui.text.prompts'))}</button>
                             </div>
                             <div class="estimated-time" role="group" aria-label="${escapeHTML(t('ui.text.estimatedTimeNeeded'))}">
-                                <span>${escapeHTML(t('ui.text.estimatedTimeNeeded2'))}</span>
+                                <span>${escapeHTML(t('ui.text.estimatedTimeNeeded'))}</span>
                                 <span class="estimate-options">${[10, 30, 60, 90].map(minutes => `<label class="estimate-option"><input type="radio" name="estimatedMinutes" value="${minutes}" aria-label="${escapeHTML(t('ui.text.lessThanValue1Minutes', { value1: minutes }))}" ${this._task.estimatedMinutes === minutes ? 'checked' : ''}><span>${escapeHTML(t('ui.text.value3', { value3: minutes }))}</span></label>`).join('')}</span>
-                                <span>${escapeHTML(t('ui.text.minutes'))}</span>
                             </div>
                         </div>
                         <div id="task-notes-panel" role="tabpanel" data-editor-panel="notes" aria-labelledby="task-notes-tab"><textarea class="notes" rows="2" maxlength="10000" placeholder="${escapeHTML(t('ui.text.addNotes'))}" aria-label="${escapeHTML(t('ui.text.taskNotes'))}"></textarea></div>

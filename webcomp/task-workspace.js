@@ -940,7 +940,7 @@ class TaskWorkspace extends HTMLElement {
             const raw = localStorage.getItem('taskimatic:font-scale');
             if (raw) {
                 const parsed = parseFloat(raw);
-                if (Number.isFinite(parsed) && parsed >= 0.7 && parsed <= 3.0) {
+                if (Number.isFinite(parsed) && parsed >= 0.5 && parsed <= 3.0) {
                     savedScale = parsed;
                 }
             }
@@ -950,7 +950,7 @@ class TaskWorkspace extends HTMLElement {
 
     setFontScale(scale, { persist = true } = {}) {
         const rounded = Math.round(scale * 100) / 100;
-        this.fontScale = Math.min(3.0, Math.max(0.7, rounded));
+        this.fontScale = Math.min(3.0, Math.max(0.5, rounded));
         document.documentElement.style.setProperty('--font-scale', String(this.fontScale));
         if (this.pipWindow && !this.pipWindow.closed) {
             this.pipWindow.document.documentElement.style.setProperty('--font-scale', String(this.fontScale));
@@ -970,13 +970,13 @@ class TaskWorkspace extends HTMLElement {
         }
         const decBtn = this.querySelector('.font-size-dec');
         const incBtn = this.querySelector('.font-size-inc');
-        const steps = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
+        const steps = [0.5, 0.6, 0.7, 0.85, 0.92, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
         if (decBtn) decBtn.disabled = (this.fontScale || 1.0) <= steps[0];
         if (incBtn) incBtn.disabled = (this.fontScale || 1.0) >= steps[steps.length - 1];
     }
 
     stepFontSize(direction) {
-        const steps = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
+        const steps = [0.5, 0.6, 0.7, 0.85, 0.92, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
         const current = this.fontScale || 1.0;
         if (direction < 0) {
             const nextIndex = steps.slice().reverse().findIndex(s => s < current - 0.01);

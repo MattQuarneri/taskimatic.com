@@ -50,8 +50,8 @@
       "taskTextFields": "할 일 내용 필드",
       "notes": "메모",
       "prompts": "프롬프트",
-      "estimatedTimeNeeded": "필요 예상 시간",
-      "estimatedTimeNeeded2": "필요 예상 시간:",
+      "estimatedTimeNeeded": "예상 소요 시간(분)",
+   
       "minutes": "분",
       "addNotes": "메모 추가…",
       "taskNotes": "할 일 메모",

@@ -19,7 +19,7 @@
     touch-action: none;
     user-select: none;
 }
-.lock-in-pill:hover { background: var(--accent); border-color: var(--accent); color: var(--chalk); }
+.lock-in-pill:hover { background: var(--accent-light); border-color: var(--accent); color: var(--chalk); }
 .lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
 .lock-in-pill.is-dragging { cursor: grabbing; transition: none; }
 .lock-in-pill:focus-visible { outline: 3px solid rgba(208, 14, 0, .28); outline-offset: 2px; }
