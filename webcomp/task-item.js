@@ -80,6 +80,7 @@ class TaskItem extends HTMLElement {
         const runningHuman = Boolean(this._task.activeTimers.human);
         const runningAgent = Boolean(this._task.activeTimers.agent);
         const running = runningHuman || runningAgent;
+        const deleteControl = `<button class="delete" type="button" aria-label="${escapeHTML(t('ui.text.deleteTask'))}">${escapeHTML(t('ui.text.delete'))}</button>`;
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -244,6 +245,7 @@ class TaskItem extends HTMLElement {
                 .tabled-control input { width: 15px; height: 15px; accent-color: var(--yellow, #e8b949); }
                 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
                 .delete { min-height: 27px; height: auto; border: 0; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
+                .done .delete { display: block; margin: 0 auto 9px; padding: 4px 8px; border: 1px solid currentColor; border-radius: 6px; color: var(--accent-dark, #b93621); font-weight: 750; }
                 .delete.armed { color: var(--accent-dark, #b93621); font-weight: 850; }
                 [hidden] { display: none !important; }
                 @media (max-width: 520px) {
@@ -263,6 +265,7 @@ class TaskItem extends HTMLElement {
                     <div>
                         <label class="check-control"><input class="check today-check" type="checkbox" ${this._task.today ? 'checked' : ''}><span>${escapeHTML(t('ui.text.today'))}</span></label>
                         <div class="check-control"><button class="check complete-check ${done ? 'checked' : ''}" type="button" aria-pressed="${done}" aria-label="${done ? t('ui.text.reopenTask') : t('ui.text.completeTask')}" aria-describedby="complete-label">${done ? '✓' : ''}</button><span id="complete-label">${escapeHTML(t('ui.text.complete'))}</span></div>
+                        ${done ? deleteControl : ''}
                         <label class="priority-control">${escapeHTML(t('ui.text.priority'))}<input class="priority-input" type="number" min="1" max="${this._priorityLimit || 1}" step="1" inputmode="numeric" ${done ? 'disabled' : ''} aria-label="${escapeHTML(t('ui.text.taskPriority1IsHighest'))}"></label>
                     </div>
                     <div>
@@ -308,7 +311,7 @@ class TaskItem extends HTMLElement {
                 <div class="footer">
                     ${this.hasAttribute('table-detail') ? `<button class="table-back" type="button" aria-label="${escapeHTML(t('ui.text.backToTaskTable'))}">${escapeHTML(t('ui.text.table'))}</button>` : ''}
                     <span class="age" title="${escapeHTML(t('ui.text.createdValue24', { value24: new Date(this._task.createdAt).toLocaleString() }))}"></span>
-                    <div class="actions"><label class="tabled-control"><input class="tabled" type="checkbox" ${tabled ? 'checked' : ''}> ${escapeHTML(t('ui.text.tabled'))}</label><button class="delete" type="button" aria-label="${escapeHTML(t('ui.text.deleteTask'))}">${escapeHTML(t('ui.text.delete'))}</button></div>
+                    <div class="actions"><label class="tabled-control"><input class="tabled" type="checkbox" ${tabled ? 'checked' : ''}> ${escapeHTML(t('ui.text.tabled'))}</label>${done ? '' : deleteControl}</div>
                 </div>
             </article>
         `;

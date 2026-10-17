@@ -745,7 +745,7 @@ searcher-element { position: relative; display: block; width: min(230px, 42%); }
 
 .active-filter button { min-height: 28px; height: auto; padding: 2px 9px; border-color: rgba(49,95,145,.35); background: transparent; box-shadow: none; color: var(--blue); font-size: var(--font-sm); }
 .task-list { display: grid; gap: 11px; }
-.task-list, .task-list .task-group-list { grid-template-columns: repeat(var(--task-columns, 1), minmax(470px, 1fr)); align-items: start; }
+.task-list, .task-list .task-group-list { grid-template-columns: repeat(var(--task-columns, 1), minmax(560px, 1fr)); align-items: start; }
 .task-list > .task-group, .task-list > task-table, .task-list > task-item[table-detail], .task-list > .empty-state { grid-column: 1 / -1; min-width: 0; }
 .task-list task-item { min-width: 0; }
 task-item { display: block; }
