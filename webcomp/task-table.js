@@ -33,26 +33,26 @@ class TaskTable extends HTMLElement {
                 .boxes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 5px; }
                 .box { flex: 1 1 180px; min-width: 0; max-width: 100%; border: 1px solid var(--line, #cfc8b8); border-top: 2px solid var(--group-color); border-radius: 6px; background: var(--panel, #fffdf7); overflow: hidden; }
                 .box .box { flex-basis: 150px; }
-                summary { display: flex; align-items: center; gap: 5px; padding: 5px 7px; cursor: pointer; background: color-mix(in srgb, var(--group-color) 7%, var(--panel, #fffdf7)); list-style: none; font-size: 11px; }
+                summary { display: flex; align-items: center; gap: 5px; padding: 5px 7px; cursor: pointer; background: color-mix(in srgb, var(--group-color) 7%, var(--panel, #fffdf7)); list-style: none; font-size: var(--font-sm, 11px); }
                 summary::-webkit-details-marker { display: none; }
                 summary::before { content: '▸'; color: var(--muted, #697177); }
                 details[open] > summary::before { content: '▾'; }
-                .type { color: var(--muted, #697177); font-size: 9px; }
+                .type { color: var(--muted, #697177); font-size: var(--font-2xs, 9px); }
                 .value { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 750; }
-                .count { color: var(--muted, #697177); font: 10px ui-monospace, monospace; }
+                .count { color: var(--muted, #697177); font: var(--font-xs, 10px) ui-monospace, monospace; }
                 .contents { padding: 5px; }
                 button { font: inherit; color: inherit; cursor: pointer; }
                 button:focus-visible, summary:focus-visible { outline: 2px solid var(--blue, #315f91); outline-offset: -2px; }
                 .filter { border: 0; background: transparent; padding: 0 3px; border-radius: 3px; color: var(--blue, #315f91); }
                 .filter:hover { background: var(--paper, #f3efe4); }
                 .tasks { display: grid; gap: 1px; flex: 1 1 180px; min-width: 0; }
-                .task { display: flex; align-items: baseline; gap: 6px; width: 100%; min-height: 28px; border: 0; border-radius: 3px; padding: 5px 6px; background: transparent; text-align: left; font-size: 12px; line-height: 1.3; }
+                .task { display: flex; align-items: baseline; gap: 6px; width: 100%; min-height: 28px; height: auto; border: 0; border-radius: 3px; padding: 5px 6px; background: transparent; text-align: left; font-size: var(--font-md, 12px); line-height: 1.3; }
                 .task:hover { background: var(--paper, #f3efe4); }
                 .task span:last-child { overflow-wrap: anywhere; }
-                .marker { color: var(--muted, #697177); font: 10px ui-monospace, monospace; }
+                .marker { color: var(--muted, #697177); font: var(--font-xs, 10px) ui-monospace, monospace; }
                 .done span:last-child { text-decoration: line-through; color: var(--muted, #697177); }
                 .running .marker { color: var(--green, #28785c); }
-                .order { margin: 0 0 8px; color: var(--muted, #697177); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+                .order { margin: 0 0 8px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); line-height: 1.5; overflow-wrap: anywhere; }
             </style><p class="order"></p><div class="boxes"></div>`;
         this.shadowRoot.querySelector('.order').textContent = this.hierarchy.length
             ? `${this._hierarchy === null ? t('ui.text.automatic') : t('ui.text.hierarchy')}: ${this.hierarchy.join(' → ')}` : t('ui.text.tasksWithoutGrouping');

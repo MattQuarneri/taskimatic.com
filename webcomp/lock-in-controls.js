@@ -21,7 +21,7 @@ function installLockInControls(targetWindow = window) {
                         flex-wrap: wrap;
                     }
                     .protect-plan-label {
-                        font: 700 16px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+                        font: 700 var(--font-xl, 16px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
                         color: var(--muted);
                         letter-spacing: .02em;
                         white-space: nowrap;
@@ -34,12 +34,13 @@ function installLockInControls(targetWindow = window) {
                     }
                     .protect-toggle {
                         min-height: 29px;
-                        padding: 0 9px;
+                        height: auto;
+                        padding: 4px 9px;
                         border: 1px solid var(--line, #cfc8b8);
                         border-radius: 7px;
                         background: var(--panel, #fffdf7);
                         color: var(--muted, #697177);
-                        font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+                        font: 700 var(--font-xs, 10px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
                         white-space: nowrap;
                         cursor: pointer;
                         transition: all 120ms ease;

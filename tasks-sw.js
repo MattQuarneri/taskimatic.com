@@ -1,7 +1,7 @@
 // Bump this version whenever index.html or one of its dependencies changes.
 // A new worker waits for existing tabs to close before switching the whole shell.
 const CACHE_PREFIX = 'taskimatic-tasks-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v16`;
+const CACHE_NAME = `${CACHE_PREFIX}v18`;
 const SHELL_ASSETS = [
     './index.html',
     './css/tasks.css',

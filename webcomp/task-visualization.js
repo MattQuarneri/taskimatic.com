@@ -32,29 +32,29 @@ class TaskVisualization extends HTMLElement {
                 button, select { font: inherit; color: inherit; }
                 .panel { min-height: 390px; padding: 14px; border: 1px solid var(--ink, #18242b); border-radius: 13px; background: var(--panel, #fffdf7); box-shadow: 3px 3px 0 rgba(24,36,43,.1); }
                 .mode-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 9px; background: var(--paper-deep, #e8e1d2); }
-                .mode-tabs button { min-height: 31px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: var(--muted, #697177); font-size: 11px; font-weight: 800; }
+                .mode-tabs button { min-height: 31px; height: auto; padding: 4px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: var(--muted, #697177); font-size: var(--font-sm, 11px); font-weight: 800; }
                 .mode-tabs button.active { background: var(--panel, #fffdf7); color: var(--ink, #18242b); box-shadow: 1px 1px 0 rgba(24,36,43,.15); }
                 button[role="tab"]:hover { background: var(--panel, #fffdf7); color: var(--ink, #18242b); }
                 .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 11px 0 6px; }
-                label { display: grid; gap: 4px; color: var(--muted, #697177); font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .06em; }
-                select { width: 100%; height: 34px; border: 1px solid #cfc8b8; border-radius: 7px; background: #fffdf7; padding: 0 7px; font-size: 11px; text-transform: none; }
-                .chart-title { margin: 15px 0 0; font-size: 13px; font-weight: 850; }
-                .chart-subtitle { margin: 3px 0 8px; color: var(--muted, #697177); font-size: 10px; }
+                label { display: grid; gap: 4px; color: var(--muted, #697177); font: 700 var(--font-2xs, 9px)/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .06em; }
+                select { width: 100%; min-height: 34px; height: auto; border: 1px solid #cfc8b8; border-radius: 7px; background: #fffdf7; padding: 4px 7px; font-size: var(--font-sm, 11px); text-transform: none; }
+                .chart-title { margin: 15px 0 0; font-size: var(--font-base, 13px); font-weight: 850; }
+                .chart-subtitle { margin: 3px 0 8px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 .canvas-wrap { position: relative; height: 210px; }
                 canvas { width: 100%; height: 100%; display: block; }
                 .task-hit-layer { position: absolute; inset: 0; pointer-events: none; }
                 .task-hit { position: absolute; min-width: 0; min-height: 0; margin: 0; border: 0; border-radius: 0; padding: 0; background: transparent; box-shadow: none; cursor: pointer; pointer-events: auto; }
                 .task-hit:focus-visible { outline: 2px solid var(--ink, #18242b); outline-offset: 1px; background: rgba(255,255,255,.14); }
-                .chart-tooltip { position: absolute; z-index: 3; max-width: min(230px, calc(100% - 16px)); padding: 6px 8px; border: 1px solid var(--ink, #18242b); border-radius: 6px; background: var(--ink, #18242b); color: white; box-shadow: 2px 2px 0 rgba(24,36,43,.14); font-size: 10px; font-weight: 750; line-height: 1.3; text-align: center; pointer-events: none; }
-                .empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 35px; color: var(--muted, #697177); text-align: center; font-size: 11px; line-height: 1.5; }
+                .chart-tooltip { position: absolute; z-index: 3; max-width: min(230px, calc(100% - 16px)); padding: 6px 8px; border: 1px solid var(--ink, #18242b); border-radius: 6px; background: var(--ink, #18242b); color: white; box-shadow: 2px 2px 0 rgba(24,36,43,.14); font-size: var(--font-xs, 10px); font-weight: 750; line-height: 1.3; text-align: center; pointer-events: none; }
+                .empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 35px; color: var(--muted, #697177); text-align: center; font-size: var(--font-sm, 11px); line-height: 1.5; }
                 .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 10px; margin-top: 8px; }
-                .legend-item { min-width: 0; display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 5px; font-size: 9px; }
+                .legend-item { min-width: 0; display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 5px; font-size: var(--font-2xs, 9px); }
                 button.legend-item { width: 100%; border: 0; border-radius: 4px; padding: 4px; background: transparent; text-align: left; cursor: pointer; }
                 button.legend-item:hover { background: var(--paper-deep, #e8e1d2); }
                 button.legend-item:focus-visible { outline: 2px solid var(--ink, #18242b); outline-offset: 1px; }
                 .swatch { width: 7px; height: 7px; border-radius: 2px; }
                 .legend-name { overflow: hidden; color: var(--muted, #697177); text-overflow: ellipsis; white-space: nowrap; }
-                .legend-value { font: 750 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+                .legend-value { font: 750 var(--font-2xs, 9px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
                 @media (max-width: 1120px) { .panel { min-height: 355px; } .canvas-wrap { height: 190px; } }
             </style>
             <section class="panel" aria-label="${escapeHTML(t('ui.text.taskAnalytics'))}">

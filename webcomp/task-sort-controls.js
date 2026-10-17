@@ -12,7 +12,7 @@ class TaskSortControls extends HTMLElement {
             <style>
                 :host { display: block; }
                 .sort-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
-                button { min-height: 29px; padding: 0 9px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--muted, #697177); font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; cursor: pointer; }
+                button { min-height: 29px; height: auto; padding: 4px 9px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--muted, #697177); font: 700 var(--font-xs, 10px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; cursor: pointer; }
                 button:hover { border-color: var(--ink, #18242b); color: var(--ink, #18242b); }
                 button.active { border-color: var(--blue, #315f91); background: rgba(49,95,145,.08); color: var(--blue, #315f91); }
                 button:focus-visible { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }

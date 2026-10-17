@@ -10,17 +10,17 @@ class TaskHierarchyEditor extends HTMLElement {
                 * { box-sizing: border-box; }
                 dialog { width: min(410px, calc(100vw - 24px)); max-height: 85dvh; padding: 18px; border: 1px solid var(--ink, #18242b); border-radius: 12px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); box-shadow: 5px 5px 0 #18242b22; }
                 dialog::backdrop { background: #18242b55; }
-                h3 { margin: 0; font-size: 17px; }
-                p { color: var(--muted, #697177); font-size: 12px; line-height: 1.5; }
+                h3 { margin: 0; font-size: var(--font-2xl, 17px); }
+                p { color: var(--muted, #697177); font-size: var(--font-md, 12px); line-height: 1.5; }
                 button, input, select { font: inherit; color: inherit; }
-                select, .name { display: block; width: 100%; height: 34px; margin: 6px 0 12px; padding: 5px 8px; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--panel, #fffdf7); }
-                label { font-size: 12px; }
+                select, .name { display: block; width: 100%; min-height: 34px; height: auto; margin: 6px 0 12px; padding: 5px 8px; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--panel, #fffdf7); font-size: var(--font-md, 12px); }
+                label { font-size: var(--font-md, 12px); }
                 .rows { display: grid; gap: 4px; margin: 12px 0; }
                 .row { display: flex; align-items: center; gap: 7px; padding: 5px 7px; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--paper, #f3efe4); }
                 .row label { flex: 1; overflow-wrap: anywhere; }
                 .grip { cursor: grab; color: var(--muted, #697177); }
-                .count { font-size: 10px; color: var(--muted, #697177); }
-                button { min-height: 30px; border: 1px solid var(--line, #cfc8b8); border-radius: 5px; background: var(--panel, #fffdf7); padding: 0 8px; cursor: pointer; }
+                .count { font-size: var(--font-xs, 10px); color: var(--muted, #697177); }
+                button { min-height: 30px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 5px; background: var(--panel, #fffdf7); padding: 4px 8px; cursor: pointer; font-size: var(--font-md, 12px); }
                 button:disabled { opacity: .35; cursor: default; }
                 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--blue, #315f91); }
                 .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }

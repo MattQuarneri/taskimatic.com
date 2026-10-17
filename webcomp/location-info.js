@@ -455,29 +455,29 @@ class LocationInfo extends HTMLElement {
           backdrop-filter: blur(8px);
         }
         .card-label {
-          font-size: 11px;
+          font-size: var(--font-sm, 11px);
           text-transform: uppercase;
           opacity: 0.8;
           letter-spacing: 0.5px;
           margin-bottom: 4px;
         }
         .card-value {
-          font-size: 18px;
+          font-size: var(--font-3xl, 18px);
           font-weight: 700;
           letter-spacing: 0.5px;
         }
         .card-subvalue {
-          font-size: 12px;
+          font-size: var(--font-md, 12px);
           opacity: 0.75;
           margin-top: 4px;
         }
         .location-value {
-          font-size: 16px;
+          font-size: var(--font-xl, 16px);
           font-weight: 600;
           letter-spacing: 0.3px;
         }
         .location-country {
-          font-size: 12px;
+          font-size: var(--font-md, 12px);
           opacity: 0.85;
           display: flex;
           align-items: center;
@@ -496,13 +496,13 @@ class LocationInfo extends HTMLElement {
           padding: 10px 12px;
         }
         .grid-label {
-          font-size: 11px;
+          font-size: var(--font-sm, 11px);
           opacity: 0.75;
           letter-spacing: 0.4px;
           margin-bottom: 2px;
         }
         .grid-value {
-          font-size: 13px;
+          font-size: var(--font-base, 13px);
           word-break: break-word;
           display: flex;
           align-items: center;
@@ -513,7 +513,7 @@ class LocationInfo extends HTMLElement {
           background: #fff;
         }
         .env-value {
-          font-size: 15px;
+          font-size: calc(15px * var(--font-scale, 1));
           letter-spacing: 0.3px;
           display: flex;
           gap: 8px;
@@ -524,7 +524,7 @@ class LocationInfo extends HTMLElement {
           opacity: 0.5;
         }
         .emoji {
-          font-size: 16px;
+          font-size: calc(16px * var(--font-scale, 1));
         }
         .section-box {
           margin-top: 12px;
@@ -536,11 +536,11 @@ class LocationInfo extends HTMLElement {
         .section-box ol {
           margin: 4px 0 0 0;
           padding-left: 18px;
-          font-size: 13px;
+          font-size: var(--font-base, 13px);
           line-height: 1.5;
         }
         .ua-text {
-          font-size: 12px;
+          font-size: var(--font-md, 12px);
           line-height: 1.4;
           opacity: 0.9;
           font-family: monospace;
@@ -557,7 +557,7 @@ class LocationInfo extends HTMLElement {
           padding: 12px;
         }
         .year-text {
-          font-size: 12px;
+          font-size: var(--font-md, 12px);
           line-height: 1.45;
           opacity: 0.95;
           flex: 1;

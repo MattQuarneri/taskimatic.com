@@ -74,17 +74,17 @@ export function installSessionTimes(formatDuration, targetWindow = window) {
                 :host { display: block; }
                 * { box-sizing: border-box; }
                 .sessions { display: grid; gap: 14px; margin-top: 7px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; padding: 3px 6px 6px 2px; }
-                .session { display: grid; gap: 6px; color: var(--muted, #697177); font: 650 10px/1.35 ui-monospace, monospace; }
+                .session { display: grid; gap: 6px; color: var(--muted, #697177); font: 650 var(--font-xs, 10px)/1.35 ui-monospace, monospace; }
                 .session-editor { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
                 .short-session { grid-template-columns: auto minmax(80px, 1fr) auto; }
                 dual-range-slider { min-width: 0; --dual-range-track-color: #d6d0c3; --dual-range-selection-color: #315f91; --dual-range-active-color: #e65135; --dual-range-thumb-color: #fffdf7; --dual-range-thumb-border-color: #18242b; }
-                label { display: grid; gap: 4px; min-width: 0; }
+                label { display: grid; gap: 4px; min-width: 0; font-size: var(--font-xs, 10px); }
                 input[type=range] { width: 100%; min-width: 0; margin: 0; accent-color: var(--accent, #e65135); }
                 button, input { font: inherit; color: inherit; }
-                button { min-height: 26px; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--panel, #fffdf7); cursor: pointer; padding: 3px 7px; }
-                input[type=time] { width: 100%; min-width: 0; border: 1px solid var(--line, #cfc8b8); border-radius: 4px; background: var(--panel, #fffdf7); padding: 3px; }
-                .days-input { width: 65px; padding: 4px; }
-                .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+                button { min-height: 26px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 6px; background: var(--panel, #fffdf7); cursor: pointer; padding: 3px 7px; font-size: var(--font-xs, 10px); }
+                input[type=time] { width: 100%; min-width: 0; min-height: 26px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 4px; background: var(--panel, #fffdf7); padding: 3px; font-size: var(--font-xs, 10px); }
+                .days-input { width: max(65px, 4.5em); min-height: 26px; height: auto; padding: 4px; font-size: var(--font-xs, 10px); }
+                .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: var(--font-xs, 10px); }
                 .duration { color: var(--ink, #18242b); }
                 .confirm { background: var(--green, #28785c); color: white; }
                 .delete { color: var(--accent, #e65135); }

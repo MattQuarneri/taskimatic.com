@@ -37,8 +37,8 @@ export function installBackupTracker(targetWindow = window) {
             this.shadowRoot.innerHTML = `
                 <style>
                     :host { display: inline-flex; align-items: center; gap: 8px; }
-                    .last-export { color: var(--muted, #697177); font: 650 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
-                    button { min-height: 40px; padding: 0 13px; border: 1px solid var(--ink, #18242b); border-radius: 9px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font: inherit; cursor: pointer; }
+                    .last-export { color: var(--muted, #697177); font: 650 var(--font-sm, 11px)/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+                    button { min-height: 40px; height: auto; padding: 6px 13px; border: 1px solid var(--ink, #18242b); border-radius: 9px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font: inherit; font-size: var(--font-base, 13px); cursor: pointer; }
                     button:hover { background: var(--accent, #D00E00); color: white; }
                     button:focus-visible { outline: 3px solid #315f9147; outline-offset: 2px; }
                     @keyframes backup-heartbeat {

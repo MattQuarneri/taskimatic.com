@@ -258,6 +258,7 @@ class TaskWorkspace extends HTMLElement {
 
                     </backup-tracker>
                     <button class="import-action desktop-action" type="button">${escapeHTML(t('ui.text.import'))}</button>
+                    <input class="import-input" type="file" accept="application/json,.json" hidden>
                     <button class="download-action primary" type="button">${escapeHTML(t('ui.text.downloadApp'))}</button>
                     <div class="settings-menu-container">
                         <button class="settings-button" type="button" aria-label="${escapeHTML(t('ui.text.settings'))}" aria-expanded="false" aria-haspopup="true" title="${escapeHTML(t('ui.text.settings'))}">
@@ -939,7 +940,7 @@ class TaskWorkspace extends HTMLElement {
             const raw = localStorage.getItem('taskimatic:font-scale');
             if (raw) {
                 const parsed = parseFloat(raw);
-                if (Number.isFinite(parsed) && parsed >= 0.7 && parsed <= 2.0) {
+                if (Number.isFinite(parsed) && parsed >= 0.7 && parsed <= 3.0) {
                     savedScale = parsed;
                 }
             }
@@ -949,11 +950,14 @@ class TaskWorkspace extends HTMLElement {
 
     setFontScale(scale, { persist = true } = {}) {
         const rounded = Math.round(scale * 100) / 100;
-        this.fontScale = rounded;
-        document.documentElement.style.setProperty('--font-scale', String(rounded));
+        this.fontScale = Math.min(3.0, Math.max(0.7, rounded));
+        document.documentElement.style.setProperty('--font-scale', String(this.fontScale));
+        if (this.pipWindow && !this.pipWindow.closed) {
+            this.pipWindow.document.documentElement.style.setProperty('--font-scale', String(this.fontScale));
+        }
         if (persist) {
             try {
-                localStorage.setItem('taskimatic:font-scale', String(rounded));
+                localStorage.setItem('taskimatic:font-scale', String(this.fontScale));
             } catch {}
         }
         this.updateFontSizeControls();
@@ -966,13 +970,13 @@ class TaskWorkspace extends HTMLElement {
         }
         const decBtn = this.querySelector('.font-size-dec');
         const incBtn = this.querySelector('.font-size-inc');
-        const steps = [0.85, 0.92, 1.0, 1.1, 1.22, 1.35];
+        const steps = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
         if (decBtn) decBtn.disabled = (this.fontScale || 1.0) <= steps[0];
         if (incBtn) incBtn.disabled = (this.fontScale || 1.0) >= steps[steps.length - 1];
     }
 
     stepFontSize(direction) {
-        const steps = [0.85, 0.92, 1.0, 1.1, 1.22, 1.35];
+        const steps = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
         const current = this.fontScale || 1.0;
         if (direction < 0) {
             const nextIndex = steps.slice().reverse().findIndex(s => s < current - 0.01);
@@ -1457,6 +1461,7 @@ class TaskWorkspace extends HTMLElement {
             const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 420, height: 620 });
             this.pipWindow = pipWindow;
             pipWindow.document.documentElement.lang = 'en';
+            pipWindow.document.documentElement.style.setProperty('--font-scale', String(this.fontScale || 1.0));
             installSearcherElement(pipWindow);
             installLockInControls(pipWindow);
             pipWindow.document.head.innerHTML = `
@@ -1464,62 +1469,76 @@ class TaskWorkspace extends HTMLElement {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${escapeHTML(t('ui.text.miniTaskimatic'))}</title>
                 <style>
-                    :root { --paper: #f3efe4; --panel: #fffdf7; --ink: #18242b; --muted: #697177; --line: #cfc8b8; --accent: #e65135; --green: #28785c; --blue: #315f91; color-scheme: light; }
+                    :root {
+                        --paper: #f3efe4; --panel: #fffdf7; --ink: #18242b; --muted: #697177; --line: #cfc8b8; --accent: #e65135; --green: #28785c; --blue: #315f91; color-scheme: light;
+                        --font-scale: 1;
+                        --font-3xs: calc(8px * var(--font-scale, 1));
+                        --font-2xs: calc(9px * var(--font-scale, 1));
+                        --font-xs: calc(10px * var(--font-scale, 1));
+                        --font-sm: calc(11px * var(--font-scale, 1));
+                        --font-md: calc(12px * var(--font-scale, 1));
+                        --font-base: calc(13px * var(--font-scale, 1));
+                        --font-lg: calc(14px * var(--font-scale, 1));
+                        --font-xl: calc(16px * var(--font-scale, 1));
+                        --font-2xl: calc(17px * var(--font-scale, 1));
+                        --font-3xl: calc(18px * var(--font-scale, 1));
+                        --font-4xl: calc(20px * var(--font-scale, 1));
+                    }
                     * { box-sizing: border-box; }
-                    body { min-width: 260px; margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-                    button { min-height: 34px; border: 1px solid var(--ink); border-radius: 8px; background: var(--panel); color: inherit; font: inherit; cursor: pointer; }
+                    body { min-width: 260px; margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: var(--font-base); }
+                    button { min-height: 34px; height: auto; border: 1px solid var(--ink); border-radius: 8px; background: var(--panel); color: inherit; font: inherit; cursor: pointer; }
                     button:hover { background: var(--paper); color: var(--ink); }
                     button:focus-visible { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }
                     header { position: sticky; top: 0; z-index: 2; padding: 4px; border-bottom: 1px solid var(--ink); background: rgba(243,239,228,.96); }
                     .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-                    h1 { margin: 0; font-size: 17px; letter-spacing: -.03em; }
-                    .live { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font: 750 10px ui-monospace, monospace; text-transform: uppercase; }
+                    h1 { margin: 0; font-size: var(--font-2xl); letter-spacing: -.03em; }
+                    .live { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font: 750 var(--font-xs) ui-monospace, monospace; text-transform: uppercase; }
                     .live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
                     searcher-element { position: relative; display: block; width: 100%; margin-top: 11px; }
                     .searcher-field { position: relative; display: flex; align-items: center; gap: 6px; }
                     .searcher-field .searcher-input { min-width: 0; flex: 1; }
-                    .searcher-on-now { flex: none; white-space: nowrap; min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 11px; cursor: pointer; }
+                    .searcher-on-now { flex: none; white-space: nowrap; min-height: 34px; height: auto; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: var(--font-sm); cursor: pointer; }
                     .searcher-on-now[aria-pressed="true"] { background: var(--accent); color: white; border-color: var(--accent); }
-                    .searcher-field::before { content: '⌕'; position: absolute; left: 11px; top: 6px; color: var(--muted); font-size: 18px; pointer-events: none; }
-                    .searcher-input { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 0 9px 0 32px; color: var(--ink); font: inherit; font-size: 12px; }
+                    .searcher-field::before { content: '⌕'; position: absolute; left: 11px; top: 6px; color: var(--muted); font-size: var(--font-3xl); pointer-events: none; }
+                    .searcher-input { width: 100%; min-height: 34px; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 6px 9px 6px 32px; color: var(--ink); font: inherit; font-size: var(--font-md); }
                     .searcher-menu { position: absolute; z-index: 4; top: calc(100% + 5px); left: 0; right: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 2px 2px 0 rgba(24,36,43,.12); }
-                    .searcher-option { min-height: 32px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; align-items: center; padding: 0 4px 0 9px; cursor: pointer; font-size: 12px; }
+                    .searcher-option { min-height: 32px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; align-items: center; padding: 0 4px 0 9px; cursor: pointer; font-size: var(--font-md); }
                     .searcher-option:hover, .searcher-option:focus { background: #fff8e7; outline: 0; }
                     .searcher-query { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                    .searcher-remove { min-width: 24px; min-height: 24px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer; font-size: 17px; line-height: 1; }
+                    .searcher-remove { min-width: 24px; min-height: 24px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer; font-size: var(--font-2xl); line-height: 1; }
                     .searcher-remove:hover { color: var(--accent); background: rgba(230,81,53,.1); }
                     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 4px; }
-                    .tab { border-color: var(--line); box-shadow: none; font-size: 12px; font-weight: 800; }
+                    .tab { border-color: var(--line); box-shadow: none; font-size: var(--font-md); font-weight: 800; min-height: 34px; height: auto; }
                     .tab[aria-selected="true"] { border-color: var(--ink); background: var(--ink); color: white; }
                     button[role="tab"]:hover { background: var(--panel); color: var(--ink); }
                     main { display: grid; gap: 8px; padding: 12px 12px 60px; }
-                    .lock-in-pill { position: fixed; left: 12px; bottom: 12px; z-index: 62; padding: 0 14px; border-radius: 999px; background: var(--panel); color: var(--muted); box-shadow: 2px 2px 6px rgba(24,36,43,.12); font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; }
+                    .lock-in-pill { position: fixed; left: 12px; bottom: 12px; z-index: 62; padding: 0 14px; border-radius: 999px; background: var(--panel); color: var(--muted); box-shadow: 2px 2px 6px rgba(24,36,43,.12); font: 800 var(--font-sm)/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; min-height: 32px; height: auto; }
                     .lock-in-pill:hover { border-color: var(--accent); color: var(--ink); }
                     .lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
                     .lock-in-pill.is-dragging { cursor: grabbing; }
-                    .lock-in-emoji { font-size: 22px; line-height: 1; vertical-align: -2px; }
+                    .lock-in-emoji { font-size: calc(22px * var(--font-scale, 1)); line-height: 1; vertical-align: -2px; }
                     .task { position: relative; display: grid; gap: 9px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: 2px 2px 0 rgba(24,36,43,.09); }
                     .task.running { border-left: 5px solid var(--accent); padding-left: 7px; }
                     .task.done { opacity: .7; }
-                    .task-title { overflow-wrap: anywhere; font-size: 13px; font-weight: 750; line-height: 1.35; }
+                    .task-title { overflow-wrap: anywhere; font-size: var(--font-base); font-weight: 750; line-height: 1.35; }
                     .task-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px; }
                     .task-actions { display: flex; align-items: center; gap: 5px; }
-                    .task-check { width: 27px; min-width: 27px; min-height: 27px; padding: 0; border-radius: 7px; background: transparent; font-weight: 900; }
+                    .task-check { width: max(27px, 1.8em); min-width: 27px; min-height: 27px; height: auto; padding: 0; border-radius: 7px; background: transparent; font-weight: 900; font-size: var(--font-base); }
                     .task-check.checked { border-color: var(--green); background: var(--green); color: white; }
-                    .priority-picker { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); font: 750 9px/1 ui-monospace, monospace; text-transform: uppercase; }
-                    .priority-picker input { width: 37px; height: 27px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--ink); text-align: center; font: 800 11px/1 ui-monospace, monospace; }
+                    .priority-picker { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); font: 750 var(--font-2xs)/1 ui-monospace, monospace; text-transform: uppercase; }
+                    .priority-picker input { width: max(37px, 2.5em); min-height: 27px; height: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--ink); text-align: center; font: 800 var(--font-sm)/1 ui-monospace, monospace; }
                     .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-                    .chip { min-height: 22px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--chip-color, var(--line)) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--chip-color, var(--line)) 10%, transparent); color: var(--chip-color, var(--muted)); font: 750 9px/1 ui-monospace, monospace; }
+                    .chip { min-height: 22px; height: auto; padding: 2px 8px; border: 1px solid color-mix(in srgb, var(--chip-color, var(--line)) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--chip-color, var(--line)) 10%, transparent); color: var(--chip-color, var(--muted)); font: 750 var(--font-2xs)/1 ui-monospace, monospace; }
                     .chip:hover { background: color-mix(in srgb, var(--chip-color, var(--line)) 20%, transparent); }
-                    .task-meta { color: var(--muted); font: 650 10px/1.3 ui-monospace, monospace; }
+                    .task-meta { color: var(--muted); font: 650 var(--font-xs)/1.3 ui-monospace, monospace; }
                     .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-                    .timer { min-width: 0; border-color: var(--blue); background: var(--blue); color: white; font: 750 10px/1 ui-monospace, monospace; }
+                    .timer { min-width: 0; min-height: 28px; height: auto; border-color: var(--blue); background: var(--blue); color: white; font: 750 var(--font-xs)/1 ui-monospace, monospace; padding: 4px 6px; }
                     .timer.running { border-color: var(--accent); background: var(--accent); }
                     .human.timer.running { background: var(--green); }
                     lock-in-controls { margin-top: 9px; }
                     .pip-controls { display: grid; grid-template-columns: 1fr; gap: 7px; margin-top: -8px; }
-                    .restore { grid-column: 1 / -1; font-size: 11px; font-weight: 800; }
-                    .empty { padding: 38px 18px; border: 1px dashed #a9a292; border-radius: 10px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
+                    .restore { grid-column: 1 / -1; font-size: var(--font-sm); font-weight: 800; min-height: 34px; height: auto; }
+                    .empty { padding: 38px 18px; border: 1px dashed #a9a292; border-radius: 10px; color: var(--muted); text-align: center; font-size: var(--font-md); line-height: 1.5; }
                 </style>`;
             pipWindow.document.body.innerHTML = `<header><div class="brand-row"><h1>${escapeHTML(t('ui.text.taskimatic'))}</h1><span class="live">${escapeHTML(t('ui.text.live'))}</span></div>` +
                 `<div class="pip-controls"><searcher-element on-now-filter class="pip-search" aria-label="${escapeHTML(t('ui.text.searchTasksInMiniWindow'))}"></searcher-element></div><lock-in-controls></lock-in-controls><div class="tabs" role="tablist"></div></header><main></main><button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">${escapeHTML(t('ui.text.lockIn3'))} <span class="lock-in-emoji">🔓</span></button>`;
@@ -2045,6 +2064,7 @@ class TaskWorkspace extends HTMLElement {
     }
 
     async createTask(input) {
+        await this.ready;
         const payload = typeof input === 'string' ? { text: input } : input;
         if (!payload || !cleanString(payload.text ?? payload.name, 1000)) throw new Error(t('error.messages.taskTextIsRequired'));
         const task = normalizeTask(payload);

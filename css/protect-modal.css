@@ -33,7 +33,7 @@
 .protect-new-task, .protect-notes-form { width: 100%; text-align: left; }
 .protect-new-task { margin-bottom: 24px; }
 .protect-notes-form { margin-top: 24px; }
-.protect-new-task label, .protect-notes-form label { display: block; margin-bottom: 8px; font-size: 13px; }
+.protect-new-task label, .protect-notes-form label { display: block; margin-bottom: 8px; font-size: var(--font-base, 13px); }
 .protect-new-task-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .protect-new-task input, .protect-notes-form textarea {
     min-width: 0;
@@ -42,14 +42,15 @@
     border-radius: 9px;
     background: rgba(255, 253, 247, .08);
     color: #fffdf7;
+    font-size: var(--font-base, 14px);
 }
 .protect-new-task input { flex: 1 1 180px; }
 .protect-notes-form textarea { display: block; width: 100%; min-height: 100px; resize: vertical; margin-bottom: 10px; }
 .protect-notes-form button[type="submit"] { display: block; margin-inline: auto; }
-.protect-form-status { min-height: 1.4em; margin: 8px 0 0; font-size: 12px; color: #fffdf7; }
+.protect-form-status { min-height: 1.4em; margin: 8px 0 0; font-size: var(--font-md, 12px); color: #fffdf7; }
 .protect-modal-task {
     margin: 0 0 32px;
-    font-size: clamp(28px, 4vw, 38px);
+    font-size: clamp(var(--font-6xl, 28px), 4vw, calc(38px * var(--font-scale, 1)));
     font-weight: 750;
     color: #fffdf7;
     letter-spacing: -.02em;
@@ -84,13 +85,13 @@
     pointer-events: none;
 }
 .protect-modal-time {
-    font: 800 clamp(44px, 11vw, 64px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    font: 800 clamp(var(--font-5xl, 44px), 11vw, calc(64px * var(--font-scale, 1)))/1 ui-monospace, SFMono-Regular, Menlo, monospace;
     letter-spacing: -.03em;
     color: #fffdf7;
 }
 .protect-modal-plan-label {
     margin-top: 10px;
-    font: 750 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    font: 750 var(--font-md, 12px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
     letter-spacing: .12em;
     text-transform: uppercase;
     color: rgba(255, 253, 247, 0.55);
@@ -111,10 +112,11 @@
 }
 .protect-btn {
     min-height: 46px;
+    height: auto;
     min-width: 130px;
-    padding: 0 26px;
+    padding: 6px 26px;
     border-radius: 999px;
-    font: 750 14px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    font: 750 var(--font-lg, 14px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
     letter-spacing: .04em;
     cursor: pointer;
     transition: all 140ms ease;

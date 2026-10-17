@@ -43,34 +43,35 @@ class PlanningItem extends HTMLElement {
                 article { padding: 16px; border: 1px solid var(--ink, #18242b); border-radius: 14px; background: var(--panel, #fffdf7); box-shadow: 3px 3px 0 rgba(24,36,43,.11); }
                 :host([attention]) article { outline: 3px solid var(--blue, #315f91); }
                 button, input, select, textarea { font: inherit; color: inherit; }
-                button { min-height: 32px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; padding: 4px 10px; background: var(--paper, #f3efe4); cursor: pointer; font-size: 12px; }
+                button { min-height: 32px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; padding: 4px 10px; background: var(--paper, #f3efe4); cursor: pointer; font-size: var(--font-md, 12px); }
                 button:hover { border-color: var(--ink, #18242b); }
                 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }
-                label { display: grid; gap: 5px; margin-bottom: 12px; color: var(--muted, #697177); font-size: 11px; }
-                textarea, input, select { width: 100%; min-width: 0; border: 1px solid var(--line, #cfc8b8); border-radius: 8px; background: var(--panel, #fffdf7); padding: 8px; color: var(--ink, #18242b); }
-                .text { border: 0; padding: 0; font-size: 17px; font-weight: 750; resize: vertical; }
+                label { display: grid; gap: 5px; margin-bottom: 12px; color: var(--muted, #697177); font-size: var(--font-sm, 11px); }
+                textarea, input, select { width: 100%; min-width: 0; min-height: 34px; border: 1px solid var(--line, #cfc8b8); border-radius: 8px; background: var(--panel, #fffdf7); padding: 8px; color: var(--ink, #18242b); font-size: var(--font-base, 13px); }
+                .text { border: 0; padding: 0; font-size: var(--font-2xl, 17px); font-weight: 750; resize: vertical; }
                 .thinking-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
                 .thinking-tabs button { flex: 1; }
                 .thinking-tabs button[aria-selected="true"] { background: var(--ink, #18242b); color: white; }
                 button[role="tab"]:hover { background: var(--panel, #fffdf7); color: var(--ink, #18242b); }
-                .notes, .my-thinking, .ai-thinking { min-height: 110px; resize: vertical; line-height: 1.5; font-size: 13px; }
+                .notes, .my-thinking, .ai-thinking { min-height: 110px; resize: vertical; line-height: 1.5; font-size: var(--font-base, 13px); }
                 .parent-row { display: flex; gap: 8px; }
                 .parent-row select { flex: 1; }
                 .chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
-                .chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line, #cfc8b8); border-radius: 999px; padding: 4px 8px; color: var(--blue, #315f91); background: rgba(49,95,145,.06); font-size: 11px; overflow-wrap: anywhere; }
-                .chip button { min-height: 20px; border: 0; padding: 0 3px; background: transparent; }
+                .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 999px; padding: 4px 8px; color: var(--blue, #315f91); background: rgba(49,95,145,.06); font-size: var(--font-sm, 11px); overflow-wrap: anywhere; }
+                .chip button { min-height: 20px; height: auto; border: 0; padding: 0 3px; background: transparent; font-size: inherit; }
                 .chip.inherited { border-style: dashed; }
                 .association-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; margin: 8px 0 14px; }
                 .children { display: grid; gap: 5px; margin: 10px 0; }
                 .child-link { text-align: left; overflow-wrap: anywhere; }
-                h3 { margin: 18px 0 8px; font-size: 12px; color: var(--muted, #697177); }
+                h3 { margin: 18px 0 8px; font-size: var(--font-md, 12px); color: var(--muted, #697177); }
                 .child-form { display: flex; gap: 6px; }
                 .child-form input { flex: 1; }
                 .footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; align-items: center; }
-                .age { color: var(--muted, #697177); font-size: 10px; }
-                .delete { color: var(--muted, #697177); }
+                .age { color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
+                .delete { color: var(--muted, #697177); font-size: var(--font-md, 12px); }
                 .delete.armed { color: var(--accent, #D00E00); }
                 @media (max-width: 520px) { .association-form { grid-template-columns: 1fr 1fr; } .association-form button { grid-column: 1 / -1; } }
+                @media (max-width: 720px) { textarea, input, select { font-size: max(16px, var(--font-base, 13px)); } }
             </style>
             <article>
                 <label>${isPlan ? t('ui.text.plan') : t('ui.text.want')}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: isPlan ? t('ui.text.plan') : t('ui.text.want') }))}"></textarea></label>
