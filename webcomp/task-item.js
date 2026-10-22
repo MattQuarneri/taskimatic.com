@@ -8,6 +8,10 @@ class TaskItem extends HTMLElement {
         this._notesSaveTimer = null;
         this._promptsSaveTimer = null;
         this._editorTab = 'notes';
+        this._compactTab = 'task';
+        this._lastCompactTab = 'task';
+        this._compactMedia = window.matchMedia('(max-width: 888px)');
+        this._onCompactChange = () => this.updateCompactLayout();
         this._agents = [];
         this._confirmTimer = null;
         this._associationCatalog = {};
@@ -15,6 +19,74 @@ class TaskItem extends HTMLElement {
         this._clockDayKey = '';
         this._clockMinute = -1;
         this._sessionsOpen = false;
+    }
+
+    connectedCallback() {
+        this._compactMedia.addEventListener('change', this._onCompactChange);
+        this.updateCompactLayout();
+    }
+
+    set compactTab(value) {
+        this._compactTab = value === null ? null : ['task', 'notes', 'prompts', 'associations', 'time'].includes(value) ? value : 'task';
+        if (this._compactTab) this._lastCompactTab = this._compactTab;
+        this.updateCompactTabs();
+    }
+
+    selectCompactTab(tab, toggle = false) {
+        this.compactTab = toggle && this._compactTab === tab ? null : tab;
+        this.emit('task-compact-tab-change', { tab: this._compactTab });
+    }
+
+    updateCompactTabs() {
+        const collapsed = this._compactTab === null;
+        this.shadowRoot.querySelector('.card')?.classList.toggle('compact-collapsed', collapsed);
+        this.shadowRoot.querySelectorAll('[data-compact-tab]').forEach(tab => {
+            const active = tab.dataset.compactTab === this._compactTab;
+            tab.setAttribute('aria-selected', String(active));
+            tab.setAttribute('aria-expanded', String(active));
+            tab.tabIndex = tab.dataset.compactTab === (this._compactTab || this._lastCompactTab) ? 0 : -1;
+        });
+        this.shadowRoot.querySelectorAll('[data-compact-panel]').forEach(panel => {
+            panel.hidden = panel.dataset.compactPanel !== this._compactTab;
+        });
+    }
+
+    updateCompactLayout() {
+        const shell = this.shadowRoot.querySelector('.compact-shell');
+        if (!shell) return;
+        const compact = this._compactMedia.matches;
+        if (compact === this._compactLayoutActive) return;
+        this._compactLayoutActive = compact;
+        this.shadowRoot.querySelector('.card').classList.toggle('compact', compact);
+        shell.hidden = !compact;
+        if (compact) {
+            this._compactMoves = [];
+            const move = (selector, target) => {
+                const node = this.shadowRoot.querySelector(selector);
+                const marker = document.createComment('desktop position');
+                node.before(marker);
+                this._compactMoves.push({ node, marker });
+                shell.querySelector(target).append(node);
+            };
+            move('.today-check-control', '.compact-action');
+            move('.complete-check-control', '.compact-action');
+            move('.timer.agent', '.compact-action');
+            move('.timer.human', '.compact-action');
+            move('.text', '.compact-text');
+            move('.priority-control', '[data-compact-panel="task"]');
+            move('.estimated-time', '[data-compact-panel="task"]');
+            move('.agent-picker', '[data-compact-panel="task"]');
+            move('.agent-form', '[data-compact-panel="task"]');
+            move('.notes', '[data-compact-panel="notes"]');
+            move('.prompts', '[data-compact-panel="prompts"]');
+            move('.plan-control', '[data-compact-panel="associations"]');
+            move('.meta-row', '[data-compact-panel="associations"]');
+            move('.group-editor', '[data-compact-panel="associations"]');
+            move('session-times', '[data-compact-panel="time"]');
+        } else {
+            for (const { node, marker } of this._compactMoves || []) marker.replaceWith(node);
+        }
+        this.resizeText(this.shadowRoot.querySelector('.text'));
     }
 
     set agentCatalog(value) { this._agents = value || []; }
@@ -59,6 +131,7 @@ class TaskItem extends HTMLElement {
     get task() { return cloneValue(this._task); }
 
     disconnectedCallback() {
+        this._compactMedia.removeEventListener('change', this._onCompactChange);
         clearTimeout(this._saveTimer);
         clearTimeout(this._notesSaveTimer);
         clearTimeout(this._promptsSaveTimer);
@@ -90,7 +163,7 @@ class TaskItem extends HTMLElement {
                 button { cursor: pointer; }
                 .card {
                     position: relative;
-                    padding: 15px 15px 12px;
+                    padding: 8px 8px 6px;
                     border: 1px solid var(--ink, #18242b);
                     border-radius: 12px;
                     background: var(--panel, #fffdf7);
@@ -248,6 +321,27 @@ class TaskItem extends HTMLElement {
                 .done .delete { display: block; margin: 0 auto 9px; padding: 4px 8px; border: 1px solid currentColor; border-radius: 6px; color: var(--accent-dark, #b93621); font-weight: 750; }
                 .delete.armed { color: var(--accent-dark, #b93621); font-weight: 850; }
                 [hidden] { display: none !important; }
+                .compact .main-row, .compact > .details { display: none; }
+                .compact.compact-collapsed > .footer { display: none; }
+                .compact-action { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; }
+                .compact-action .check-control { display: flex; flex-direction: row-reverse; align-items: center; gap: 4px; margin: 0; letter-spacing: 0; text-transform: none; }
+                .compact-action .check { margin: 0; }
+                .compact-action .timer { flex: 1; min-width: 0; padding: 6px; font-size: var(--font-xs, 10px); overflow-wrap: anywhere; }
+                .compact-text { margin: 10px 0; }
+                .compact-tabs { display: flex; overflow-x: auto; border-bottom: 1px solid var(--line, #cfc8b8); }
+                .compact-tabs button { flex: 1; min-height: 16px; padding: 6px; border: 0; border-radius: 6px 6px 0 0; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 10px); white-space: nowrap; }
+                .compact-tabs button[aria-selected="true"] { background: var(--ink, #18242b); color: white; }
+                [data-compact-panel] { padding: 10px 0; min-width: 0; }
+                [data-compact-panel="task"] { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+                .compact .priority-control { margin: 0; }
+                .compact .plan-control, .compact .meta-row, .compact .group-editor, .compact .details, .compact .footer { margin-left: 0; }
+                .compact .details { margin-top: 0; border: 0; padding: 0; }
+                .compact .details > summary { display: none; }
+                .compact .details > session-times { display: block; }
+                .compact .notes, .compact .prompts { border-radius: 8px; min-height: 100px; }
+                .compact .footer { flex-wrap: wrap; align-items: center; }
+                .compact .actions { margin-left: auto; }
+                .compact.done .delete { margin: 0; }
                 @media (max-width: 520px) {
                     .main-row { grid-template-columns: auto minmax(0, 1fr); }
                     .timers { grid-column: 2; justify-self: stretch; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -262,11 +356,18 @@ class TaskItem extends HTMLElement {
                 @media (prefers-reduced-motion: reduce) { :host([clock-active]) .timer.running { animation: none; } }
             </style>
             <article class="card ${running ? 'running' : ''} ${done ? 'done' : ''} ${tabled ? 'tabled' : ''}">
+                <div class="compact-shell" hidden>
+                    <div class="compact-text"></div>
+                    <div class="compact-action"></div>
+                    <div class="compact-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.taskTextFields'))}">
+                        ${['task', 'notes', 'prompts', 'associations', 'time'].map(tab => `<button type="button" role="tab" id="compact-${tab}-tab" data-compact-tab="${tab}" aria-controls="compact-${tab}-panel">${escapeHTML(tab === 'task' ? uiLabel('Task') : t(`ui.text.${tab}`))}</button>`).join('')}
+                    </div>
+                    ${['task', 'notes', 'prompts', 'associations', 'time'].map(tab => `<div id="compact-${tab}-panel" role="tabpanel" tabindex="0" data-compact-panel="${tab}" aria-labelledby="compact-${tab}-tab"></div>`).join('')}
+                </div>
                 <div class="main-row">
                     <div>
-                        <label class="check-control"><input class="check today-check" type="checkbox" ${this._task.today ? 'checked' : ''}><span>${escapeHTML(t('ui.text.today'))}</span></label>
-                        <div class="check-control"><button class="check complete-check ${done ? 'checked' : ''}" type="button" aria-pressed="${done}" aria-label="${done ? t('ui.text.reopenTask') : t('ui.text.completeTask')}" aria-describedby="complete-label">${done ? '✓' : ''}</button><span id="complete-label">${escapeHTML(t('ui.text.complete'))}</span></div>
-                        ${done ? deleteControl : ''}
+                        <label class="check-control today-check-control"><input class="check today-check" type="checkbox" ${this._task.today ? 'checked' : ''}><span>${escapeHTML(t('ui.text.today'))}</span></label>
+                        <div class="check-control complete-check-control"><button class="check complete-check ${done ? 'checked' : ''}" type="button" aria-pressed="${done}" aria-label="${done ? t('ui.text.reopenTask') : t('ui.text.completeTask')}" aria-describedby="complete-label">${done ? '✓' : ''}</button><span id="complete-label">${escapeHTML(t('ui.text.complete'))}</span></div>
                         <label class="priority-control">${escapeHTML(t('ui.text.priority'))}<input class="priority-input" type="number" min="1" max="${this._priorityLimit || 1}" step="1" inputmode="numeric" ${done ? 'disabled' : ''} aria-label="${escapeHTML(t('ui.text.taskPriority1IsHighest'))}"></label>
                     </div>
                     <div>
@@ -311,7 +412,7 @@ class TaskItem extends HTMLElement {
                 <div class="footer">
                     ${this.hasAttribute('table-detail') ? `<button class="table-back" type="button" aria-label="${escapeHTML(t('ui.text.backToTaskTable'))}">${escapeHTML(t('ui.text.table'))}</button>` : ''}
                     <span class="age" title="${escapeHTML(t('ui.text.createdValue24', { value24: new Date(this._task.createdAt).toLocaleString() }))}"></span>
-                    <div class="actions"><label class="tabled-control"><input class="tabled" type="checkbox" ${tabled ? 'checked' : ''}> ${escapeHTML(t('ui.text.tabled'))}</label>${done ? '' : deleteControl}</div>
+                    <div class="actions"><label class="tabled-control"><input class="tabled" type="checkbox" ${tabled ? 'checked' : ''}> ${escapeHTML(t('ui.text.tabled'))}</label>${deleteControl}</div>
                 </div>
             </article>
         `;
@@ -513,6 +614,25 @@ class TaskItem extends HTMLElement {
             }, 3000);
         });
 
+        this.shadowRoot.querySelectorAll('[data-compact-tab]').forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.selectCompactTab(tab.dataset.compactTab, true);
+            });
+            tab.addEventListener('keydown', event => {
+                const tabs = [...this.shadowRoot.querySelectorAll('[data-compact-tab]')];
+                const index = tabs.indexOf(tab);
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+                    : event.key === 'ArrowRight' ? (index + 1) % tabs.length
+                    : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1;
+                if (next < 0) return;
+                event.preventDefault();
+                this.selectCompactTab(tabs[next].dataset.compactTab);
+                tabs[next].focus();
+            });
+        });
+        this._compactLayoutActive = undefined;
+        this.updateCompactTabs();
+        this.updateCompactLayout();
         this._clockDayKey = '';
         this._clockMinute = -1;
         this.updateClock(Date.now(), true);

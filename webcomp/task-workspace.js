@@ -15,6 +15,7 @@ class TaskWorkspace extends HTMLElement {
         this.wants = [];
         this.agents = [];
         this.taskEditorTabs = new Map();
+        this.taskCompactTabs = new Map();
         this.planThinkingTabs = new Map();
         this.mainView = 'tasks';
         this.planningSearch = { plans: '', wants: '' };
@@ -447,6 +448,11 @@ class TaskWorkspace extends HTMLElement {
     }
 
     bindAgentEvents() {
+        this.addEventListener('task-compact-tab-change', event => {
+            const { id, tab } = event.detail;
+            this.taskCompactTabs.set(id, tab);
+            this.querySelectorAll('task-item').forEach(item => { if (item.dataset.taskId === id) item.compactTab = tab; });
+        });
         this.addEventListener('task-editor-tab-change', event => {
             const { id, tab } = event.detail;
             this.taskEditorTabs.set(id, tab);
@@ -1842,6 +1848,7 @@ class TaskWorkspace extends HTMLElement {
         element.toggleAttribute('table-detail', tableDetail);
         element.agentCatalog = this.agents;
         element.editorTab = this.taskEditorTabs.get(task.id) || 'notes';
+        element.compactTab = this.taskCompactTabs.has(task.id) ? this.taskCompactTabs.get(task.id) : 'task';
         element.planCatalog = this.plans;
         element.associationCatalog = this.associationCatalogFor(task.id);
         element.priorityLimit = this.priorityLimitFor(task.id);
