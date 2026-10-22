@@ -84,5 +84,5 @@ export async function downloadPortableApp(workspace) {
     downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), filename);
     workspace.toast(t('ui.text.portableAppDownloadedWithTheCurrentWorkspace'));
     return { filename, taskCount: workspace.tasks.length, planCount: workspace.plans.length,
-        wantCount: workspace.wants.length, agentCount: workspace.agents.length };
+        goalCount: workspace.goals.length, wantCount: workspace.wants.length, agentCount: workspace.agents.length };
 }

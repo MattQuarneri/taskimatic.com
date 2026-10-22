@@ -403,7 +403,29 @@
       "fontSize": "Розмір тексту",
       "decreaseFontSize": "Зменшити шрифт",
       "increaseFontSize": "Збільшити шрифт",
-      "chooseYourLanguage": "Оберіть мову"
+      "chooseYourLanguage": "Оберіть мову",
+      "goal": "Ціль",
+      "goalLower": "ціль",
+      "goalsLower": "цілі",
+      "goalsTab": "Цілі",
+      "goalsEyebrow": "Оберіть результат",
+      "goalsHeading": "Чого ви хочете досягти?",
+      "goalsHelp": "Визначте успіх, за бажанням оберіть дату та пов’яжіть плани для досягнення цілі.",
+      "goalPlaceholder": "Назвіть бажаний результат",
+      "goalsEmptyTitle": "Дайте прагненню напрямок",
+      "goalsEmptyHelp": "Додайте ціль, визначте успіх і створіть план, коли будете готові.",
+      "successCriteria": "Критерії успіху",
+      "successPlaceholder": "Як ви дізнаєтеся, що досягли цілі?",
+      "targetDate": "Цільова дата (необов’язково)",
+      "achieved": "Досягнуто",
+      "goalNotes": "Нотатки",
+      "goalOptional": "Ціль (необов’язково)",
+      "parentGoal": "Батьківська ціль",
+      "openGoal": "Відкрити ціль",
+      "noGoal": "Без цілі",
+      "plansForGoal": "Плани для цієї цілі",
+      "goalsAndPlansFromWant": "Цілі та плани з цього бажання",
+      "turnWantIntoGoal": "Перетворити це бажання на ціль"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "Стратегія імпорту має бути merge або replace.",
       "couldNotEmbedValue0InTheDownload": "Не вдалося вбудувати {value0} у файл завантаження.",
       "taskimaticWorkspaceIsNotMounted": "Робочий простір taskimatic не змонтовано.",
-      "couldNotEmbedI18n": "Не вдалося вбудувати переклади у файл завантаження."
+      "couldNotEmbedI18n": "Не вдалося вбудувати переклади у файл завантаження.",
+      "goalNotFound": "Ціль не знайдено: {id}"
     }
   }
 }

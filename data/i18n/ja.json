@@ -403,7 +403,29 @@
       "fontSize": "文字サイズ",
       "decreaseFontSize": "文字を小さくする",
       "increaseFontSize": "文字を大きくする",
-      "chooseYourLanguage": "言語を選択してください"
+      "chooseYourLanguage": "言語を選択してください",
+      "goal": "目標",
+      "goalLower": "目標",
+      "goalsLower": "目標",
+      "goalsTab": "目標",
+      "goalsEyebrow": "目指す成果を選ぶ",
+      "goalsHeading": "何を達成したいですか？",
+      "goalsHelp": "成功の基準を決め、必要に応じて目標日を設定し、達成につながるプランを関連付けましょう。",
+      "goalPlaceholder": "達成したい成果を入力",
+      "goalsEmptyTitle": "願いに目的地を",
+      "goalsEmptyHelp": "上で目標を追加し、成功の基準を決め、準備ができたらプランを作りましょう。",
+      "successCriteria": "成功の基準",
+      "successPlaceholder": "何をもって達成としますか？",
+      "targetDate": "目標日（任意）",
+      "achieved": "達成済み",
+      "goalNotes": "メモ",
+      "goalOptional": "目標（任意）",
+      "parentGoal": "親の目標",
+      "openGoal": "目標を開く",
+      "noGoal": "目標なし",
+      "plansForGoal": "この目標のプラン",
+      "goalsAndPlansFromWant": "この願いから生まれた目標とプラン",
+      "turnWantIntoGoal": "この願いを目標にする"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "インポート方針は merge または replace である必要があります。",
       "couldNotEmbedValue0InTheDownload": "ダウンロードファイルに {value0} を埋め込めませんでした。",
       "taskimaticWorkspaceIsNotMounted": "taskimatic ワークスペースがマウントされていません。",
-      "couldNotEmbedI18n": "ダウンロードファイルに翻訳データを埋め込めませんでした。"
+      "couldNotEmbedI18n": "ダウンロードファイルに翻訳データを埋め込めませんでした。",
+      "goalNotFound": "目標が見つかりません：{id}"
     }
   }
 }

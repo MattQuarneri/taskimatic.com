@@ -403,7 +403,29 @@
       "fontSize": "文字大小",
       "decreaseFontSize": "缩小字号",
       "increaseFontSize": "放大字号",
-      "chooseYourLanguage": "选择你的语言"
+      "chooseYourLanguage": "选择你的语言",
+      "goal": "目标",
+      "goalLower": "目标",
+      "goalsLower": "目标",
+      "goalsTab": "目标",
+      "goalsEyebrow": "选择你要的结果",
+      "goalsHeading": "你想达成什么？",
+      "goalsHelp": "定义成功，选择可选的目标日期，并关联帮助你达成目标的计划。",
+      "goalPlaceholder": "写下你想达成的结果",
+      "goalsEmptyTitle": "为你的愿望设定方向",
+      "goalsEmptyHelp": "在上方添加目标、定义成功，并在准备好后制定计划。",
+      "successCriteria": "成功的标准",
+      "successPlaceholder": "怎样才算达成了这个目标？",
+      "targetDate": "目标日期（可选）",
+      "achieved": "已达成",
+      "goalNotes": "备注",
+      "goalOptional": "目标（可选）",
+      "parentGoal": "所属目标",
+      "openGoal": "打开目标",
+      "noGoal": "无目标",
+      "plansForGoal": "此目标的计划",
+      "goalsAndPlansFromWant": "此愿望的目标和计划",
+      "turnWantIntoGoal": "将此愿望转为目标"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "导入策略必须为 merge 或 replace。",
       "couldNotEmbedValue0InTheDownload": "无法在下载副本中嵌入 {value0}。",
       "taskimaticWorkspaceIsNotMounted": "taskimatic 工作区尚未挂载。",
-      "couldNotEmbedI18n": "无法在下载副本中嵌入翻译。"
+      "couldNotEmbedI18n": "无法在下载副本中嵌入翻译。",
+      "goalNotFound": "找不到目标：{id}"
     }
   }
 }

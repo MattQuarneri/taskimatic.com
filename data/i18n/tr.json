@@ -403,7 +403,29 @@
       "fontSize": "Metin boyutu",
       "decreaseFontSize": "Yazı boyutunu küçült",
       "increaseFontSize": "Yazı boyutunu büyüt",
-      "chooseYourLanguage": "Dilinizi seçin"
+      "chooseYourLanguage": "Dilinizi seçin",
+      "goal": "Hedef",
+      "goalLower": "hedef",
+      "goalsLower": "hedefler",
+      "goalsTab": "Hedefler",
+      "goalsEyebrow": "Sonucunu seç",
+      "goalsHeading": "Neye ulaşmak istiyorsun?",
+      "goalsHelp": "Başarıyı tanımla, isteğe bağlı bir tarih seç ve seni oraya götürecek planları bağla.",
+      "goalPlaceholder": "Ulaşmak istediğin sonucu adlandır",
+      "goalsEmptyTitle": "İsteğine bir yön ver",
+      "goalsEmptyHelp": "Yukarıya bir hedef ekle, başarıyı tanımla ve hazır olduğunda bir plan oluştur.",
+      "successCriteria": "Başarı nasıl görünür",
+      "successPlaceholder": "Başardığını nasıl anlayacaksın?",
+      "targetDate": "Hedef tarih (isteğe bağlı)",
+      "achieved": "Ulaşıldı",
+      "goalNotes": "Notlar",
+      "goalOptional": "Hedef (isteğe bağlı)",
+      "parentGoal": "Üst hedef",
+      "openGoal": "Hedefi aç",
+      "noGoal": "Hedef yok",
+      "plansForGoal": "Bu hedefin planları",
+      "goalsAndPlansFromWant": "Bu istekten doğan hedefler ve planlar",
+      "turnWantIntoGoal": "Bu isteği hedefe dönüştür"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "İçe aktarma stratejisi merge veya replace olmalıdır.",
       "couldNotEmbedValue0InTheDownload": "İndirilen dosyaya {value0} gömülemedi.",
       "taskimaticWorkspaceIsNotMounted": "taskimatic çalışma alanı bağlı değil.",
-      "couldNotEmbedI18n": "İndirilen dosyaya çeviriler gömülemedi."
+      "couldNotEmbedI18n": "İndirilen dosyaya çeviriler gömülemedi.",
+      "goalNotFound": "Hedef bulunamadı: {id}"
     }
   }
 }

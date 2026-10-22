@@ -51,7 +51,6 @@
       "notes": "메모",
       "prompts": "프롬프트",
       "estimatedTimeNeeded": "예상 소요 시간(분)",
-   
       "minutes": "분",
       "addNotes": "메모 추가…",
       "taskNotes": "할 일 메모",
@@ -404,7 +403,29 @@
       "fontSize": "글자 크기",
       "decreaseFontSize": "글자 축소",
       "increaseFontSize": "글자 확대",
-      "chooseYourLanguage": "언어를 선택하세요"
+      "chooseYourLanguage": "언어를 선택하세요",
+      "goal": "목표",
+      "goalLower": "목표",
+      "goalsLower": "목표",
+      "goalsTab": "목표",
+      "goalsEyebrow": "원하는 결과를 선택하세요",
+      "goalsHeading": "무엇을 이루고 싶나요?",
+      "goalsHelp": "성공 기준을 정하고, 필요하면 목표 날짜를 선택하고, 달성을 위한 계획을 연결하세요.",
+      "goalPlaceholder": "이루고 싶은 결과를 입력하세요",
+      "goalsEmptyTitle": "열망에 목적지를 정하세요",
+      "goalsEmptyHelp": "위에서 목표를 추가하고 성공 기준을 정한 뒤 준비가 되면 계획을 세우세요.",
+      "successCriteria": "성공 기준",
+      "successPlaceholder": "달성했다는 것을 어떻게 알 수 있나요?",
+      "targetDate": "목표 날짜 (선택 사항)",
+      "achieved": "달성함",
+      "goalNotes": "메모",
+      "goalOptional": "목표 (선택 사항)",
+      "parentGoal": "상위 목표",
+      "openGoal": "목표 열기",
+      "noGoal": "목표 없음",
+      "plansForGoal": "이 목표의 계획",
+      "goalsAndPlansFromWant": "이 바람의 목표와 계획",
+      "turnWantIntoGoal": "이 바람을 목표로 바꾸기"
     }
   },
   "error": {
@@ -444,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "가져오기 방식은 merge 또는 replace여야 합니다.",
       "couldNotEmbedValue0InTheDownload": "다운로드에 {value0}을(를) 포함할 수 없습니다.",
       "taskimaticWorkspaceIsNotMounted": "taskimatic 워크스페이스가 마운트되지 않았습니다.",
-      "couldNotEmbedI18n": "다운로드에 번역 데이터를 포함할 수 없습니다."
+      "couldNotEmbedI18n": "다운로드에 번역 데이터를 포함할 수 없습니다.",
+      "goalNotFound": "목표를 찾을 수 없습니다: {id}"
     }
   }
 }

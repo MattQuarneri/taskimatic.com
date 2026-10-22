@@ -7,12 +7,12 @@ class PlanningItem extends HTMLElement {
         this._confirmTimer = null;
     }
 
-    setData({ kind, record, parents, children, associations, catalog, thinkingTab = 'myThinking' }) {
+    setData({ kind, record, parents, children, associations, catalog, goalParents = [], thinkingTab = 'myThinking' }) {
         this.kind = kind;
         this._thinkingTab = thinkingTab === 'aiThinking' ? 'aiThinking' : 'myThinking';
         this._record = cloneValue(record);
         this.dataset.recordId = record.id;
-        this.render(parents, children, associations, catalog);
+        this.render(parents, children, associations, catalog, goalParents);
     }
 
     updateThinkingTabs() {
@@ -33,8 +33,11 @@ class PlanningItem extends HTMLElement {
         this.dispatchEvent(new CustomEvent(name, { bubbles: true, composed: true, detail: { kind: this.kind, id: this._record.id, ...detail } }));
     }
 
-    render(parents, children, associations, catalog) {
+    render(parents, children, associations, catalog, goalParents) {
         const isPlan = this.kind === 'plans';
+        const isGoal = this.kind === 'goals';
+        const singular = this.kind.slice(0, -1);
+        const childKind = isPlan ? 'tasks' : isGoal ? 'plans' : 'goals';
         this.shadowRoot.innerHTML = `
             <style>
                 :host { display: block; min-width: 0; }
@@ -54,6 +57,8 @@ class PlanningItem extends HTMLElement {
                 .thinking-tabs button[aria-selected="true"] { background: var(--ink, #18242b); color: white; }
                 button[role="tab"]:hover { background: var(--panel, #fffdf7); color: var(--ink, #18242b); }
                 .notes, .my-thinking, .ai-thinking { min-height: 110px; resize: vertical; line-height: 1.5; font-size: var(--font-base, 13px); }
+                .achieved-label { display: flex; align-items: center; gap: 8px; }
+                .achieved { width: auto; min-height: 20px; }
                 .parent-row { display: flex; gap: 8px; }
                 .parent-row select { flex: 1; }
                 .chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
@@ -74,7 +79,7 @@ class PlanningItem extends HTMLElement {
                 @media (max-width: 720px) { textarea, input, select { font-size: max(16px, var(--font-base, 13px)); } }
             </style>
             <article>
-                <label>${isPlan ? t('ui.text.plan') : t('ui.text.want')}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: isPlan ? t('ui.text.plan') : t('ui.text.want') }))}"></textarea></label>
+                <label>${isGoal ? t('ui.text.goal') : isPlan ? t('ui.text.plan') : t('ui.text.want')}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: isGoal ? t('ui.text.goal') : isPlan ? t('ui.text.plan') : t('ui.text.want') }))}"></textarea></label>
                 ${isPlan ? `
                     <div class="thinking-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.planThinking'))}">
                         <button type="button" id="my-thinking-tab" role="tab" data-thinking-tab="myThinking" aria-controls="my-thinking-panel">${escapeHTML(t('ui.text.myThinking'))}</button>
@@ -82,8 +87,14 @@ class PlanningItem extends HTMLElement {
                     </div>
                     <div role="tabpanel" id="my-thinking-panel" data-thinking-panel="myThinking" aria-labelledby="my-thinking-tab"><label>${escapeHTML(t('ui.text.myThinkingApproachAndNextSteps'))}<textarea class="my-thinking" rows="5" maxlength="50000" aria-label="${escapeHTML(t('ui.text.myThinking'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label></div>
                     <div role="tabpanel" id="ai-thinking-panel" data-thinking-panel="aiThinking" aria-labelledby="ai-thinking-tab"><label>${escapeHTML(t('ui.text.aIThinking2'))}<textarea class="ai-thinking" rows="5" maxlength="50000" aria-label="${escapeHTML(t('ui.text.aIThinking'))}" placeholder="${escapeHTML(t('ui.text.saveTextGeneratedByAI'))}"></textarea></label></div>
+                ` : isGoal ? `
+                    <label>${escapeHTML(t('ui.text.successCriteria'))}<textarea class="successCriteria" rows="3" maxlength="10000" placeholder="${escapeHTML(t('ui.text.successPlaceholder'))}"></textarea></label>
+                    <label>${escapeHTML(t('ui.text.targetDate'))}<input class="targetDate" type="date"></label>
+                    <label class="achieved-label"><input class="achieved" type="checkbox">${escapeHTML(t('ui.text.achieved'))}</label>
+                    <label>${escapeHTML(t('ui.text.goalNotes'))}<textarea class="notes" rows="3" maxlength="10000"></textarea></label>
                 ` : `<label>${escapeHTML(t('ui.text.ideasAspirationsAndPossibilities'))}<textarea class="notes" rows="5" maxlength="10000" aria-label="${escapeHTML(t('ui.text.wantNotes'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label>`}
-                <label class="parent-label" ${isPlan ? '' : 'hidden'}>${escapeHTML(t('ui.text.wantOptional'))}<span class="parent-row"><select class="parent" aria-label="${escapeHTML(t('ui.text.parentWant'))}"></select><button class="open-parent" type="button" ${this._record.wantId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openWant'))}</button></span></label>
+                <label class="parent-label" ${isPlan || isGoal ? '' : 'hidden'}>${escapeHTML(t('ui.text.wantOptional'))}<span class="parent-row"><select class="parent" aria-label="${escapeHTML(t('ui.text.parentWant'))}"></select><button class="open-parent" type="button" ${this._record.wantId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openWant'))}</button></span></label>
+                ${isPlan ? `<label>${escapeHTML(t('ui.text.goalOptional'))}<span class="parent-row"><select class="goal-parent" aria-label="${escapeHTML(t('ui.text.parentGoal'))}"></select><button class="open-goal" type="button" ${this._record.goalId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openGoal'))}</button></span></label>` : ''}
                 <div class="chips" aria-label="${escapeHTML(t('ui.text.associations'))}"></div>
                 <form class="association-form">
                     <input class="association-type" list="planning-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}" required>
@@ -92,13 +103,13 @@ class PlanningItem extends HTMLElement {
                     <datalist id="planning-values"></datalist>
                     <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                 </form>
-                <h3>${isPlan ? t('ui.text.tasksInThisPlan') : t('ui.text.plansFromThisWant')} · ${children.length}</h3>
+                <h3>${isPlan ? t('ui.text.tasksInThisPlan') : isGoal ? t('ui.text.plansForGoal') : t('ui.text.goalsAndPlansFromWant')} · ${children.length}</h3>
                 <div class="children"></div>
-                <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(isPlan ? 'task' : 'plan') }))}" placeholder="${isPlan ? t('ui.text.turnANextStepIntoATask') : t('ui.text.turnThisWantIntoAPlan')}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(isPlan ? 'task' : 'plan') }))}</button></form>
-                <div class="footer"><span class="age"></span><button class="delete" type="button">${escapeHTML(t('ui.text.deleteValue10', { value10: uiLabel(isPlan ? 'plan' : 'want') }))}</button></div>
+                <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(childKind.slice(0, -1)) }))}" placeholder="${isPlan ? t('ui.text.turnANextStepIntoATask') : isGoal ? t('ui.text.turnThisWantIntoAPlan') : t('ui.text.turnWantIntoGoal')}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(childKind.slice(0, -1)) }))}</button></form>
+                <div class="footer"><span class="age"></span><button class="delete" type="button">${escapeHTML(t('ui.text.deleteValue10', { value10: uiLabel(singular) }))}</button></div>
             </article>
         `;
-        for (const field of isPlan ? ['text', 'myThinking', 'aiThinking'] : ['text', 'notes']) {
+        for (const field of isPlan ? ['text', 'myThinking', 'aiThinking'] : isGoal ? ['text', 'notes', 'successCriteria', 'targetDate'] : ['text', 'notes']) {
             const selector = { myThinking: '.my-thinking', aiThinking: '.ai-thinking' }[field] || `.${field}`;
             const input = this.shadowRoot.querySelector(selector);
             input.value = this._record[field];
@@ -130,6 +141,18 @@ class PlanningItem extends HTMLElement {
             });
         });
         this.updateThinkingTabs();
+        if (isGoal) {
+            const achieved = this.shadowRoot.querySelector('.achieved');
+            achieved.checked = this._record.achieved;
+            achieved.addEventListener('change', () => this.emit('planning-update', { patch: { achieved: achieved.checked } }));
+        }
+        if (isPlan) {
+            const goal = this.shadowRoot.querySelector('.goal-parent');
+            goal.append(new Option(t('ui.text.noGoal'), ''), ...goalParents.map(record => new Option(record.text, record.id)));
+            goal.value = this._record.goalId || '';
+            goal.addEventListener('change', () => this.emit('planning-update', { patch: { goalId: goal.value || null } }));
+            this.shadowRoot.querySelector('.open-goal').addEventListener('click', () => this.emit('planning-navigate', { targetKind: 'goals', targetId: this._record.goalId }));
+        }
         const parent = this.shadowRoot.querySelector('.parent');
         parent.append(new Option(t('error.messages.noWant'), ''));
         for (const record of parents) parent.append(new Option(record.text, record.id));
@@ -142,7 +165,7 @@ class PlanningItem extends HTMLElement {
             const own = ownKeys.has(`${association.type}\u0000${association.value.toLowerCase()}`);
             const chip = document.createElement('span');
             chip.className = `chip${own ? '' : ' inherited'}`;
-            chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(isPlan ? 'tasks' : 'plans') })}`;
+            chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(childKind) })}`;
             if (own) {
                 const remove = document.createElement('button');
                 remove.type = 'button';
@@ -171,8 +194,8 @@ class PlanningItem extends HTMLElement {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'child-link';
-            button.textContent = `${child.status === 'done' ? '✓ ' : ''}${child.text}`;
-            button.addEventListener('click', () => this.emit('planning-navigate', { targetKind: isPlan ? 'tasks' : 'plans', targetId: child.id }));
+            button.textContent = `${child.status === 'done' || child.achieved ? '✓ ' : ''}${child.text}`;
+            button.addEventListener('click', () => this.emit('planning-navigate', { targetKind: child.targetKind || childKind, targetId: child.id }));
             childList.append(button);
         }
         this.shadowRoot.querySelector('.child-form').addEventListener('submit', event => {
@@ -187,10 +210,10 @@ class PlanningItem extends HTMLElement {
             if (button.classList.contains('armed')) this.emit('planning-delete');
             else {
                 button.classList.add('armed');
-                button.textContent = t('ui.text.confirmDeleteKeepsValue0', { value0: uiLabel(isPlan ? 'tasks' : 'plans') });
+                button.textContent = t('ui.text.confirmDeleteKeepsValue0', { value0: uiLabel(childKind) });
                 this._confirmTimer = setTimeout(() => {
                     button.classList.remove('armed');
-                    button.textContent = t('ui.text.deleteValue0', { value0: uiLabel(isPlan ? 'plan' : 'want') });
+                    button.textContent = t('ui.text.deleteValue0', { value0: uiLabel(singular) });
                 }, 3500);
             }
         });

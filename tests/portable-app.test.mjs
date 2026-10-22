@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
+import { APP_VERSION } from '../js/task-model.js';
 import { bundleModule, embedPortableAssets } from '../js/portable-app.js';
 import { t, escapeHTML, uiLabel, i18n } from './i18n-test-context.mjs';
 
@@ -30,7 +31,7 @@ test('portable bundle boots the complete app graph with isolated modules and no 
         'lock-in-controls', 'searcher-element', 'session-times', 'backup-tracker']) {
         assert.ok(registered.has(name), `${name} registered`);
     }
-    assert.equal(target.taskimatic.version, '2.1.0');
+    assert.equal(target.taskimatic.version, APP_VERSION);
     const worker = await fs.readFile(new URL('../tasks-sw.js', import.meta.url), 'utf8');
     for (const url of reads.keys()) {
         const relative = new URL(url).pathname.slice(new URL('../', import.meta.url).pathname.length);

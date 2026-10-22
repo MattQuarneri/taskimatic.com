@@ -403,7 +403,29 @@
       "fontSize": "Dimensione testo",
       "decreaseFontSize": "Riduci dimensione carattere",
       "increaseFontSize": "Aumenta dimensione carattere",
-      "chooseYourLanguage": "Scegli la tua lingua"
+      "chooseYourLanguage": "Scegli la tua lingua",
+      "goal": "Obiettivo",
+      "goalLower": "obiettivo",
+      "goalsLower": "obiettivi",
+      "goalsTab": "Obiettivi",
+      "goalsEyebrow": "Scegli il risultato",
+      "goalsHeading": "Cosa vuoi raggiungere?",
+      "goalsHelp": "Definisci il successo, scegli una data facoltativa e collega i piani per raggiungerlo.",
+      "goalPlaceholder": "Dai un nome al risultato da raggiungere",
+      "goalsEmptyTitle": "Dai una destinazione alla tua ambizione",
+      "goalsEmptyHelp": "Aggiungi un obiettivo, definisci il successo e crea un piano quando sei pronto.",
+      "successCriteria": "Come si presenta il successo",
+      "successPlaceholder": "Come saprai di averlo raggiunto?",
+      "targetDate": "Data prevista (facoltativa)",
+      "achieved": "Raggiunto",
+      "goalNotes": "Note",
+      "goalOptional": "Obiettivo (facoltativo)",
+      "parentGoal": "Obiettivo principale",
+      "openGoal": "Apri obiettivo",
+      "noGoal": "Nessun obiettivo",
+      "plansForGoal": "Piani per questo obiettivo",
+      "goalsAndPlansFromWant": "Obiettivi e piani da questo desiderio",
+      "turnWantIntoGoal": "Trasforma questo desiderio in un obiettivo"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "La strategia di importazione deve essere merge o replace.",
       "couldNotEmbedValue0InTheDownload": "Impossibile incorporare {value0} nel download.",
       "taskimaticWorkspaceIsNotMounted": "Lo spazio di lavoro di taskimatic non è montato.",
-      "couldNotEmbedI18n": "Impossibile incorporare le traduzioni nel download."
+      "couldNotEmbedI18n": "Impossibile incorporare le traduzioni nel download.",
+      "goalNotFound": "Obiettivo non trovato: {id}"
     }
   }
 }

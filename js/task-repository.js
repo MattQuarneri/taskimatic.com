@@ -94,6 +94,8 @@ class TaskRepository {
 
     parseOpfsWorkspace(text) {
         const saved = JSON.parse(text);
+        // Older snapshots predate Goals; only the new collection may be absent.
+        if (saved.version === 1 && saved.workspace && !Object.hasOwn(saved.workspace, 'goals')) saved.workspace.goals = [];
         if (saved.version !== 1 || !saved.workspace || !WORKSPACE_COLLECTIONS.every(kind =>
             Array.isArray(saved.workspace[kind]) && saved.workspace[kind].every(record => record && typeof record.id === 'string'))) {
             throw new Error(t('error.messages.invalidOPFSWorkspace'));

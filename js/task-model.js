@@ -1,9 +1,9 @@
 import { normalizeAssociations } from './task-planning-model.js';
 
 const DB_NAME = 'taskimatic-local';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORE_NAME = 'tasks';
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 const COMMON_PROPERTIES = ['project', 'initiative', 'sub-system', 'feature', 'client', 'domain', 'work-area', 'dependent-task'];
 const TIMER_ACTORS = ['human', 'agent'];
 const COLOR_PALETTE = ['#315f91', '#e65135', '#28785c', '#8a5a94', '#b47720', '#277b84', '#9b3f57'];

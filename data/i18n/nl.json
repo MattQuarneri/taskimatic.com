@@ -403,7 +403,29 @@
       "fontSize": "Tekstgrootte",
       "decreaseFontSize": "Lettergrootte verkleinen",
       "increaseFontSize": "Lettergrootte vergroten",
-      "chooseYourLanguage": "Kies uw taal"
+      "chooseYourLanguage": "Kies uw taal",
+      "goal": "Doel",
+      "goalLower": "doel",
+      "goalsLower": "doelen",
+      "goalsTab": "Doelen",
+      "goalsEyebrow": "Kies je resultaat",
+      "goalsHeading": "Wat wil je bereiken?",
+      "goalsHelp": "Bepaal wat succes is, kies eventueel een streefdatum en koppel de plannen die je er brengen.",
+      "goalPlaceholder": "Benoem een resultaat dat je wilt bereiken",
+      "goalsEmptyTitle": "Geef je ambitie een bestemming",
+      "goalsEmptyHelp": "Voeg hierboven een doel toe, bepaal wat succes is en maak een plan zodra je klaar bent.",
+      "successCriteria": "Hoe succes eruitziet",
+      "successPlaceholder": "Hoe weet je dat je dit hebt bereikt?",
+      "targetDate": "Streefdatum (optioneel)",
+      "achieved": "Bereikt",
+      "goalNotes": "Notities",
+      "goalOptional": "Doel (optioneel)",
+      "parentGoal": "Bovenliggend doel",
+      "openGoal": "Doel openen",
+      "noGoal": "Geen doel",
+      "plansForGoal": "Plannen voor dit doel",
+      "goalsAndPlansFromWant": "Doelen en plannen uit deze wens",
+      "turnWantIntoGoal": "Maak van deze wens een doel"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "Importstrategie moet merge of replace zijn.",
       "couldNotEmbedValue0InTheDownload": "Kon {value0} niet insluiten in de download.",
       "taskimaticWorkspaceIsNotMounted": "taskimatic-werkruimte is niet gekoppeld.",
-      "couldNotEmbedI18n": "Kon vertalingen niet insluiten in de download."
+      "couldNotEmbedI18n": "Kon vertalingen niet insluiten in de download.",
+      "goalNotFound": "Doel niet gevonden: {id}"
     }
   }
 }

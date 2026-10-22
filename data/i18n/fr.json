@@ -403,7 +403,29 @@
       "fontSize": "Taille du texte",
       "decreaseFontSize": "Diminuer la taille de police",
       "increaseFontSize": "Augmenter la taille de police",
-      "chooseYourLanguage": "Choisissez votre langue"
+      "chooseYourLanguage": "Choisissez votre langue",
+      "goal": "Objectif",
+      "goalLower": "objectif",
+      "goalsLower": "objectifs",
+      "goalsTab": "Objectifs",
+      "goalsEyebrow": "Choisissez votre résultat",
+      "goalsHeading": "Que voulez-vous accomplir ?",
+      "goalsHelp": "Définissez la réussite, choisissez une date facultative et associez les plans pour y parvenir.",
+      "goalPlaceholder": "Nommez un résultat à atteindre",
+      "goalsEmptyTitle": "Donnez une destination à votre ambition",
+      "goalsEmptyHelp": "Ajoutez un objectif, définissez la réussite et créez un plan quand vous serez prêt.",
+      "successCriteria": "À quoi ressemble la réussite",
+      "successPlaceholder": "Comment saurez-vous que vous avez réussi ?",
+      "targetDate": "Date cible (facultative)",
+      "achieved": "Atteint",
+      "goalNotes": "Notes",
+      "goalOptional": "Objectif (facultatif)",
+      "parentGoal": "Objectif parent",
+      "openGoal": "Ouvrir l’objectif",
+      "noGoal": "Aucun objectif",
+      "plansForGoal": "Plans pour cet objectif",
+      "goalsAndPlansFromWant": "Objectifs et plans issus de ce souhait",
+      "turnWantIntoGoal": "Transformer ce souhait en objectif"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "La stratégie d'importation doit être merge ou replace.",
       "couldNotEmbedValue0InTheDownload": "Impossible d'intégrer {value0} dans le téléchargement.",
       "taskimaticWorkspaceIsNotMounted": "L'espace de travail taskimatic n'est pas monté.",
-      "couldNotEmbedI18n": "Impossible d'intégrer les traductions dans le téléchargement."
+      "couldNotEmbedI18n": "Impossible d'intégrer les traductions dans le téléchargement.",
+      "goalNotFound": "Objectif introuvable : {id}"
     }
   }
 }

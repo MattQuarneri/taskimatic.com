@@ -13,12 +13,13 @@ class TaskWorkspace extends HTMLElement {
         this.tasks = [];
         this.plans = [];
         this.wants = [];
+        this.goals = [];
         this.agents = [];
         this.taskEditorTabs = new Map();
         this.taskCompactTabs = new Map();
         this.planThinkingTabs = new Map();
         this.mainView = 'tasks';
-        this.planningSearch = { plans: '', wants: '' };
+        this.planningSearch = { plans: '', goals: '', wants: '' };
         this.statusFilter = 'open';
         this.associationFilter = null;
         this.planFilter = null;
@@ -151,9 +152,10 @@ class TaskWorkspace extends HTMLElement {
 
     async initialize() {
         await this.repository.init();
-        const [tasks, plans, wants, agents] = await Promise.all(WORKSPACE_COLLECTIONS.map(kind => this.repository.all(kind)));
+        const [tasks, plans, goals, wants, agents] = await Promise.all(WORKSPACE_COLLECTIONS.map(kind => this.repository.all(kind)));
         this.tasks = tasks.map(normalizeTask);
         this.plans = plans.map(record => normalizePlanningRecord('plans', record));
+        this.goals = goals.map(record => normalizePlanningRecord('goals', record));
         this.wants = wants.map(record => normalizePlanningRecord('wants', record));
         this.agents = agents.map(normalizeAgent);
         this.associationFilter = this.associationFromHash();
@@ -319,7 +321,7 @@ class TaskWorkspace extends HTMLElement {
                 </aside>
                 <main class="main-column">
                     <nav class="workspace-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.workspace'))}">
-                        ${['tasks', 'plans', 'wants'].map((kind, index) => `<button class="workspace-tab" id="${kind}-tab" type="button" role="tab" aria-controls="${kind}-view" aria-selected="${index === 0}" tabindex="${index === 0 ? '0' : '-1'}" data-view="${kind}">${escapeHTML(uiLabel(kind, true))}<span class="nav-count" data-workspace-count="${kind}">0</span></button>`).join('')}
+                        ${['tasks', 'plans', 'goals', 'wants'].map((kind, index) => `<button class="workspace-tab" id="${kind}-tab" type="button" role="tab" aria-controls="${kind}-view" aria-selected="${index === 0}" tabindex="${index === 0 ? '0' : '-1'}" data-view="${kind}">${escapeHTML(uiLabel(kind, true))}<span class="nav-count" data-workspace-count="${kind}">0</span></button>`).join('')}
                     </nav>
                     <section id="tasks-view" role="tabpanel" aria-labelledby="tasks-tab">
                     <div class="welcome-row">
@@ -343,11 +345,11 @@ class TaskWorkspace extends HTMLElement {
                     <div class="active-filter" hidden><span></span><button type="button">${escapeHTML(t('ui.text.clearGrouping'))}</button></div>
                     <section class="task-list" aria-live="polite"></section>
                     </section>
-                    ${['plans', 'wants'].map(kind => `
+                    ${['plans', 'goals', 'wants'].map(kind => `
                         <section id="${kind}-view" role="tabpanel" aria-labelledby="${kind}-tab" hidden>
-                            <div class="welcome-row"><div><div class="eyebrow">${kind === 'plans' ? t('ui.text.fromThinkingToDoing') : t('ui.text.roomForPossibilities')}</div><h1>${kind === 'plans' ? t('ui.text.shapeAPlan') : t('ui.text.whatWouldYouLikeToHaveOrAchieve')}</h1></div></div>
-                            <p class="planning-help">${kind === 'plans' ? t('ui.text.developYourApproachAndLinkTheTasksThatMakeItHappenAssociationsOnThoseTasksRollUpIntoT') : t('ui.text.captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape')}</p>
-                            <section class="capture-card"><form class="planning-capture capture-form" data-kind="${kind}"><input class="capture-input" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue6Title', { value6: uiLabel(kind === 'plans' ? 'plan' : 'want') }))}" placeholder="${kind === 'plans' ? t('ui.text.giveYourPlanAName') : t('ui.text.captureADesireOrAspiration')}" required><button class="add-button" type="submit">${escapeHTML(t('ui.text.addValue8', { value8: uiLabel(kind === 'plans' ? 'plan' : 'want') }))}</button></form></section>
+                            <div class="welcome-row"><div><div class="eyebrow">${kind === 'goals' ? t('ui.text.goalsEyebrow') : kind === 'plans' ? t('ui.text.fromThinkingToDoing') : t('ui.text.roomForPossibilities')}</div><h1>${kind === 'goals' ? t('ui.text.goalsHeading') : kind === 'plans' ? t('ui.text.shapeAPlan') : t('ui.text.whatWouldYouLikeToHaveOrAchieve')}</h1></div></div>
+                            <p class="planning-help">${kind === 'goals' ? t('ui.text.goalsHelp') : kind === 'plans' ? t('ui.text.developYourApproachAndLinkTheTasksThatMakeItHappenAssociationsOnThoseTasksRollUpIntoT') : t('ui.text.captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape')}</p>
+                            <section class="capture-card"><form class="planning-capture capture-form" data-kind="${kind}"><input class="capture-input" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue6Title', { value6: uiLabel(kind.slice(0, -1)) }))}" placeholder="${kind === 'goals' ? t('ui.text.goalPlaceholder') : kind === 'plans' ? t('ui.text.giveYourPlanAName') : t('ui.text.captureADesireOrAspiration')}" required><button class="add-button" type="submit">${escapeHTML(t('ui.text.addValue8', { value8: uiLabel(kind.slice(0, -1)) }))}</button></form></section>
                             <div class="planning-search"><input type="search" data-planning-search="${kind}" aria-label="${escapeHTML(t('ui.text.searchValue10', { value10: uiLabel(kind) }))}" placeholder="${escapeHTML(t('ui.text.searchValue11ThinkingAndAssociations', { value11: uiLabel(kind) }))}"></div>
                             <div class="active-filter planning-filter" data-kind="${kind}" hidden><span></span><button type="button" data-clear-planning-filter>${escapeHTML(t('ui.text.clearGrouping'))}</button></div>
                             <section class="planning-list" data-kind="${kind}" aria-live="polite"></section>
@@ -542,9 +544,9 @@ class TaskWorkspace extends HTMLElement {
     }
 
     setMainView(kind, focus = false) {
-        if (!['tasks', 'plans', 'wants'].includes(kind)) return;
+        if (!['tasks', 'plans', 'goals', 'wants'].includes(kind)) return;
         this.mainView = kind;
-        for (const view of ['tasks', 'plans', 'wants']) {
+        for (const view of ['tasks', 'plans', 'goals', 'wants']) {
             const active = view === kind;
             const tab = this.querySelector(`#${view}-tab`);
             tab.setAttribute('aria-selected', String(active));
@@ -557,7 +559,7 @@ class TaskWorkspace extends HTMLElement {
     }
 
     bindPlanningEvents() {
-        const kinds = ['tasks', 'plans', 'wants'];
+        const kinds = ['tasks', 'plans', 'goals', 'wants'];
         this.querySelectorAll('.workspace-tab').forEach(tab => {
             tab.addEventListener('click', () => this.setMainView(tab.dataset.view));
             tab.addEventListener('keydown', event => {
@@ -600,7 +602,8 @@ class TaskWorkspace extends HTMLElement {
         this.addEventListener('planning-child-add', event => {
             const { kind, id, input } = event.detail;
             if (kind === 'plans') this.createTask({ ...input, planId: id });
-            else this.createPlanning('plans', { ...input, wantId: id });
+            else if (kind === 'goals') this.createPlanning('plans', { ...input, goalId: id });
+            else this.createPlanning('goals', { ...input, wantId: id });
         });
         this.addEventListener('planning-navigate', event => {
             const { targetKind, targetId } = event.detail;
@@ -621,7 +624,7 @@ class TaskWorkspace extends HTMLElement {
     }
 
     renderPlanning(source = null) {
-        for (const kind of ['plans', 'wants']) {
+        for (const kind of ['plans', 'goals', 'wants']) {
             const list = this.querySelector(`.planning-list[data-kind="${kind}"]`);
             const records = this.listPlanning(kind, { search: this.planningSearch[kind], association: this.associationFilter });
             const filter = this.querySelector(`.planning-filter[data-kind="${kind}"]`);
@@ -631,8 +634,11 @@ class TaskWorkspace extends HTMLElement {
                 if (source?.kind === kind && source.dataset.recordId === record.id) return source;
                 const element = document.createElement('planning-item');
                 element.setData({
-                    kind, record, thinkingTab: this.planThinkingTabs.get(record.id), parents: kind === 'plans' ? this.wants : [],
-                    children: kind === 'plans' ? this.tasks.filter(task => task.planId === record.id) : this.plans.filter(plan => plan.wantId === record.id),
+                    kind, record, thinkingTab: this.planThinkingTabs.get(record.id), parents: this.wants, goalParents: this.goals,
+                    children: kind === 'plans' ? this.tasks.filter(task => task.planId === record.id)
+                        : kind === 'goals' ? this.plans.filter(plan => plan.goalId === record.id)
+                        : [...this.goals.filter(goal => goal.wantId === record.id).map(goal => ({ ...goal, targetKind: 'goals' })),
+                            ...this.plans.filter(plan => plan.wantId === record.id).map(plan => ({ ...plan, targetKind: 'plans' }))],
                     associations: record.effectiveAssociations,
                     catalog: this.associationCatalogFor()
                 });
@@ -650,9 +656,9 @@ class TaskWorkspace extends HTMLElement {
                 const empty = document.createElement('div');
                 empty.className = 'empty-state';
                 const title = document.createElement('h3');
-                title.textContent = this[kind].length ? t('ui.text.noMatches') : kind === 'plans' ? t('ui.text.makeSpaceForAPlan') : t('ui.text.letAnIdeaTakeShape');
+                title.textContent = this[kind].length ? t('ui.text.noMatches') : kind === 'goals' ? t('ui.text.goalsEmptyTitle') : kind === 'plans' ? t('ui.text.makeSpaceForAPlan') : t('ui.text.letAnIdeaTakeShape');
                 const copy = document.createElement('p');
-                copy.textContent = this[kind].length ? t('ui.text.tryAnotherSearchOrAssociation') : kind === 'plans' ? t('ui.text.nameYourPlanAboveExploreItInMyThinkingAndTurnNextStepsIntoLinkedTasks') : t('ui.text.captureAnAspirationAboveItCanGrowIntoPlansWhenYouAreReady');
+                copy.textContent = this[kind].length ? t('ui.text.tryAnotherSearchOrAssociation') : kind === 'goals' ? t('ui.text.goalsEmptyHelp') : kind === 'plans' ? t('ui.text.nameYourPlanAboveExploreItInMyThinkingAndTurnNextStepsIntoLinkedTasks') : t('ui.text.captureAnAspirationAboveItCanGrowIntoPlansWhenYouAreReady');
                 empty.append(title, copy);
                 list.append(empty);
             }
@@ -660,38 +666,41 @@ class TaskWorkspace extends HTMLElement {
     }
 
     listPlanning(kind, query = {}) {
-        if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const search = String(query.search || '').toLowerCase();
         const [association] = normalizeAssociations(query.association ? [query.association] : []);
         return cloneValue(this[kind].map(record => ({ ...record, effectiveAssociations: planningAssociations(kind, record, this) }))
-            .filter(record => (!query.wantId || record.wantId === query.wantId)
-                && (!search || `${record.text} ${record.notes || ''} ${record.myThinking || ''} ${record.aiThinking || ''} ${JSON.stringify(record.effectiveAssociations)}`.toLowerCase().includes(search))
+            .filter(record => (query.wantId === undefined || record.wantId === query.wantId)
+                && (query.goalId === undefined || record.goalId === query.goalId)
+                && (!search || `${record.text} ${record.successCriteria || ''} ${record.targetDate || ''} ${record.notes || ''} ${record.myThinking || ''} ${record.aiThinking || ''} ${JSON.stringify(record.effectiveAssociations)}`.toLowerCase().includes(search))
                 && (!association || record.effectiveAssociations.some(item => item.type === association.type && item.value.toLowerCase() === association.value.toLowerCase())))
             .sort((a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base', numeric: true })));
     }
 
     async createPlanning(kind, input) {
-        if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const payload = typeof input === 'string' ? { text: input } : input;
         if (!payload || !cleanString(payload.text ?? payload.title ?? payload.name, 1000)) throw new Error(t('error.messages.aTitleIsRequired'));
         const record = normalizePlanningRecord(kind, payload);
         if (this[kind].some(item => item.id === record.id)) throw new Error(t('error.messages.recordAlreadyExistsValue0', { value0: record.id }));
         if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(t('error.messages.wantNotFoundValue0', { value0: record.wantId }));
+        if (record.goalId && !this.goals.some(goal => goal.id === record.goalId)) throw new Error(t('error.messages.goalNotFound', { id: record.goalId }));
         await this.repository.put(record, kind);
         this[kind].push(record);
         this.renderAll();
-        this.emitChange(`${kind === 'plans' ? 'plan' : 'want'}-created`, record);
+        this.emitChange(`${kind.slice(0, -1)}-created`, record);
         return cloneValue(record);
     }
 
     async updatePlanning(kind, id, patch = {}, options = {}) {
-        if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const index = this[kind].findIndex(record => record.id === id);
         if (index < 0) throw new Error(t('error.messages.recordNotFoundValue0', { value0: id }));
         if ('text' in patch && !cleanString(patch.text, 1000)) throw new Error(t('error.messages.aTitleIsRequired'));
         if (kind === 'plans' && 'notes' in patch && !('myThinking' in patch)) patch = { ...patch, myThinking: patch.notes };
         const record = normalizePlanningRecord(kind, { ...this[kind][index], ...patch, id, createdAt: this[kind][index].createdAt, updatedAt: nowISO() });
         if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(t('error.messages.wantNotFoundValue0', { value0: record.wantId }));
+        if (record.goalId && !this.goals.some(goal => goal.id === record.goalId)) throw new Error(t('error.messages.goalNotFound', { id: record.goalId }));
         await this.repository.put(record, kind);
         this[kind].splice(index, 1, record);
         if (options.quiet) {
@@ -705,21 +714,24 @@ class TaskWorkspace extends HTMLElement {
                 select.value = item.task.planId || '';
             });
         } else this.renderAll();
-        this.emitChange(`${kind === 'plans' ? 'plan' : 'want'}-updated`, record);
+        this.emitChange(`${kind.slice(0, -1)}-updated`, record);
         return cloneValue(record);
     }
 
     async deletePlanning(kind, id) {
-        if (!['plans', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const record = this[kind].find(record => record.id === id);
         if (!record) throw new Error(t('error.messages.recordNotFoundValue0', { value0: id }));
-        const snapshot = { tasks: this.tasks, plans: this.plans, wants: this.wants, agents: this.agents, [kind]: this[kind].filter(record => record.id !== id) };
+        const snapshot = { tasks: this.tasks, plans: this.plans, wants: this.wants, goals: this.goals, agents: this.agents, [kind]: this[kind].filter(record => record.id !== id) };
         if (kind === 'plans') snapshot.tasks = snapshot.tasks.map(task => task.planId === id ? { ...task, planId: null, updatedAt: nowISO() } : task);
-        else snapshot.plans = snapshot.plans.map(plan => plan.wantId === id ? { ...plan, wantId: null, updatedAt: nowISO() } : plan);
+        else if (kind === 'goals') snapshot.plans = snapshot.plans.map(plan => plan.goalId === id ? { ...plan, goalId: null, updatedAt: nowISO() } : plan);
+        else {
+            for (const childKind of ['plans', 'goals']) snapshot[childKind] = snapshot[childKind].map(item => item.wantId === id ? { ...item, wantId: null, updatedAt: nowISO() } : item);
+        }
         await this.repository.replaceWorkspace(snapshot);
         Object.assign(this, snapshot);
         this.renderAll();
-        this.emitChange(`${kind === 'plans' ? 'plan' : 'want'}-deleted`, record);
+        this.emitChange(`${kind.slice(0, -1)}-deleted`, record);
         return { id, deleted: true };
     }
 
@@ -1878,7 +1890,7 @@ class TaskWorkspace extends HTMLElement {
     }
 
     renderCounts() {
-        for (const kind of ['tasks', 'plans', 'wants']) this.querySelector(`[data-workspace-count="${kind}"]`).textContent = this[kind].length;
+        for (const kind of ['tasks', 'plans', 'goals', 'wants']) this.querySelector(`[data-workspace-count="${kind}"]`).textContent = this[kind].length;
         this.querySelector('[data-count="all"]').textContent = this.tasks.length;
         this.querySelector('[data-count="open"]').textContent = this.tasks.filter((task) => task.status === 'open' && !task.tabled).length;
         this.querySelector('[data-count="tabled"]').textContent = this.tasks.filter((task) => task.tabled).length;
@@ -1914,7 +1926,7 @@ class TaskWorkspace extends HTMLElement {
 
     associationCatalogFor(taskId) {
         const catalog = Object.create(null);
-        for (const task of [...this.tasks, ...this.plans, ...this.wants]) for (const association of task.associations) {
+        for (const task of [...this.tasks, ...this.plans, ...this.goals, ...this.wants]) for (const association of task.associations) {
             if (!catalog[association.type]) catalog[association.type] = new Set();
             catalog[association.type].add(association.value);
         }
@@ -2340,13 +2352,14 @@ class TaskWorkspace extends HTMLElement {
             format: 'taskimatic-data',
             version: APP_VERSION,
             exportedAt: nowISO(),
-            schemaVersion: 3,
+            schemaVersion: 4,
             settings: {
                 language: window.i18n?.currentLang || 'en',
                 fontScale: this.fontScale || 1.0
             },
             tasks: cloneValue(this.sortedTasks()),
             plans: cloneValue(this.plans),
+            goals: cloneValue(this.goals),
             wants: cloneValue(this.wants),
             agents: cloneValue(this.agents)
         };
@@ -2401,7 +2414,7 @@ class TaskWorkspace extends HTMLElement {
 
         this.renderAll();
         this.emitChange('imported');
-        return { imported: incoming.tasks.length, total: this.tasks.length, plans: { imported: incoming.plans.length, total: this.plans.length }, wants: { imported: incoming.wants.length, total: this.wants.length }, agents: { imported: incoming.agents.length, total: this.agents.length } };
+        return { imported: incoming.tasks.length, total: this.tasks.length, plans: { imported: incoming.plans.length, total: this.plans.length }, goals: { imported: incoming.goals.length, total: this.goals.length }, wants: { imported: incoming.wants.length, total: this.wants.length }, agents: { imported: incoming.agents.length, total: this.agents.length } };
     }
 
     async downloadApp() {

@@ -403,7 +403,29 @@
       "fontSize": "Tamanho do texto",
       "decreaseFontSize": "Diminuir tamanho da fonte",
       "increaseFontSize": "Aumentar tamanho da fonte",
-      "chooseYourLanguage": "Escolha seu idioma"
+      "chooseYourLanguage": "Escolha seu idioma",
+      "goal": "Meta",
+      "goalLower": "meta",
+      "goalsLower": "metas",
+      "goalsTab": "Metas",
+      "goalsEyebrow": "Escolha seu resultado",
+      "goalsHeading": "O que você quer alcançar?",
+      "goalsHelp": "Defina o sucesso, escolha uma data opcional e vincule os planos para chegar lá.",
+      "goalPlaceholder": "Dê nome a um resultado que deseja alcançar",
+      "goalsEmptyTitle": "Dê um destino à sua ambição",
+      "goalsEmptyHelp": "Adicione uma meta acima, defina o sucesso e crie um plano quando estiver pronto.",
+      "successCriteria": "Como é o sucesso",
+      "successPlaceholder": "Como você saberá que alcançou esta meta?",
+      "targetDate": "Data desejada (opcional)",
+      "achieved": "Alcançada",
+      "goalNotes": "Notas",
+      "goalOptional": "Meta (opcional)",
+      "parentGoal": "Meta principal",
+      "openGoal": "Abrir meta",
+      "noGoal": "Sem meta",
+      "plansForGoal": "Planos para esta meta",
+      "goalsAndPlansFromWant": "Metas e planos deste desejo",
+      "turnWantIntoGoal": "Transforme este desejo em uma meta"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "A estratégia de importação deve ser merge ou replace.",
       "couldNotEmbedValue0InTheDownload": "Não foi possível incorporar {value0} no download.",
       "taskimaticWorkspaceIsNotMounted": "O espaço de trabalho taskimatic não está montado.",
-      "couldNotEmbedI18n": "Não foi possível incorporar as traduções no download."
+      "couldNotEmbedI18n": "Não foi possível incorporar as traduções no download.",
+      "goalNotFound": "Meta não encontrada: {id}"
     }
   }
 }

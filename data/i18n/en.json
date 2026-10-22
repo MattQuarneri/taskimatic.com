@@ -179,7 +179,7 @@
       "shapeAPlan": "Shape a plan.",
       "whatWouldYouLikeToHaveOrAchieve": "What would you like to have or achieve?",
       "developYourApproachAndLinkTheTasksThatMakeItHappenAssociationsOnThoseTasksRollUpIntoT": "Develop your approach and link the tasks that make it happen. Associations on those tasks roll up into their plan. A plan can stand alone or grow from a Want.",
-      "captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape": "Capture vague desires and aspirations, then turn them into plans when they take shape.",
+      "captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape": "Capture desires and aspirations, then shape them into goals when you are ready.",
       "giveYourPlanAName": "Give your plan a name…",
       "captureADesireOrAspiration": "Capture a desire or aspiration…",
       "newValue6Title": "New {value6} title",
@@ -241,7 +241,7 @@
       "live": "Live",
       "closeWorkComposition": "Close work composition",
       "thePageIsTheApp": "the page is the app",
-      "downloadAWorkingHTMLCopyWithYourWantsPlansAndTasksEmbeddedEditsStayPrivateInThisBrows": "Download a working HTML copy with your Wants, Plans, and Tasks embedded. Edits stay private in this browser’s local storage.",
+      "downloadAWorkingHTMLCopyWithYourWantsPlansAndTasksEmbeddedEditsStayPrivateInThisBrows": "Download a working HTML copy with your Wants, Goals, Plans, and Tasks embedded. Edits stay private in this browser’s local storage.",
       "0Tasks": "0 tasks",
       "closeToday": "Close Today",
       "humanTimerRunningStopItToCloseToday": "Human timer running — stop it to close Today.",
@@ -272,7 +272,7 @@
       "letAnIdeaTakeShape": "Let an idea take shape",
       "tryAnotherSearchOrAssociation": "Try another search or association.",
       "nameYourPlanAboveExploreItInMyThinkingAndTurnNextStepsIntoLinkedTasks": "Name your plan above, explore it in My Thinking, and turn next steps into linked tasks.",
-      "captureAnAspirationAboveItCanGrowIntoPlansWhenYouAreReady": "Capture an aspiration above. It can grow into plans when you are ready.",
+      "captureAnAspirationAboveItCanGrowIntoPlansWhenYouAreReady": "Capture an aspiration above. It can grow into goals and plans when you are ready.",
       "lockInValue0": "Lock In{value0}",
       "lockInOnHumanTimersOpenTheFocusTimerClickToTurnOffDragToMove": "Lock In on — human timers open the focus timer. Click to turn off; drag to move.",
       "lockInOffClickToTurnOnDragToMove": "Lock In off — click to turn on; drag to move.",
@@ -403,7 +403,29 @@
       "fontSize": "Text size",
       "decreaseFontSize": "Decrease font size",
       "increaseFontSize": "Increase font size",
-      "chooseYourLanguage": "Choose your language"
+      "chooseYourLanguage": "Choose your language",
+      "goal": "Goal",
+      "goalLower": "goal",
+      "goalsLower": "goals",
+      "goalsTab": "Goals",
+      "goalsEyebrow": "Choose your outcome",
+      "goalsHeading": "What do you want to achieve?",
+      "goalsHelp": "Define success, choose an optional target date, and link the plans that will get you there.",
+      "goalPlaceholder": "Name an outcome you want to reach",
+      "goalsEmptyTitle": "Give your ambition a destination",
+      "goalsEmptyHelp": "Capture a goal above, define success, and build a plan when you are ready.",
+      "successCriteria": "What success looks like",
+      "successPlaceholder": "How will you know you have achieved this?",
+      "targetDate": "Target date (optional)",
+      "achieved": "Achieved",
+      "goalNotes": "Notes",
+      "goalOptional": "Goal (optional)",
+      "parentGoal": "Parent goal",
+      "openGoal": "Open goal",
+      "noGoal": "No goal",
+      "plansForGoal": "Plans for this goal",
+      "goalsAndPlansFromWant": "Goals and plans from this want",
+      "turnWantIntoGoal": "Turn this want into a goal"
     }
   },
   "error": {
@@ -421,7 +443,7 @@
       "agentAlreadyExistsValue0": "Agent already exists: {value0}",
       "agentNotFoundValue0": "Agent not found: {value0}",
       "cannotDeleteValue0Value1Value2StillAssigned": "Cannot delete {value0}: {value1} {value2} still assigned.",
-      "expectedPlansOrWants": "Expected plans or wants.",
+      "expectedPlansOrWants": "Expected plans, goals, or wants.",
       "aTitleIsRequired": "A title is required.",
       "recordAlreadyExistsValue0": "Record already exists: {value0}",
       "wantNotFoundValue0": "Want not found: {value0}",
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "Import strategy must be merge or replace.",
       "couldNotEmbedValue0InTheDownload": "Could not embed {value0} in the download.",
       "taskimaticWorkspaceIsNotMounted": "taskimatic workspace is not mounted.",
-      "couldNotEmbedI18n": "Could not embed translations in the download."
+      "couldNotEmbedI18n": "Could not embed translations in the download.",
+      "goalNotFound": "Goal not found: {id}"
     }
   }
 }

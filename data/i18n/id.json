@@ -403,7 +403,29 @@
       "fontSize": "Ukuran teks",
       "decreaseFontSize": "Perkecil ukuran font",
       "increaseFontSize": "Perbesar ukuran font",
-      "chooseYourLanguage": "Pilih bahasa Anda"
+      "chooseYourLanguage": "Pilih bahasa Anda",
+      "goal": "Tujuan",
+      "goalLower": "tujuan",
+      "goalsLower": "tujuan",
+      "goalsTab": "Tujuan",
+      "goalsEyebrow": "Pilih hasil yang diinginkan",
+      "goalsHeading": "Apa yang ingin Anda capai?",
+      "goalsHelp": "Tentukan keberhasilan, pilih tanggal opsional, dan hubungkan rencana untuk mencapainya.",
+      "goalPlaceholder": "Beri nama hasil yang ingin dicapai",
+      "goalsEmptyTitle": "Beri arah pada ambisi Anda",
+      "goalsEmptyHelp": "Tambahkan tujuan di atas, tentukan keberhasilan, dan buat rencana saat siap.",
+      "successCriteria": "Seperti apa keberhasilan itu",
+      "successPlaceholder": "Bagaimana Anda tahu bahwa ini sudah tercapai?",
+      "targetDate": "Tanggal target (opsional)",
+      "achieved": "Tercapai",
+      "goalNotes": "Catatan",
+      "goalOptional": "Tujuan (opsional)",
+      "parentGoal": "Tujuan induk",
+      "openGoal": "Buka tujuan",
+      "noGoal": "Tanpa tujuan",
+      "plansForGoal": "Rencana untuk tujuan ini",
+      "goalsAndPlansFromWant": "Tujuan dan rencana dari keinginan ini",
+      "turnWantIntoGoal": "Ubah keinginan ini menjadi tujuan"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "Strategi impor harus merge atau replace.",
       "couldNotEmbedValue0InTheDownload": "Tidak dapat menyematkan {value0} ke dalam unduhan.",
       "taskimaticWorkspaceIsNotMounted": "Ruang kerja taskimatic tidak terpasang.",
-      "couldNotEmbedI18n": "Tidak dapat menyematkan terjemahan ke dalam unduhan."
+      "couldNotEmbedI18n": "Tidak dapat menyematkan terjemahan ke dalam unduhan.",
+      "goalNotFound": "Tujuan tidak ditemukan: {id}"
     }
   }
 }

@@ -6,7 +6,7 @@ import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../js/task-repository.js', import.meta.url), 'utf8');
 const code = source.slice(source.indexOf('class TaskRepository {'), source.indexOf('export {'));
-const kinds = ['tasks', 'plans', 'wants', 'agents'];
+const kinds = ['tasks', 'plans', 'goals', 'wants', 'agents'];
 const empty = () => Object.fromEntries(kinds.map(kind => [kind, []]));
 function environment({available = true, writable = true, initial = '', idbAvailable = true} = {}) {
     const files = new Map([['workspace.json', initial]]);
@@ -169,4 +169,21 @@ test('edits made in IndexedDB fallback take precedence when OPFS becomes availab
     assert.equal((await recovered.get('task')).text, 'edited in fallback');
     assert.equal((await recovered.get('new')).id, 'new');
     assert.equal(JSON.parse(env.files.get('workspace.json')).workspace.tasks.length, 2);
+});
+
+
+test('older OPFS workspaces acquire an empty Goals collection without losing existing data', async () => {
+    const workspace = empty();
+    delete workspace.goals;
+    workspace.plans.push({id: 'legacy-plan', wantId: 'legacy-want'});
+    workspace.wants.push({id: 'legacy-want'});
+    const env = environment({initial: JSON.stringify({version: 1, workspace})});
+    const repo = await new env.Repository().init();
+    assert.equal(repo.mode, 'opfs');
+    assert.deepEqual(Array.from(await repo.all('goals')), []);
+    assert.equal((await repo.all('plans'))[0].wantId, 'legacy-want');
+    await repo.put({id: 'goal', text: 'New outcome'}, 'goals');
+    const reloaded = await new env.Repository().init();
+    assert.equal((await reloaded.all('goals'))[0].text, 'New outcome');
+    assert.equal((await reloaded.all('wants'))[0].id, 'legacy-want');
 });

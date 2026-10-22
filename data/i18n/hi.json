@@ -403,7 +403,29 @@
       "fontSize": "टेक्स्ट का आकार",
       "decreaseFontSize": "फ़ॉन्ट आकार छोटा करें",
       "increaseFontSize": "फ़ॉन्ट आकार बड़ा करें",
-      "chooseYourLanguage": "अपनी भाषा चुनें"
+      "chooseYourLanguage": "अपनी भाषा चुनें",
+      "goal": "लक्ष्य",
+      "goalLower": "लक्ष्य",
+      "goalsLower": "लक्ष्य",
+      "goalsTab": "लक्ष्य",
+      "goalsEyebrow": "अपना परिणाम चुनें",
+      "goalsHeading": "आप क्या हासिल करना चाहते हैं?",
+      "goalsHelp": "सफलता तय करें, वैकल्पिक तारीख चुनें और वहाँ पहुँचाने वाली योजनाएँ जोड़ें।",
+      "goalPlaceholder": "उस परिणाम को नाम दें जिसे आप पाना चाहते हैं",
+      "goalsEmptyTitle": "अपनी आकांक्षा को मंज़िल दें",
+      "goalsEmptyHelp": "ऊपर लक्ष्य जोड़ें, सफलता तय करें और तैयार होने पर योजना बनाएँ।",
+      "successCriteria": "सफलता कैसी दिखेगी",
+      "successPlaceholder": "आप कैसे जानेंगे कि आपने इसे हासिल कर लिया है?",
+      "targetDate": "लक्ष्य तारीख (वैकल्पिक)",
+      "achieved": "हासिल किया",
+      "goalNotes": "नोट्स",
+      "goalOptional": "लक्ष्य (वैकल्पिक)",
+      "parentGoal": "मूल लक्ष्य",
+      "openGoal": "लक्ष्य खोलें",
+      "noGoal": "कोई लक्ष्य नहीं",
+      "plansForGoal": "इस लक्ष्य की योजनाएँ",
+      "goalsAndPlansFromWant": "इस इच्छा से बने लक्ष्य और योजनाएँ",
+      "turnWantIntoGoal": "इस इच्छा को लक्ष्य में बदलें"
     }
   },
   "error": {
@@ -443,7 +465,8 @@
       "importStrategyMustBeMergeOrReplace": "आयात रणनीति merge या replace होनी चाहिए।",
       "couldNotEmbedValue0InTheDownload": "डाउनलोड में {value0} को एम्बेड नहीं किया जा सका।",
       "taskimaticWorkspaceIsNotMounted": "taskimatic कार्यक्षेत्र माउंट नहीं है।",
-      "couldNotEmbedI18n": "डाउनलोड में अनुवाद एम्बेड नहीं किए जा सके।"
+      "couldNotEmbedI18n": "डाउनलोड में अनुवाद एम्बेड नहीं किए जा सके।",
+      "goalNotFound": "लक्ष्य नहीं मिला: {id}"
     }
   }
 }
