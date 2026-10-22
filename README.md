@@ -7,6 +7,7 @@ Serve this directory over HTTP for development (for example, `python3 -m http.se
 - `index.html`: page metadata, accessible shell, and portable workspace seed.
 - `css/tasks.css` and `css/protect-modal.css`: global workspace and Lock In styles.
 - `webcomp/`: custom elements, with each component's template, styles, and event handling together. `task-workspace.js` coordinates the workspace and its views.
+- `webcomp/plan-item.js`, `goal-item.js`, and `want-item.js`: dedicated planning cards. Each accepts `setData({ record, parents?, children?, associations?, catalog?, goalParents? })` and emits bubbling `planning-*` events. `planning-item.js` shares editing, associations, child links, and deletion behavior.
 - `js/tasks-app.js`: startup and component registration after translations are ready.
 - `js/task-model.js`: task normalization, shared formatting, and duration caching.
 - `js/task-repository.js`: OPFS persistence, IndexedDB migration/fallback, and memory fallback.

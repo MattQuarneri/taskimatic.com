@@ -1,4 +1,5 @@
 import { APP_VERSION, TIMER_ACTORS, cloneValue, uid, nowISO, cleanString, canonicalType, setText, durationCache, currentDay, invalidateDurationCache, completedDurationsTodayForTask, normalizeTask, parseQuickTask, durationForTask, durationTodayForTask, formatDuration, formatProtectTime, colorFor } from '../js/task-model.js';
+import { WorkspaceLiveModel } from '../js/workspace-live-model.js';
 import { TaskRepository } from '../js/task-repository.js';
 import { downloadBlob } from '../js/download.js';
 import { installLockInControls } from './lock-in-controls.js';
@@ -10,6 +11,9 @@ class TaskWorkspace extends HTMLElement {
     constructor() {
         super();
         this.repository = new TaskRepository();
+        this.liveModel = new WorkspaceLiveModel();
+        this._unsubscribePlanning = null;
+        this.pendingPlanningCreates = new Map();
         this.tasks = [];
         this.plans = [];
         this.wants = [];
@@ -115,6 +119,7 @@ class TaskWorkspace extends HTMLElement {
     }
 
     connectedCallback() {
+        this.subscribePlanningModel();
         if (this.dataset.mounted) return;
         this.dataset.mounted = 'true';
         this.renderShell();
@@ -136,6 +141,8 @@ class TaskWorkspace extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this._unsubscribePlanning?.();
+        this._unsubscribePlanning = null;
         this.plansNavResizeObserver?.disconnect();
         clearTimeout(this.timerTick);
         if (this.protectTimerInterval) {
@@ -576,8 +583,14 @@ class TaskWorkspace extends HTMLElement {
             const input = form.querySelector('input');
             const parsed = parseQuickTask(input.value);
             if (!parsed.text) return;
-            await this.createPlanning(form.dataset.kind, parsed);
+            const captured = input.value;
             input.value = '';
+            this.planningSearch[form.dataset.kind] = '';
+            this.querySelector(`[data-planning-search="${form.dataset.kind}"]`).value = '';
+            this.associationFilter = null;
+            this.updateLocationHash(null);
+            const record = await this.runPlanningAction(() => this.createPlanning(form.dataset.kind, parsed));
+            if (!record && !input.value) input.value = captured;
             input.focus();
         }));
         this.querySelectorAll('[data-planning-search]').forEach(input => input.addEventListener('input', () => {
@@ -587,23 +600,23 @@ class TaskWorkspace extends HTMLElement {
         this.querySelectorAll('[data-clear-planning-filter]').forEach(button => button.addEventListener('click', () => this.setAssociationFilter(null)));
         this.addEventListener('task-plan-change', event => this.updateTask(event.detail.id, { planId: event.detail.planId }));
         this.addEventListener('planning-thinking-tab-change', event => this.planThinkingTabs.set(event.detail.id, event.detail.tab));
-        this.addEventListener('planning-update', event => this.updatePlanning(event.detail.kind, event.detail.id, event.detail.patch, { quiet: event.detail.quiet, source: event.target }));
-        this.addEventListener('planning-delete', event => this.deletePlanning(event.detail.kind, event.detail.id));
+        this.addEventListener('planning-update', event => this.runPlanningAction(() => this.updatePlanning(event.detail.kind, event.detail.id, event.detail.patch, { quiet: event.detail.quiet, source: event.target })));
+        this.addEventListener('planning-delete', event => this.runPlanningAction(() => this.deletePlanning(event.detail.kind, event.detail.id)));
         this.addEventListener('planning-association-add', event => {
             const { kind, id, association } = event.detail;
             const record = this[kind].find(record => record.id === id);
-            this.updatePlanning(kind, id, { associations: normalizeAssociations([...record.associations, association]) });
+            this.runPlanningAction(() => this.updatePlanning(kind, id, { associations: normalizeAssociations([...record.associations, association]) }));
         });
         this.addEventListener('planning-association-remove', event => {
             const { kind, id, association } = event.detail;
             const record = this[kind].find(record => record.id === id);
-            this.updatePlanning(kind, id, { associations: record.associations.filter(item => !(item.type === association.type && item.value.toLowerCase() === association.value.toLowerCase())) });
+            this.runPlanningAction(() => this.updatePlanning(kind, id, { associations: record.associations.filter(item => !(item.type === association.type && item.value.toLowerCase() === association.value.toLowerCase())) }));
         });
         this.addEventListener('planning-child-add', event => {
             const { kind, id, input } = event.detail;
-            if (kind === 'plans') this.createTask({ ...input, planId: id });
-            else if (kind === 'goals') this.createPlanning('plans', { ...input, goalId: id });
-            else this.createPlanning('goals', { ...input, wantId: id });
+            if (kind === 'plans') this.runPlanningAction(async () => { await this.pendingPlanningCreates.get(id); return this.createTask({ ...input, planId: id }); });
+            else if (kind === 'goals') this.runPlanningAction(async () => { await this.pendingPlanningCreates.get(id); return this.createPlanning('plans', { ...input, goalId: id }); });
+            else this.runPlanningAction(async () => { await this.pendingPlanningCreates.get(id); return this.createPlanning('goals', { ...input, wantId: id }); });
         });
         this.addEventListener('planning-navigate', event => {
             const { targetKind, targetId } = event.detail;
@@ -615,7 +628,7 @@ class TaskWorkspace extends HTMLElement {
             this.closeDrawers();
             this.setMainView(targetKind);
             this.renderAll();
-            const item = [...this.querySelectorAll(`.planning-list[data-kind="${targetKind}"] planning-item`)].find(item => item.dataset.recordId === targetId);
+            const item = [...this.querySelectorAll(`.planning-list[data-kind="${targetKind}"] ${targetKind.slice(0, -1)}-item`)].find(item => item.dataset.recordId === targetId);
             item?.setAttribute('attention', '');
             item?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             item?.shadowRoot.querySelector('.text').focus({ preventScroll: true });
@@ -623,35 +636,46 @@ class TaskWorkspace extends HTMLElement {
         });
     }
 
-    renderPlanning(source = null) {
+    subscribePlanningModel() {
+        if (this._unsubscribePlanning) return;
+        this._unsubscribePlanning = this.liveModel.subscribe(change => {
+            this.renderPlanningViews();
+            this.renderCounts();
+            this.renderPlansNav();
+            this.renderAssociations();
+            document.dispatchEvent(new CustomEvent('taskimatic:model-change', { detail: change }));
+        });
+    }
+
+    renderPlanning(source = null, action = 'reconciled') {
+        this.subscribePlanningModel();
+        if (!this.liveModel.replace(this, { source, action })) this.renderPlanningViews();
+    }
+
+    renderPlanningViews() {
         for (const kind of ['plans', 'goals', 'wants']) {
             const list = this.querySelector(`.planning-list[data-kind="${kind}"]`);
             const records = this.listPlanning(kind, { search: this.planningSearch[kind], association: this.associationFilter });
             const filter = this.querySelector(`.planning-filter[data-kind="${kind}"]`);
             filter.hidden = !this.associationFilter;
             if (this.associationFilter) filter.querySelector('span').textContent = `${this.associationFilter.type}: ${this.associationFilter.value}`;
+            const existing = new Map([...list.children].filter(item => item.dataset.recordId).map(item => [item.dataset.recordId, item]));
             const items = records.map(record => {
-                if (source?.kind === kind && source.dataset.recordId === record.id) return source;
-                const element = document.createElement('planning-item');
-                element.setData({
-                    kind, record, thinkingTab: this.planThinkingTabs.get(record.id), parents: this.wants, goalParents: this.goals,
-                    children: kind === 'plans' ? this.tasks.filter(task => task.planId === record.id)
-                        : kind === 'goals' ? this.plans.filter(plan => plan.goalId === record.id)
-                        : [...this.goals.filter(goal => goal.wantId === record.id).map(goal => ({ ...goal, targetKind: 'goals' })),
-                            ...this.plans.filter(plan => plan.wantId === record.id).map(plan => ({ ...plan, targetKind: 'plans' }))],
-                    associations: record.effectiveAssociations,
-                    catalog: this.associationCatalogFor()
-                });
+                const current = existing.get(record.id);
+                if (current) return current;
+                const element = document.createElement(`${kind.slice(0, -1)}-item`);
+                element.setData({ ...this.liveModel.planningData(kind, record.id), thinkingTab: this.planThinkingTabs.get(record.id) });
+                element.model = this.liveModel;
                 return element;
             });
-            // Leave the focused editor attached while its debounced save updates other views.
-            if (source && list.contains(source) && items.includes(source)) {
-                [...list.children].filter(item => item !== source).forEach(item => item.remove());
-                items.forEach((item, index) => {
-                    const current = list.children[index] || null;
-                    if (current !== item) list.insertBefore(item, current);
-                });
-            } else list.replaceChildren(...items);
+            // Keep existing editors connected; moving or rebuilding all cards
+            // cancels pending saves and loses input focus and subscriptions.
+            const keep = new Set(items);
+            [...list.children].filter(item => !keep.has(item)).forEach(item => item.remove());
+            items.forEach((item, index) => {
+                const current = list.children[index] || null;
+                if (current !== item) list.insertBefore(item, current);
+            });
             if (!records.length) {
                 const empty = document.createElement('div');
                 empty.className = 'empty-state';
@@ -662,6 +686,15 @@ class TaskWorkspace extends HTMLElement {
                 empty.append(title, copy);
                 list.append(empty);
             }
+        }
+    }
+
+    async runPlanningAction(operation) {
+        try { return await operation(); }
+        catch (error) {
+            this.toast(error.message);
+            this.dispatchEvent(new CustomEvent('planning-error', { bubbles: true, composed: true, detail: { message: error.message } }));
+            return null;
         }
     }
 
@@ -685,14 +718,27 @@ class TaskWorkspace extends HTMLElement {
         if (this[kind].some(item => item.id === record.id)) throw new Error(t('error.messages.recordAlreadyExistsValue0', { value0: record.id }));
         if (record.wantId && !this.wants.some(want => want.id === record.wantId)) throw new Error(t('error.messages.wantNotFoundValue0', { value0: record.wantId }));
         if (record.goalId && !this.goals.some(goal => goal.id === record.goalId)) throw new Error(t('error.messages.goalNotFound', { id: record.goalId }));
-        await this.repository.put(record, kind);
         this[kind].push(record);
+        // Publish before waiting for disk: a slow OPFS write must not hide a new card.
+        this.renderPlanning(null, `${kind.slice(0, -1)}-creating`);
+        const saved = this.repository.put(record, kind);
+        this.pendingPlanningCreates.set(record.id, saved);
+        try {
+            await saved;
+        } catch (error) {
+            this[kind] = this[kind].filter(item => item.id !== record.id);
+            this.renderPlanning(null, `${kind.slice(0, -1)}-create-failed`);
+            throw error;
+        } finally {
+            this.pendingPlanningCreates.delete(record.id);
+        }
         this.renderAll();
         this.emitChange(`${kind.slice(0, -1)}-created`, record);
         return cloneValue(record);
     }
 
     async updatePlanning(kind, id, patch = {}, options = {}) {
+        await this.pendingPlanningCreates.get(id);
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const index = this[kind].findIndex(record => record.id === id);
         if (index < 0) throw new Error(t('error.messages.recordNotFoundValue0', { value0: id }));
@@ -704,7 +750,6 @@ class TaskWorkspace extends HTMLElement {
         await this.repository.put(record, kind);
         this[kind].splice(index, 1, record);
         if (options.quiet) {
-            if (options.source) options.source._record = cloneValue(record);
             this.renderPlanning(options.source);
             this.renderAssociations();
             this.querySelectorAll('task-item').forEach(item => {
@@ -719,6 +764,7 @@ class TaskWorkspace extends HTMLElement {
     }
 
     async deletePlanning(kind, id) {
+        await this.pendingPlanningCreates.get(id);
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const record = this[kind].find(record => record.id === id);
         if (!record) throw new Error(t('error.messages.recordNotFoundValue0', { value0: id }));
@@ -2083,7 +2129,8 @@ class TaskWorkspace extends HTMLElement {
     }
 
     emitChange(action, record = null) {
-        const kind = action.startsWith('plan-') ? 'plan' : action.startsWith('want-') ? 'want' : action.startsWith('agent-') ? 'agent' : 'task';
+        this.renderPlanning(null, action);
+        const kind = action.startsWith('goal-') ? 'goal' : action.startsWith('plan-') ? 'plan' : action.startsWith('want-') ? 'want' : action.startsWith('agent-') ? 'agent' : 'task';
         document.dispatchEvent(new CustomEvent('taskimatic:change', { detail: { action, kind, record: record ? cloneValue(record) : null, task: kind === 'task' && record ? cloneValue(record) : null } }));
     }
 

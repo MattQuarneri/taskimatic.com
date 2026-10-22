@@ -1,30 +1,109 @@
 import { COMMON_PROPERTIES, cloneValue, canonicalType, parseQuickTask } from '../js/task-model.js';
-class PlanningItem extends HTMLElement {
+export class PlanningItem extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
         this._saveTimers = {};
         this._confirmTimer = null;
+        this._model = null;
+        this._unsubscribe = null;
     }
 
-    setData({ kind, record, parents, children, associations, catalog, goalParents = [], thinkingTab = 'myThinking' }) {
-        this.kind = kind;
+    setData({ kind, record, parents = [], children = [], associations = record.associations || [], catalog = {}, goalParents = [], thinkingTab = 'myThinking' }) {
+        this.kind = this.constructor.kind || kind;
         this._thinkingTab = thinkingTab === 'aiThinking' ? 'aiThinking' : 'myThinking';
         this._record = cloneValue(record);
         this.dataset.recordId = record.id;
         this.render(parents, children, associations, catalog, goalParents);
     }
 
-    updateThinkingTabs() {
-        this.shadowRoot.querySelectorAll('[data-thinking-tab]').forEach(tab => {
-            const active = tab.dataset.thinkingTab === this._thinkingTab;
-            tab.setAttribute('aria-selected', String(active));
-            tab.tabIndex = active ? 0 : -1;
-        });
-        this.shadowRoot.querySelectorAll('[data-thinking-panel]').forEach(panel => { panel.hidden = panel.dataset.thinkingPanel !== this._thinkingTab; });
+    get model() { return this._model; }
+    set model(next) {
+        this._unsubscribe?.();
+        this._unsubscribe = null;
+        this._model = next;
+        this.subscribeToModel();
+        this.refreshFromModel();
+    }
+
+    connectedCallback() {
+        this.subscribeToModel();
+        this.refreshFromModel();
+    }
+
+    subscribeToModel() {
+        if (!this._model || this._unsubscribe) return;
+        this._unsubscribe = this._model.subscribe(() => this.refreshFromModel());
+    }
+
+    refreshFromModel() {
+        if (!this._record) return;
+        const data = this._model?.planningData(this.kind, this._record.id);
+        if (!data) return;
+        const before = this._record;
+        this._record = cloneValue(data.record);
+        for (const field of this.editableFields) {
+            if (before[field] === data.record[field]) continue;
+            const input = this.shadowRoot.querySelector(this.fieldSelector(field));
+            if (this.shadowRoot.activeElement !== input && !this._saveTimers[field]) input.value = data.record[field] ?? '';
+        }
+        this.refreshRelationships(data.parents, data.goalParents);
+        const achieved = this.shadowRoot.querySelector('.achieved');
+        if (achieved) achieved.checked = data.record.achieved;
+        this.renderAssociationChips(data.associations);
+        this.renderChildren(data.children);
+        this.shadowRoot.querySelector('.children-heading').textContent = `${t(this.childrenTitleKey)} · ${data.children.length}`;
+        this.refreshCatalog(data.catalog);
+    }
+
+    fieldSelector(field) {
+        return { myThinking: '.my-thinking', aiThinking: '.ai-thinking' }[field] || `.${field}`;
+    }
+
+    refreshRelationships(parents, goalParents) {
+        for (const [selector, records, field, emptyKey] of [
+            ['.parent', parents, 'wantId', 'error.messages.noWant'],
+            ['.goal-parent', goalParents, 'goalId', 'ui.text.noGoal']
+        ]) {
+            const select = this.shadowRoot.querySelector(selector);
+            if (!select) continue;
+            select.replaceChildren(new Option(t(emptyKey), ''), ...records.map(record => new Option(record.text, record.id)));
+            select.value = this._record[field] || '';
+        }
+        const want = this.shadowRoot.querySelector('.open-parent');
+        if (want) want.hidden = !this._record.wantId;
+        const goal = this.shadowRoot.querySelector('.open-goal');
+        if (goal) goal.hidden = !this._record.goalId;
+    }
+
+    refreshCatalog(catalog) {
+        this._catalog = catalog;
+        const types = this.shadowRoot.querySelector('#planning-types');
+        types.replaceChildren(...[...new Set([...COMMON_PROPERTIES, ...Object.keys(catalog)])].map(property => new Option(property, property)));
+    }
+
+    get untrimmedFields() { return []; }
+
+    renderRelationships() { return ''; }
+    bindDetails() {}
+
+    renderWantParent() {
+        return `<label class="parent-label">${escapeHTML(t('ui.text.wantOptional'))}<span class="parent-row"><select class="parent" aria-label="${escapeHTML(t('ui.text.parentWant'))}"></select><button class="open-parent" type="button" ${this._record.wantId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openWant'))}</button></span></label>`;
+    }
+
+    bindWantParent(parents) {
+        const parent = this.shadowRoot.querySelector('.parent');
+        if (!parent) return;
+        parent.append(new Option(t('error.messages.noWant'), ''));
+        for (const record of parents) parent.append(new Option(record.text, record.id));
+        parent.value = this._record.wantId || '';
+        parent.addEventListener('change', () => this.emit('planning-update', { patch: { wantId: parent.value || null } }));
+        this.shadowRoot.querySelector('.open-parent').addEventListener('click', () => this.emit('planning-navigate', { targetKind: 'wants', targetId: this._record.wantId }));
     }
 
     disconnectedCallback() {
+        this._unsubscribe?.();
+        this._unsubscribe = null;
         Object.values(this._saveTimers).forEach(clearTimeout);
         clearTimeout(this._confirmTimer);
     }
@@ -34,10 +113,8 @@ class PlanningItem extends HTMLElement {
     }
 
     render(parents, children, associations, catalog, goalParents) {
-        const isPlan = this.kind === 'plans';
-        const isGoal = this.kind === 'goals';
         const singular = this.kind.slice(0, -1);
-        const childKind = isPlan ? 'tasks' : isGoal ? 'plans' : 'goals';
+        const childKind = this.childKind;
         this.shadowRoot.innerHTML = `
             <style>
                 :host { display: block; min-width: 0; }
@@ -79,22 +156,9 @@ class PlanningItem extends HTMLElement {
                 @media (max-width: 720px) { textarea, input, select { font-size: max(16px, var(--font-base, 13px)); } }
             </style>
             <article>
-                <label>${isGoal ? t('ui.text.goal') : isPlan ? t('ui.text.plan') : t('ui.text.want')}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: isGoal ? t('ui.text.goal') : isPlan ? t('ui.text.plan') : t('ui.text.want') }))}"></textarea></label>
-                ${isPlan ? `
-                    <div class="thinking-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.planThinking'))}">
-                        <button type="button" id="my-thinking-tab" role="tab" data-thinking-tab="myThinking" aria-controls="my-thinking-panel">${escapeHTML(t('ui.text.myThinking'))}</button>
-                        <button type="button" id="ai-thinking-tab" role="tab" data-thinking-tab="aiThinking" aria-controls="ai-thinking-panel">${escapeHTML(t('ui.text.aIThinking'))}</button>
-                    </div>
-                    <div role="tabpanel" id="my-thinking-panel" data-thinking-panel="myThinking" aria-labelledby="my-thinking-tab"><label>${escapeHTML(t('ui.text.myThinkingApproachAndNextSteps'))}<textarea class="my-thinking" rows="5" maxlength="50000" aria-label="${escapeHTML(t('ui.text.myThinking'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label></div>
-                    <div role="tabpanel" id="ai-thinking-panel" data-thinking-panel="aiThinking" aria-labelledby="ai-thinking-tab"><label>${escapeHTML(t('ui.text.aIThinking2'))}<textarea class="ai-thinking" rows="5" maxlength="50000" aria-label="${escapeHTML(t('ui.text.aIThinking'))}" placeholder="${escapeHTML(t('ui.text.saveTextGeneratedByAI'))}"></textarea></label></div>
-                ` : isGoal ? `
-                    <label>${escapeHTML(t('ui.text.successCriteria'))}<textarea class="successCriteria" rows="3" maxlength="10000" placeholder="${escapeHTML(t('ui.text.successPlaceholder'))}"></textarea></label>
-                    <label>${escapeHTML(t('ui.text.targetDate'))}<input class="targetDate" type="date"></label>
-                    <label class="achieved-label"><input class="achieved" type="checkbox">${escapeHTML(t('ui.text.achieved'))}</label>
-                    <label>${escapeHTML(t('ui.text.goalNotes'))}<textarea class="notes" rows="3" maxlength="10000"></textarea></label>
-                ` : `<label>${escapeHTML(t('ui.text.ideasAspirationsAndPossibilities'))}<textarea class="notes" rows="5" maxlength="10000" aria-label="${escapeHTML(t('ui.text.wantNotes'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label>`}
-                <label class="parent-label" ${isPlan || isGoal ? '' : 'hidden'}>${escapeHTML(t('ui.text.wantOptional'))}<span class="parent-row"><select class="parent" aria-label="${escapeHTML(t('ui.text.parentWant'))}"></select><button class="open-parent" type="button" ${this._record.wantId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openWant'))}</button></span></label>
-                ${isPlan ? `<label>${escapeHTML(t('ui.text.goalOptional'))}<span class="parent-row"><select class="goal-parent" aria-label="${escapeHTML(t('ui.text.parentGoal'))}"></select><button class="open-goal" type="button" ${this._record.goalId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openGoal'))}</button></span></label>` : ''}
+                <label>${escapeHTML(t(`ui.text.${singular}`))}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: t(`ui.text.${singular}`) }))}"></textarea></label>
+                ${this.renderDetails()}
+                ${this.renderRelationships()}
                 <div class="chips" aria-label="${escapeHTML(t('ui.text.associations'))}"></div>
                 <form class="association-form">
                     <input class="association-type" list="planning-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}" required>
@@ -103,19 +167,19 @@ class PlanningItem extends HTMLElement {
                     <datalist id="planning-values"></datalist>
                     <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                 </form>
-                <h3>${isPlan ? t('ui.text.tasksInThisPlan') : isGoal ? t('ui.text.plansForGoal') : t('ui.text.goalsAndPlansFromWant')} · ${children.length}</h3>
+                <h3 class="children-heading">${escapeHTML(t(this.childrenTitleKey))} · ${children.length}</h3>
                 <div class="children"></div>
-                <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(childKind.slice(0, -1)) }))}" placeholder="${isPlan ? t('ui.text.turnANextStepIntoATask') : isGoal ? t('ui.text.turnThisWantIntoAPlan') : t('ui.text.turnWantIntoGoal')}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(childKind.slice(0, -1)) }))}</button></form>
+                <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(childKind.slice(0, -1)) }))}" placeholder="${escapeHTML(t(this.childPlaceholderKey))}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(childKind.slice(0, -1)) }))}</button></form>
                 <div class="footer"><span class="age"></span><button class="delete" type="button">${escapeHTML(t('ui.text.deleteValue10', { value10: uiLabel(singular) }))}</button></div>
             </article>
         `;
-        for (const field of isPlan ? ['text', 'myThinking', 'aiThinking'] : isGoal ? ['text', 'notes', 'successCriteria', 'targetDate'] : ['text', 'notes']) {
-            const selector = { myThinking: '.my-thinking', aiThinking: '.ai-thinking' }[field] || `.${field}`;
-            const input = this.shadowRoot.querySelector(selector);
-            input.value = this._record[field];
+        for (const field of this.editableFields) {
+            const input = this.shadowRoot.querySelector(this.fieldSelector(field));
+            input.value = this._record[field] ?? '';
             const save = () => {
                 clearTimeout(this._saveTimers[field]);
-                const value = ['myThinking', 'aiThinking'].includes(field) ? input.value : input.value.trim();
+                delete this._saveTimers[field];
+                const value = this.untrimmedFields.includes(field) ? input.value : input.value.trim();
                 if (field === 'text' && !value) { input.value = this._record.text; return; }
                 if (value !== this._record[field]) this.emit('planning-update', { patch: { [field]: value }, quiet: true });
             };
@@ -125,84 +189,30 @@ class PlanningItem extends HTMLElement {
             });
             input.addEventListener('blur', save);
         }
-        this.shadowRoot.querySelectorAll('[data-thinking-tab]').forEach(tab => {
-            tab.addEventListener('click', () => {
-                this._thinkingTab = tab.dataset.thinkingTab;
-                this.updateThinkingTabs();
-                this.emit('planning-thinking-tab-change', { tab: this._thinkingTab });
-            });
-            tab.addEventListener('keydown', event => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-                event.preventDefault();
-                const next = event.key === 'Home' ? 'myThinking' : event.key === 'End' ? 'aiThinking' : this._thinkingTab === 'myThinking' ? 'aiThinking' : 'myThinking';
-                const nextTab = this.shadowRoot.querySelector(`[data-thinking-tab="${next}"]`);
-                nextTab.click();
-                nextTab.focus();
-            });
-        });
-        this.updateThinkingTabs();
-        if (isGoal) {
-            const achieved = this.shadowRoot.querySelector('.achieved');
-            achieved.checked = this._record.achieved;
-            achieved.addEventListener('change', () => this.emit('planning-update', { patch: { achieved: achieved.checked } }));
-        }
-        if (isPlan) {
-            const goal = this.shadowRoot.querySelector('.goal-parent');
-            goal.append(new Option(t('ui.text.noGoal'), ''), ...goalParents.map(record => new Option(record.text, record.id)));
-            goal.value = this._record.goalId || '';
-            goal.addEventListener('change', () => this.emit('planning-update', { patch: { goalId: goal.value || null } }));
-            this.shadowRoot.querySelector('.open-goal').addEventListener('click', () => this.emit('planning-navigate', { targetKind: 'goals', targetId: this._record.goalId }));
-        }
-        const parent = this.shadowRoot.querySelector('.parent');
-        parent.append(new Option(t('error.messages.noWant'), ''));
-        for (const record of parents) parent.append(new Option(record.text, record.id));
-        parent.value = this._record.wantId || '';
-        parent.addEventListener('change', () => this.emit('planning-update', { patch: { wantId: parent.value || null } }));
-        this.shadowRoot.querySelector('.open-parent').addEventListener('click', () => this.emit('planning-navigate', { targetKind: 'wants', targetId: this._record.wantId }));
-        const ownKeys = new Set(this._record.associations.map(item => `${item.type}\u0000${item.value.toLowerCase()}`));
-        const chips = this.shadowRoot.querySelector('.chips');
-        for (const association of associations) {
-            const own = ownKeys.has(`${association.type}\u0000${association.value.toLowerCase()}`);
-            const chip = document.createElement('span');
-            chip.className = `chip${own ? '' : ' inherited'}`;
-            chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(childKind) })}`;
-            if (own) {
-                const remove = document.createElement('button');
-                remove.type = 'button';
-                remove.textContent = '×';
-                remove.setAttribute('aria-label', t('ui.text.removeValue0Value1', { value0: association.type, value1: association.value }));
-                remove.addEventListener('click', () => this.emit('planning-association-remove', { association }));
-                chip.append(remove);
-            }
-            chips.append(chip);
-        }
+        this.bindDetails(goalParents);
+        this.bindWantParent(parents);
+        this.renderAssociationChips(associations);
         const type = this.shadowRoot.querySelector('.association-type');
         const value = this.shadowRoot.querySelector('.association-value');
-        const types = this.shadowRoot.querySelector('#planning-types');
-        for (const property of new Set([...COMMON_PROPERTIES, ...Object.keys(catalog)])) types.append(new Option(property, property));
+        this.refreshCatalog(catalog);
         type.addEventListener('input', () => {
             const values = this.shadowRoot.querySelector('#planning-values');
             values.replaceChildren();
-            for (const name of catalog[canonicalType(type.value)] || []) values.append(new Option(name, name));
+            for (const name of this._catalog[canonicalType(type.value)] || []) values.append(new Option(name, name));
         });
         this.shadowRoot.querySelector('.association-form').addEventListener('submit', event => {
             event.preventDefault();
             this.emit('planning-association-add', { association: { type: type.value, value: value.value } });
         });
-        const childList = this.shadowRoot.querySelector('.children');
-        for (const child of children) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'child-link';
-            button.textContent = `${child.status === 'done' || child.achieved ? '✓ ' : ''}${child.text}`;
-            button.addEventListener('click', () => this.emit('planning-navigate', { targetKind: child.targetKind || childKind, targetId: child.id }));
-            childList.append(button);
-        }
+        this.renderChildren(children);
         this.shadowRoot.querySelector('.child-form').addEventListener('submit', event => {
             event.preventDefault();
             const input = this.shadowRoot.querySelector('.child-text');
             const parsed = parseQuickTask(input.value);
-            if (parsed.text) this.emit('planning-child-add', { input: parsed });
+            if (parsed.text) {
+                this.emit('planning-child-add', { input: parsed });
+                input.value = '';
+            }
         });
         this.shadowRoot.querySelector('.age').textContent = t('ui.text.createdValue0', { value0: new Date(this._record.createdAt).toLocaleDateString() });
         this.shadowRoot.querySelector('.delete').addEventListener('click', event => {
@@ -218,5 +228,38 @@ class PlanningItem extends HTMLElement {
             }
         });
     }
+
+    renderAssociationChips(associations) {
+        const ownKeys = new Set(this._record.associations.map(item => `${item.type}\u0000${item.value.toLowerCase()}`));
+        const chips = this.shadowRoot.querySelector('.chips');
+        chips.replaceChildren();
+        for (const association of associations) {
+            const own = ownKeys.has(`${association.type}\u0000${association.value.toLowerCase()}`);
+            const chip = document.createElement('span');
+            chip.className = `chip${own ? '' : ' inherited'}`;
+            chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(this.childKind) })}`;
+            if (own) {
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.textContent = '×';
+                remove.setAttribute('aria-label', t('ui.text.removeValue0Value1', { value0: association.type, value1: association.value }));
+                remove.addEventListener('click', () => this.emit('planning-association-remove', { association }));
+                chip.append(remove);
+            }
+            chips.append(chip);
+        }
+    }
+
+    renderChildren(children) {
+        const childList = this.shadowRoot.querySelector('.children');
+        childList.replaceChildren();
+        for (const child of children) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'child-link';
+            button.textContent = `${child.status === 'done' || child.achieved ? '✓ ' : ''}${child.text}`;
+            button.addEventListener('click', () => this.emit('planning-navigate', { targetKind: child.targetKind || this.childKind, targetId: child.id }));
+            childList.append(button);
+        }
+    }
 }
-customElements.define('planning-item', PlanningItem);

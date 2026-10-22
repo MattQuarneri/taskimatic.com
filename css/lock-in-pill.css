@@ -2,7 +2,7 @@
     position: fixed;
     left: 12px;
     bottom: 26px;
-    z-index: 62;
+    z-index: 100;
     height: auto;
     transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
     min-height: max(34px, 2.2em);

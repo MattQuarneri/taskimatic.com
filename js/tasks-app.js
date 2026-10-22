@@ -10,7 +10,9 @@ import '../webcomp/task-item.js';
 import '../webcomp/task-table.js';
 import '../webcomp/task-hierarchy-editor.js';
 import '../webcomp/task-visualization.js';
-import '../webcomp/planning-item.js';
+import '../webcomp/plan-item.js';
+import '../webcomp/goal-item.js';
+import '../webcomp/want-item.js';
 import { TaskWorkspace } from '../webcomp/task-workspace.js';
 
 await window.i18n.ready;
