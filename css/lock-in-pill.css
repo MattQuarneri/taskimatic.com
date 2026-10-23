@@ -19,6 +19,7 @@
     touch-action: none;
     user-select: none;
 }
+.lock-in-pill-slot { display: block; flex-shrink: 0; }
 .lock-in-pill:hover { background: var(--accent-light); border-color: var(--accent); color: var(--chalk); }
 .lock-in-pill.is-locked { background: var(--accent); border-color: var(--accent); color: white; }
 .lock-in-pill.is-dragging { cursor: grabbing; transition: none; }

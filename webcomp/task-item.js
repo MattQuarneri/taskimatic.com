@@ -7,7 +7,8 @@ class TaskItem extends HTMLElement {
         this._saveTimer = null;
         this._notesSaveTimer = null;
         this._promptsSaveTimer = null;
-        this._editorTab = 'notes';
+        this._editorTab = null;
+        this._lastEditorTab = 'notes';
         this._compactTab = 'task';
         this._lastCompactTab = 'task';
         this._compactMedia = window.matchMedia('(max-width: 888px)');
@@ -18,7 +19,6 @@ class TaskItem extends HTMLElement {
         this._plans = [];
         this._clockDayKey = '';
         this._clockMinute = -1;
-        this._sessionsOpen = false;
     }
 
     connectedCallback() {
@@ -82,6 +82,7 @@ class TaskItem extends HTMLElement {
             move('.plan-control', '[data-compact-panel="associations"]');
             move('.meta-row', '[data-compact-panel="associations"]');
             move('.group-editor', '[data-compact-panel="associations"]');
+            move('.time-totals', '[data-compact-panel="time"]');
             move('session-times', '[data-compact-panel="time"]');
         } else {
             for (const { node, marker } of this._compactMoves || []) marker.replaceWith(node);
@@ -91,13 +92,23 @@ class TaskItem extends HTMLElement {
 
     set agentCatalog(value) { this._agents = value || []; }
 
-    set editorTab(value) { this._editorTab = value === 'prompts' ? 'prompts' : 'notes'; this.updateEditorTabs(); }
+    set editorTab(value) {
+        this._editorTab = ['notes', 'prompts', 'associations', 'time'].includes(value) ? value : null;
+        if (this._editorTab) this._lastEditorTab = this._editorTab;
+        this.updateEditorTabs();
+    }
+
+    selectEditorTab(tab, toggle = false) {
+        this.editorTab = toggle && this._editorTab === tab ? null : tab;
+        this.emit('task-editor-tab-change', { tab: this._editorTab });
+    }
 
     updateEditorTabs() {
         this.shadowRoot.querySelectorAll('[data-editor-tab]').forEach(tab => {
             const active = tab.dataset.editorTab === this._editorTab;
             tab.setAttribute('aria-selected', String(active));
-            tab.tabIndex = active ? 0 : -1;
+            tab.setAttribute('aria-expanded', String(active));
+            tab.tabIndex = tab.dataset.editorTab === (this._editorTab || this._lastEditorTab) ? 0 : -1;
         });
         this.shadowRoot.querySelectorAll('[data-editor-panel]').forEach(panel => { panel.hidden = panel.dataset.editorPanel !== this._editorTab; });
     }
@@ -107,12 +118,6 @@ class TaskItem extends HTMLElement {
     set associationCatalog(value) { this._associationCatalog = cloneValue(value || {}); }
 
     set priorityLimit(value) { this._priorityLimit = Math.max(1, Number(value) || 1); }
-
-    set sessionsOpen(value) {
-        this._sessionsOpen = Boolean(value);
-        const details = this.shadowRoot.querySelector('.details');
-        if (details) details.open = this._sessionsOpen;
-    }
 
     set task(value) {
         this._task = cloneValue(value);
@@ -205,7 +210,7 @@ class TaskItem extends HTMLElement {
                 .text {
                     display: block;
                     width: 100%;
-                    min-height: 30px;
+                    min-height: 70px;
                     max-height: 150px;
                     resize: vertical;
                     overflow: auto;
@@ -282,13 +287,13 @@ class TaskItem extends HTMLElement {
                 .group-editor { display: grid; grid-template-columns: 120px minmax(130px, 1fr) auto; gap: 5px; margin: 5px 0 0 5px; padding: 8px; border: 1px solid #d6d0c3; border-radius: 9px; background: #f5f0e5; }
                 .group-editor input { min-width: 0; min-height: 34px; height: auto; border: 1px solid #bdb7aa; border-radius: 7px; background: #fffdf7; padding: 4px 8px; font-size: var(--font-md, 12px); }
                 .group-editor button { min-height: 34px; height: auto; border: 1px solid var(--ink, #18242b); border-radius: 7px; background: var(--ink, #18242b); color: white; padding: 4px 10px; font-size: var(--font-sm, 11px); font-weight: 800; }
-                .details { margin: 5px 0 0 5px; border-top: 1px solid #ded8ca; padding-top: 8px; }
+                .card > [data-editor-panel] { margin-top: 5px; }
                 .plan-control { display: grid; gap: 5px; margin: 5px 0 0 5px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 .plan-row { display: flex; gap: 5px; }
                 .plan-select { flex: 1; min-width: 0; max-width: 100%; min-height: 30px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font-size: var(--font-md, 12px); }
                 .open-plan { min-height: 30px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: var(--font-xs, 10px); cursor: pointer; }
-                .editor-toolbar { display: flex; align-items: flex-end; gap: 8px; margin-top: 9px; }
-                .editor-tabs { display: flex; flex-shrink: 0; gap: 3px; }
+                .editor-toolbar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 9px; }
+                .editor-tabs { display: flex; flex-wrap: wrap; gap: 3px; border-bottom: 1px solid var(--line, #cfc8b8); }
                 .estimated-time { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; padding-bottom: 3px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 .estimate-options { display: inline-flex; gap: 3px; }
                 .estimate-option { position: relative; cursor: pointer; }
@@ -306,10 +311,6 @@ class TaskItem extends HTMLElement {
                 .agent-form input { min-width: 0; width: 100%; min-height: 31px; height: auto; padding: 0 5px; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: var(--font-md, 12px); }
                 .agent-form button { min-height: 27px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--paper, #f3efe4); font-size: var(--font-xs, 10px); cursor: pointer; }
                 .notes, .prompts { display: block; width: 100%; min-height: 48px; max-height: 180px; resize: vertical; border: 1px solid #d6d0c3; border-radius: 0 8px 8px 8px; background: rgba(245,240,229,.55); padding: 8px; color: var(--ink, #18242b); font-size: var(--font-lg, 14px); line-height: 1.45; }
-                summary { display: inline-flex; align-items: center; gap: 5px; color: var(--muted, #697177); cursor: pointer; font-size: var(--font-xs, 10px); font-weight: 750; list-style: none; }
-                summary::-webkit-details-marker { display: none; }
-                summary::before { content: '›'; font-size: var(--font-xl, 16px); transition: transform 120ms ease; }
-                details[open] summary::before { transform: rotate(90deg); }
                 .footer { display: flex; align-items: end; justify-content: space-between; gap: 5px; margin: 5px 0 0 5px; }
                 .age { color: var(--muted, #697177); font: 650 var(--font-xs, 10px)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
                 :host([table-detail]) .footer { margin-left: 0; flex-wrap: wrap; }
@@ -321,7 +322,7 @@ class TaskItem extends HTMLElement {
                 .done .delete { display: block; margin: 0 auto 9px; padding: 4px 8px; border: 1px solid currentColor; border-radius: 6px; color: var(--accent-dark, #b93621); font-weight: 750; }
                 .delete.armed { color: var(--accent-dark, #b93621); font-weight: 850; }
                 [hidden] { display: none !important; }
-                .compact .main-row, .compact > .details { display: none; }
+                .compact .main-row, .compact > [data-editor-panel] { display: none; }
                 .compact.compact-collapsed > .footer { display: none; }
                 .compact-action { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; }
                 .compact-action .check-control { display: flex; flex-direction: row-reverse; align-items: center; gap: 4px; margin: 0; letter-spacing: 0; text-transform: none; }
@@ -334,10 +335,7 @@ class TaskItem extends HTMLElement {
                 [data-compact-panel] { padding: 10px 0; min-width: 0; }
                 [data-compact-panel="task"] { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
                 .compact .priority-control { margin: 0; }
-                .compact .plan-control, .compact .meta-row, .compact .group-editor, .compact .details, .compact .footer { margin-left: 0; }
-                .compact .details { margin-top: 0; border: 0; padding: 0; }
-                .compact .details > summary { display: none; }
-                .compact .details > session-times { display: block; }
+                .compact .plan-control, .compact .meta-row, .compact .group-editor, .compact .footer { margin-left: 0; }
                 .compact .notes, .compact .prompts { border-radius: 8px; min-height: 100px; }
                 .compact .footer { flex-wrap: wrap; align-items: center; }
                 .compact .actions { margin-left: auto; }
@@ -347,7 +345,7 @@ class TaskItem extends HTMLElement {
                     .timers { grid-column: 2; justify-self: stretch; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     .timer { min-width: 0; padding-inline: 4px; overflow-wrap: anywhere; }
                     .agent-picker, .agent-form { grid-column: 2; max-width: none; }
-                    .plan-control, .meta-row, .group-editor, .details, .footer { margin-left: 5px; }
+                    .plan-control, .meta-row, .group-editor, .footer { margin-left: 5px; }
                     .notes, .prompts, .group-editor input, .plan-select, .agent-select, .agent-form input { font-size: max(16px, var(--font-base)); }
                     .notes-wrap { margin-left: 0; }
                     .group-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -373,17 +371,16 @@ class TaskItem extends HTMLElement {
                     <div>
                         <textarea class="text" rows="1" aria-label="${escapeHTML(t('ui.text.taskText'))}"></textarea>
                         <div class="editor-toolbar">
-                            <div class="editor-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.taskTextFields'))}">
-                                <button id="task-notes-tab" type="button" role="tab" data-editor-tab="notes" aria-controls="task-notes-panel">${escapeHTML(t('ui.text.notes'))}</button>
-                                <button id="task-prompts-tab" type="button" role="tab" data-editor-tab="prompts" aria-controls="task-prompts-panel">${escapeHTML(t('ui.text.prompts'))}</button>
-                            </div>
                             <div class="estimated-time" role="group" aria-label="${escapeHTML(t('ui.text.estimatedTimeNeeded'))}">
                                 <span>${escapeHTML(t('ui.text.estimatedTimeNeeded'))}</span>
                                 <span class="estimate-options">${[10, 30, 60, 90].map(minutes => `<label class="estimate-option"><input type="radio" name="estimatedMinutes" value="${minutes}" aria-label="${escapeHTML(t('ui.text.lessThanValue1Minutes', { value1: minutes }))}" ${this._task.estimatedMinutes === minutes ? 'checked' : ''}><span>${escapeHTML(t('ui.text.value3', { value3: minutes }))}</span></label>`).join('')}</span>
                             </div>
+                            <div class="editor-tabs" role="tablist" aria-label="${escapeHTML(t('ui.text.taskTextFields'))}">
+                                ${['notes', 'prompts', 'associations', 'time'].map(tab => `<button id="task-${tab}-tab" type="button" role="tab" data-editor-tab="${tab}" aria-controls="task-${tab}-panel">${escapeHTML(t(`ui.text.${tab}`))}</button>`).join('')}
+                            </div>
                         </div>
-                        <div id="task-notes-panel" role="tabpanel" data-editor-panel="notes" aria-labelledby="task-notes-tab"><textarea class="notes" rows="2" maxlength="10000" placeholder="${escapeHTML(t('ui.text.addNotes'))}" aria-label="${escapeHTML(t('ui.text.taskNotes'))}"></textarea></div>
-                        <div id="task-prompts-panel" role="tabpanel" data-editor-panel="prompts" aria-labelledby="task-prompts-tab"><textarea class="prompts" rows="5" maxlength="50000" placeholder="${escapeHTML(t('ui.text.recordAPrompt'))}" aria-label="${escapeHTML(t('ui.text.taskPrompts'))}"></textarea></div>
+                        <div id="task-notes-panel" role="tabpanel" tabindex="0" data-editor-panel="notes" aria-labelledby="task-notes-tab"><textarea class="notes" rows="2" maxlength="10000" placeholder="${escapeHTML(t('ui.text.addNotes'))}" aria-label="${escapeHTML(t('ui.text.taskNotes'))}"></textarea></div>
+                        <div id="task-prompts-panel" role="tabpanel" tabindex="0" data-editor-panel="prompts" aria-labelledby="task-prompts-tab"><textarea class="prompts" rows="5" maxlength="50000" placeholder="${escapeHTML(t('ui.text.recordAPrompt'))}" aria-label="${escapeHTML(t('ui.text.taskPrompts'))}"></textarea></div>
                     </div>
                     <div class="timers">
                         <button class="timer human ${runningHuman ? 'running' : ''}" data-actor="human" type="button" ${done || tabled ? 'disabled' : ''} aria-label="${runningHuman ? t('ui.text.stopHumanTimer') : t('ui.text.startHumanTimer')}"></button>
@@ -392,23 +389,24 @@ class TaskItem extends HTMLElement {
                         <form class="agent-form" hidden><input class="agent-name" maxlength="120" placeholder="${escapeHTML(t('ui.text.agentName'))}" aria-label="${escapeHTML(t('ui.text.newAgentName'))}" required><button type="submit">${escapeHTML(t('ui.text.addAgent'))}</button><button class="agent-cancel" type="button">${escapeHTML(t('ui.text.cancel'))}</button></form>
                     </div>
                 </div>
-                <label class="plan-control">${escapeHTML(t('ui.text.planOptional'))}<span class="plan-row"><select class="plan-select" aria-label="${escapeHTML(t('ui.text.taskPlan'))}"></select><button class="open-plan" type="button" ${this._task.planId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openPlan'))}</button></span></label>
-                <div class="meta-row">
-                    <div class="meta-left"><div class="chips"></div><div class="link-pills" hidden></div></div>
-                    <div class="time-totals"><span class="time-total human-total"></span><span class="time-total agent-total"></span></div>
-                </div>
-                <form class="group-editor" hidden>
-                    <input class="group-type" list="property-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}">
-                    <datalist id="property-types">${COMMON_PROPERTIES.map((type) => `<option value="${type}"></option>`).join('')}</datalist>
-                    <input class="group-value" list="association-values" maxlength="120" placeholder="${escapeHTML(t('ui.text.chooseOrTypeANewValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}">
-                    <datalist id="association-values"></datalist>
-                    <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
-                </form>
+                <div id="task-associations-panel" role="tabpanel" tabindex="0" data-editor-panel="associations" aria-labelledby="task-associations-tab" hidden>
+                    <label class="plan-control">${escapeHTML(t('ui.text.planOptional'))}<span class="plan-row"><select class="plan-select" aria-label="${escapeHTML(t('ui.text.taskPlan'))}"></select><button class="open-plan" type="button" ${this._task.planId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openPlan'))}</button></span></label>
+                    <div class="meta-row">
+                        <div class="meta-left"><div class="chips"></div><div class="link-pills" hidden></div></div>
+                    </div>
+                    <form class="group-editor" hidden>
+                        <input class="group-type" list="property-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}">
+                        <datalist id="property-types">${COMMON_PROPERTIES.map((type) => `<option value="${type}"></option>`).join('')}</datalist>
+                        <input class="group-value" list="association-values" maxlength="120" placeholder="${escapeHTML(t('ui.text.chooseOrTypeANewValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}">
+                        <datalist id="association-values"></datalist>
+                        <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
+                    </form>
 
-                <details class="details" ${this._task.sessions.length ? '' : 'hidden'} ${this._sessionsOpen ? 'open' : ''}>
-                    <summary>${escapeHTML(t('ui.text.value21TimeValue22', { value21: this._task.sessions.length, value22: uiLabel(this._task.sessions.length === 1 ? 'entry' : 'entries') }))}</summary>
+                </div>
+                <div id="task-time-panel" role="tabpanel" tabindex="0" data-editor-panel="time" aria-labelledby="task-time-tab" hidden>
+                    <div class="time-totals"><span class="time-total human-total"></span><span class="time-total agent-total"></span></div>
                     <session-times></session-times>
-                </details>
+                </div>
                 <div class="footer">
                     ${this.hasAttribute('table-detail') ? `<button class="table-back" type="button" aria-label="${escapeHTML(t('ui.text.backToTaskTable'))}">${escapeHTML(t('ui.text.table'))}</button>` : ''}
                     <span class="age" title="${escapeHTML(t('ui.text.createdValue24', { value24: new Date(this._task.createdAt).toLocaleString() }))}"></span>
@@ -470,17 +468,17 @@ class TaskItem extends HTMLElement {
         });
         promptsArea.addEventListener('blur', savePrompts);
         this.shadowRoot.querySelectorAll('[data-editor-tab]').forEach(tab => {
-            const select = () => {
-                this.editorTab = tab.dataset.editorTab;
-                this.emit('task-editor-tab-change', { tab: this._editorTab });
-            };
-            tab.addEventListener('click', select);
+            tab.addEventListener('click', () => this.selectEditorTab(tab.dataset.editorTab, true));
             tab.addEventListener('keydown', event => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                const tabs = [...this.shadowRoot.querySelectorAll('[data-editor-tab]')];
+                const index = tabs.indexOf(tab);
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+                    : event.key === 'ArrowRight' ? (index + 1) % tabs.length
+                    : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1;
+                if (next < 0) return;
                 event.preventDefault();
-                const next = event.key === 'Home' ? 'notes' : event.key === 'End' ? 'prompts' : this._editorTab === 'notes' ? 'prompts' : 'notes';
-                this.shadowRoot.querySelector(`[data-editor-tab="${next}"]`).click();
-                this.shadowRoot.querySelector(`[data-editor-tab="${next}"]`).focus();
+                this.selectEditorTab(tabs[next].dataset.editorTab);
+                tabs[next].focus();
             });
         });
         this.updateEditorTabs();
@@ -589,12 +587,6 @@ class TaskItem extends HTMLElement {
             event.preventDefault();
             if (!typeInput.value.trim() || !valueInput.value.trim()) return;
             this.emit('task-association-add', { association: { type: typeInput.value, value: valueInput.value } });
-        });
-
-        const details = this.shadowRoot.querySelector('.details');
-        details.addEventListener('toggle', () => {
-            this._sessionsOpen = details.open;
-            this.emit('task-sessions-toggle', { open: details.open });
         });
 
         this.shadowRoot.querySelector('session-times').data = { taskId: this._task.id, sessions: this._task.sessions };

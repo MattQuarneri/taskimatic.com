@@ -57,7 +57,6 @@ class TaskWorkspace extends HTMLElement {
         this.pipSearch = '';
         this.pipOnNow = false;
         this.pipClockElements = new Map();
-        this.openSessionDetails = new Set();
         this.collapsedAssociationTypes = new Set();
         this.activeDrawer = null;
         this.todayTabDrag = null;
@@ -96,6 +95,7 @@ class TaskWorkspace extends HTMLElement {
             this.positionBrandHelp();
             this.positionLockInPill();
         };
+        this.handlePillScroll = () => { if (!this.lockInPillPos) this.positionLockInPill(); };
         this.handleClockStateChange = () => this.syncClock();
         this.handleHashChange = () => {
             const association = this.associationFromHash();
@@ -132,6 +132,10 @@ class TaskWorkspace extends HTMLElement {
         this.updateTaskColumns();
         this.bindEvents();
         window.addEventListener('resize', this.handleResize);
+        window.addEventListener('scroll', this.handlePillScroll, { passive: true });
+        this.pillResizeObserver = new ResizeObserver(() => this.positionLockInPill());
+        this.pillResizeObserver.observe(this.querySelector('.topbar'));
+        this.pillResizeObserver.observe(this.querySelector('#lock-in-pill'));
         window.addEventListener('focus', this.handleClockStateChange);
         window.addEventListener('blur', this.handleClockStateChange);
         window.addEventListener('hashchange', this.handleHashChange);
@@ -144,6 +148,8 @@ class TaskWorkspace extends HTMLElement {
         this._unsubscribePlanning?.();
         this._unsubscribePlanning = null;
         this.plansNavResizeObserver?.disconnect();
+        this.pillResizeObserver?.disconnect();
+        window.removeEventListener('scroll', this.handlePillScroll);
         clearTimeout(this.timerTick);
         if (this.protectTimerInterval) {
             clearInterval(this.protectTimerInterval);
@@ -257,6 +263,7 @@ class TaskWorkspace extends HTMLElement {
                         <small><a href="https://mentic.com" target="_blank">${escapeHTML(t('ui.text.broughtYouByMENTICCognitiveSystems'))}</a></small>
                     </div>
                     <div><div class="brand-name">${escapeHTML(t('ui.text.taskimatic'))}</div><div class="brand-sub">${escapeHTML(t('ui.text.localWorkLedger'))}</div></div>
+                    <span class="lock-in-pill-slot" aria-hidden="true"></span>
                 </div>
                 <div class="top-actions">
                     <div class="storage-state" data-mode="indexeddb" title="${escapeHTML(t('ui.text.yourWorkspaceIsStoredInThisBrowser'))}">
@@ -388,20 +395,20 @@ class TaskWorkspace extends HTMLElement {
                     <button type="button" class="drawer-close" id="today-close" aria-label="${escapeHTML(t('ui.text.closeToday'))}">✕</button>
                 </div>
                 <lock-in-controls></lock-in-controls>
-                <p class="today-lock" id="today-lock" role="status" hidden>${escapeHTML(t('ui.text.humanTimerRunningStopItToCloseToday'))}</p>
+                <p class="today-lock" id="today-lock" role="status" hidden>${escapeHTML(t('ui.text.lockIn2'))}</p>
                 <task-sort-controls class="today-sort" aria-label="${escapeHTML(t('ui.text.sortTodayTasks'))}"></task-sort-controls>
                 <section class="today-task-list" aria-label="${escapeHTML(t('ui.text.todayTasks'))}" aria-live="polite"></section>
             </aside>
             <button type="button" class="panel-grab-tab today-tab" id="today-tab" aria-label="${escapeHTML(t('ui.text.toggleTodayPanel'))}" aria-controls="today-drawer" aria-describedby="today-lock" aria-expanded="false" title="${escapeHTML(t('ui.text.todayDragUpOrDownToMoveArrowKeysAlsoMoveTheTab'))}">
                 <span class="tab-text">${escapeHTML(t('ui.text.today'))}</span>
             </button>
-            <button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">${escapeHTML(t('ui.text.lockIn3'))} <span class="lock-in-emoji">🔓</span></button>
             <button type="button" class="panel-grab-tab left-tab" id="associations-tab" aria-label="${escapeHTML(t('ui.text.toggleAssociationsPanel'))}" aria-expanded="false" title="${escapeHTML(t('ui.text.associations'))}">
                 <span class="tab-text">${escapeHTML(t('ui.text.associations'))}</span>
             </button>
             <button type="button" class="panel-grab-tab right-tab" id="insights-tab" aria-label="${escapeHTML(t('ui.text.toggleAnalyticsPanel'))}" aria-expanded="false" title="${escapeHTML(t('ui.text.analytics'))}">
                 <span class="tab-text">${escapeHTML(t('ui.text.analytics'))}</span>
             </button>
+            <button type="button" class="lock-in-pill" id="lock-in-pill" aria-pressed="false">${escapeHTML(t('ui.text.lockIn3'))} <span class="lock-in-emoji">🔓</span></button>
             <div class="drawer-scrim" id="drawer-scrim" aria-hidden="true"></div>
             <div class="protect-modal" id="protect-modal" role="dialog" aria-modal="true" aria-labelledby="protect-modal-task" aria-hidden="true" inert tabindex="-1">
                 <div class="protect-modal-content">
@@ -841,6 +848,7 @@ class TaskWorkspace extends HTMLElement {
         this.lockInEnabled = Boolean(enabled);
         try { localStorage.setItem('taskimatic-lock-in-enabled', String(this.lockInEnabled)); } catch (error) { /* Storage is optional. */ }
         this.updateLockInPill();
+        this.syncTodayDrawer();
     }
 
     updateLockInPill() {
@@ -860,7 +868,20 @@ class TaskWorkspace extends HTMLElement {
         const positionKey = targetWindow === window ? 'lockInPillPos' : 'pipLockInPillPos';
         const pill = targetWindow === window ? this.querySelector('#lock-in-pill') : targetWindow.document.querySelector('#lock-in-pill');
         if (!pill) return;
+        const slot = targetWindow === window ? this.querySelector('.lock-in-pill-slot') : null;
+        if (slot) {
+            slot.style.width = `${pill.offsetWidth}px`;
+            slot.style.height = `${pill.offsetHeight}px`;
+        }
+        if (!this[positionKey] && slot) {
+            const bounds = slot.getBoundingClientRect();
+            pill.style.left = `${bounds.left}px`;
+            pill.style.top = `${bounds.top}px`;
+            pill.style.bottom = 'auto';
+            return;
+        }
         if (!this[positionKey]) {
+            pill.style.position = '';
             pill.style.left = '';
             pill.style.top = '';
             pill.style.bottom = '';
@@ -872,6 +893,7 @@ class TaskWorkspace extends HTMLElement {
             x: Math.max(8, Math.min(maxX, this[positionKey].x)),
             y: Math.max(8, Math.min(maxY, this[positionKey].y))
         };
+        pill.style.position = 'fixed';
         pill.style.left = `${this[positionKey].x}px`;
         pill.style.top = `${this[positionKey].y}px`;
         pill.style.bottom = 'auto';
@@ -939,14 +961,15 @@ class TaskWorkspace extends HTMLElement {
     }
 
     isTodayLocked() {
-        return this.tasks.some(task => task.today && Boolean(task.activeTimers?.human));
+        return Boolean(this.lockInEnabled);
     }
 
     syncTodayDrawer() {
         const locked = this.isTodayLocked();
         const close = this.querySelector('#today-close');
+        if (!close) return;
         close.disabled = locked;
-        close.title = locked ? t('ui.text.stopTheTodayTaskSHumanTimerToCloseThisPanel') : t('ui.text.closeToday');
+        close.title = locked ? t('ui.text.lockIn2') : t('ui.text.closeToday');
         this.querySelector('#today-lock').hidden = !locked;
         if (locked && this.activeDrawer !== 'today') this.openDrawer('today');
     }
@@ -1315,10 +1338,6 @@ class TaskWorkspace extends HTMLElement {
         this.addEventListener('task-association-remove', (event) => this.removeAssociation(event.detail.id, event.detail.association));
         this.addEventListener('task-session-update', (event) => this.updateSession(event.detail.id, event.detail.sessionId, event.detail));
         this.addEventListener('task-session-delete', (event) => this.deleteSession(event.detail.id, event.detail.sessionId));
-        this.addEventListener('task-sessions-toggle', (event) => {
-            if (event.detail.open) this.openSessionDetails.add(event.detail.id);
-            else this.openSessionDetails.delete(event.detail.id);
-        });
         this.addEventListener('task-chart-navigate', (event) => this.revealTask(event.detail.id));
         this.addEventListener('task-chart-filter', (event) => {
             this.setMainView('tasks');
@@ -1905,13 +1924,12 @@ class TaskWorkspace extends HTMLElement {
         const element = document.createElement('task-item');
         element.toggleAttribute('table-detail', tableDetail);
         element.agentCatalog = this.agents;
-        element.editorTab = this.taskEditorTabs.get(task.id) || 'notes';
+        element.editorTab = this.taskEditorTabs.get(task.id) ?? null;
         element.compactTab = this.taskCompactTabs.has(task.id) ? this.taskCompactTabs.get(task.id) : 'task';
         element.planCatalog = this.plans;
         element.associationCatalog = this.associationCatalogFor(task.id);
         element.priorityLimit = this.priorityLimitFor(task.id);
         element.task = task;
-        element.sessionsOpen = this.openSessionDetails.has(task.id);
         element.toggleAttribute('clock-active', this.isMainFocused());
         return element;
     }

@@ -5,9 +5,10 @@ import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../webcomp/task-item.js', import.meta.url), 'utf8');
 const names = ['task', 'notes', 'prompts', 'associations', 'time'];
-function createItem() {
-    const tabs = names.map(name => ({ dataset: { compactTab: name }, attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } }));
-    const panels = names.map(name => ({ dataset: { compactPanel: name } }));
+function createItem(mode = 'compact') {
+    const tabNames = mode === 'compact' ? names : names.slice(1);
+    const tabs = tabNames.map(name => ({ dataset: { [`${mode}Tab`]: name }, attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } }));
+    const panels = tabNames.map(name => ({ dataset: { [`${mode}Panel`]: name } }));
     const classes = new Set();
     let TaskItem;
     vm.runInNewContext(source.slice(source.indexOf('class TaskItem')), {
@@ -15,7 +16,7 @@ function createItem() {
             attachShadow() {
                 this.shadowRoot = {
                     querySelector: () => ({ classList: { toggle(name, on) { on ? classes.add(name) : classes.delete(name); } } }),
-                    querySelectorAll: selector => selector === '[data-compact-tab]' ? tabs : panels
+                    querySelectorAll: selector => selector === `[data-${mode}-tab]` ? tabs : selector === `[data-${mode}-panel]` ? panels : []
                 };
             }
             dispatchEvent(event) { this.lastEvent = event; }
@@ -55,4 +56,41 @@ test('switching tabs opens the new panel and keyboard selection does not collaps
     item.compactTab = null;
     item.updateCompactTabs();
     assert.ok(panels.every(panel => panel.hidden));
+});
+
+test('full-size tabs start collapsed with one keyboard focus target', () => {
+    const { item, tabs, panels } = createItem('editor');
+    item.updateEditorTabs();
+    assert.ok(panels.every(panel => panel.hidden));
+    assert.ok(tabs.every(tab => tab.attributes['aria-selected'] === 'false'));
+    assert.equal(tabs.filter(tab => tab.tabIndex === 0).length, 1);
+});
+
+test('every full-size tab opens, collapses on repeat selection, and reopens', () => {
+    for (const name of names.slice(1)) {
+        const { item, tabs, panels } = createItem('editor');
+        item.selectEditorTab(name, true);
+        assert.equal(panels.find(panel => !panel.hidden).dataset.editorPanel, name);
+        item.selectEditorTab(name, true);
+        assert.equal(item.lastEvent.type, 'task-editor-tab-change');
+        assert.equal(item.lastEvent.detail.tab, null);
+        assert.ok(panels.every(panel => panel.hidden));
+        assert.ok(tabs.every(tab => tab.attributes['aria-expanded'] === 'false'));
+        assert.equal(tabs.find(tab => tab.tabIndex === 0).dataset.editorTab, name);
+        item.selectEditorTab(name, true);
+        assert.equal(panels.find(panel => !panel.hidden).dataset.editorPanel, name);
+    }
+});
+
+test('full-size tab switches and synchronized state keep exactly one panel open', () => {
+    const { item, panels } = createItem('editor');
+    item.selectEditorTab('associations', true);
+    item.selectEditorTab('time');
+    item.selectEditorTab('time');
+    assert.deepEqual(panels.filter(panel => !panel.hidden).map(panel => panel.dataset.editorPanel), ['time']);
+    item.editorTab = null;
+    item.updateEditorTabs();
+    assert.ok(panels.every(panel => panel.hidden));
+    item.editorTab = 'associations';
+    assert.equal(panels.find(panel => !panel.hidden).dataset.editorPanel, 'associations');
 });
