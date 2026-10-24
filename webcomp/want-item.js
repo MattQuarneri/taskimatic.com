@@ -7,8 +7,10 @@ export class WantItem extends PlanningItem {
     get childPlaceholderKey() { return 'ui.text.turnWantIntoGoal'; }
     get editableFields() { return ['text', 'notes']; }
 
+    get detailTabs() { return [{ id: 'notes', label: t('ui.text.notes') }]; }
+
     renderDetails() {
-        return `<label>${escapeHTML(t('ui.text.ideasAspirationsAndPossibilities'))}<textarea class="notes" rows="5" maxlength="10000" aria-label="${escapeHTML(t('ui.text.wantNotes'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></label>`;
+        return `<div role="tabpanel" tabindex="0" id="planning-notes-panel" data-planning-panel="notes" aria-labelledby="planning-notes-tab" hidden><textarea class="notes" rows="2" maxlength="10000" aria-label="${escapeHTML(t('ui.text.wantNotes'))}" placeholder="${escapeHTML(t('ui.text.makeRoomForYourThinking'))}"></textarea></div>`;
     }
 }
 

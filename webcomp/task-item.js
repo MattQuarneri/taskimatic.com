@@ -293,7 +293,7 @@ class TaskItem extends HTMLElement {
                 .plan-select { flex: 1; min-width: 0; max-width: 100%; min-height: 30px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); color: var(--ink, #18242b); font-size: var(--font-md, 12px); }
                 .open-plan { min-height: 30px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; background: var(--panel, #fffdf7); font-size: var(--font-xs, 10px); cursor: pointer; }
                 .editor-toolbar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 9px; }
-                .editor-tabs { display: flex; flex-wrap: wrap; gap: 3px; border-bottom: 1px solid var(--line, #cfc8b8); }
+                .editor-tabs { display: flex; flex-wrap: wrap; gap: 3px; }
                 .estimated-time { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; padding-bottom: 3px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 .estimate-options { display: inline-flex; gap: 3px; }
                 .estimate-option { position: relative; cursor: pointer; }

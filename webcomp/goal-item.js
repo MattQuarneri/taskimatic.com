@@ -7,12 +7,21 @@ export class GoalItem extends PlanningItem {
     get childPlaceholderKey() { return 'ui.text.turnThisWantIntoAPlan'; }
     get editableFields() { return ['text', 'notes', 'successCriteria', 'targetDate']; }
 
+    get detailTabs() {
+        return [{ id: 'outcome', label: t('ui.text.goal') }, { id: 'notes', label: t('ui.text.notes') }];
+    }
+
+    renderSummary() {
+        return `<label class="achieved-label"><input class="achieved" type="checkbox">${escapeHTML(t('ui.text.achieved'))}</label>`;
+    }
+
     renderDetails() {
         return `
-            <label>${escapeHTML(t('ui.text.successCriteria'))}<textarea class="successCriteria" rows="3" maxlength="10000" placeholder="${escapeHTML(t('ui.text.successPlaceholder'))}"></textarea></label>
-            <label>${escapeHTML(t('ui.text.targetDate'))}<input class="targetDate" type="date"></label>
-            <label class="achieved-label"><input class="achieved" type="checkbox">${escapeHTML(t('ui.text.achieved'))}</label>
-            <label>${escapeHTML(t('ui.text.goalNotes'))}<textarea class="notes" rows="3" maxlength="10000"></textarea></label>`;
+            <div role="tabpanel" tabindex="0" id="planning-outcome-panel" data-planning-panel="outcome" aria-labelledby="planning-outcome-tab" hidden>
+                <label>${escapeHTML(t('ui.text.successCriteria'))}<textarea class="successCriteria" rows="1" maxlength="10000" placeholder="${escapeHTML(t('ui.text.successPlaceholder'))}"></textarea></label>
+                <label>${escapeHTML(t('ui.text.targetDate'))}<input class="targetDate" type="date"></label>
+            </div>
+            <div role="tabpanel" tabindex="0" id="planning-notes-panel" data-planning-panel="notes" aria-labelledby="planning-notes-tab" hidden><textarea class="notes" rows="2" maxlength="10000" aria-label="${escapeHTML(t('ui.text.goalNotes'))}"></textarea></div>`;
     }
 
     renderRelationships() {

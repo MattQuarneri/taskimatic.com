@@ -8,7 +8,7 @@ import { WorkspaceLiveModel } from '../js/workspace-live-model.js';
 import { t, escapeHTML, uiLabel } from './i18n-test-context.mjs';
 
 class Element {
-    constructor() { this.dataset = {}; this.listeners = {}; this.children = []; this.value = ''; }
+    constructor() { this.dataset = {}; this.listeners = {}; this.children = []; this.value = ''; this.style = {}; this.scrollHeight = 30; }
     addEventListener(name, handler) { this.listeners[name] = handler; }
     dispatch(name) { this.listeners[name]?.({currentTarget: this, preventDefault() {}}); }
     append(...children) { this.children.push(...children); }
@@ -20,7 +20,7 @@ class Element {
 class Shadow {
     set innerHTML(html) {
         this.html = html;
-        this.nodes = [...html.matchAll(/<(input|textarea|select|button|div|span|form|datalist|h3)\b([^>]*)>/g)].map(([, tag, attrs]) => {
+        this.nodes = [...html.matchAll(/<(article|input|textarea|select|button|div|span|form|datalist|h3)\b([^>]*)>/g)].map(([, tag, attrs]) => {
             const node = new Element();
             node.tag = tag;
             node.attrs = Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v]));
@@ -99,9 +99,9 @@ test('goals emit achievement updates and plans navigate to their selected goal',
 
 test('plan thinking tabs preserve selection and whitespace when editing', () => {
     const plan = item('plans');
-    plan.shadowRoot.querySelector('[data-thinking-tab="aiThinking"]').click();
+    plan.shadowRoot.querySelector('[data-planning-tab="aiThinking"]').click();
     assert.equal(plan.lastEvent.detail.tab, 'aiThinking');
-    assert.equal(plan.shadowRoot.querySelector('[data-thinking-panel="myThinking"]').hidden, true);
+    assert.equal(plan.shadowRoot.querySelector('[data-planning-panel="myThinking"]').hidden, true);
     const editor = plan.shadowRoot.querySelector('.ai-thinking');
     editor.value = '  Keep this formatting\n';
     editor.dispatch('blur');
@@ -186,4 +186,44 @@ test('a live update preserves an unsaved focused editor and model rebinding unsu
     first.replace(snapshot);
     assert.equal(editor.value, 'Original');
     goal.disconnectedCallback();
+});
+
+
+test('planning cards start collapsed and each tab toggles its details independently', () => {
+    for (const kind of ['plans', 'goals', 'wants']) {
+        const component = item(kind);
+        const panels = component.shadowRoot.querySelectorAll('[data-planning-panel]');
+        const tabs = component.shadowRoot.querySelectorAll('[data-planning-tab]');
+        assert.ok(panels.every(panel => panel.hidden));
+        assert.equal(tabs.filter(tab => tab.tabIndex === 0).length, 1);
+        for (const tab of tabs) {
+            tab.click();
+            assert.equal(panels.filter(panel => !panel.hidden).length, 1);
+            assert.equal(panels.find(panel => !panel.hidden).dataset.planningPanel, tab.dataset.planningTab);
+            tab.click();
+            assert.ok(panels.every(panel => panel.hidden));
+            assert.equal(component.lastEvent.detail.tab, null);
+            assert.equal(tab.tabIndex, 0);
+        }
+    }
+});
+
+test('linked-item tabs use capitalized labels for Tasks, Plans, and Goals', () => {
+    for (const [kind, label] of [['plans', 'Tasks'], ['goals', 'Plans'], ['wants', 'Goals']]) {
+        const component = item(kind);
+        assert.equal(component.tabs.find(tab => tab.id === 'children').label, label);
+    }
+});
+
+test('planning tabs support keyboard navigation and keep selection through refresh', () => {
+    const component = item('plans');
+    const tabs = component.shadowRoot.querySelectorAll('[data-planning-tab]');
+    tabs[0].listeners.keydown({key: 'End', preventDefault() {}});
+    assert.equal(component.lastEvent.detail.tab, 'children');
+    const record = structuredClone(component._record);
+    component.setData({record});
+    assert.equal(component.shadowRoot.querySelector('[data-planning-panel="children"]').hidden, false);
+    component.selectTab('children', true);
+    component.setData({record});
+    assert.ok(component.shadowRoot.querySelectorAll('[data-planning-panel]').every(panel => panel.hidden));
 });

@@ -7,11 +7,13 @@ export class PlanningItem extends HTMLElement {
         this._confirmTimer = null;
         this._model = null;
         this._unsubscribe = null;
+        this._selectedTab = null;
+        this._lastTab = null;
     }
 
-    setData({ kind, record, parents = [], children = [], associations = record.associations || [], catalog = {}, goalParents = [], thinkingTab = 'myThinking' }) {
+    setData({ kind, record, parents = [], children = [], associations = record.associations || [], catalog = {}, goalParents = [], selectedTab = this._selectedTab }) {
         this.kind = this.constructor.kind || kind;
-        this._thinkingTab = thinkingTab === 'aiThinking' ? 'aiThinking' : 'myThinking';
+        this._selectedTab = selectedTab;
         this._record = cloneValue(record);
         this.dataset.recordId = record.id;
         this.render(parents, children, associations, catalog, goalParents);
@@ -47,6 +49,7 @@ export class PlanningItem extends HTMLElement {
             const input = this.shadowRoot.querySelector(this.fieldSelector(field));
             if (this.shadowRoot.activeElement !== input && !this._saveTimers[field]) input.value = data.record[field] ?? '';
         }
+        this.resizeTitle();
         this.refreshRelationships(data.parents, data.goalParents);
         const achieved = this.shadowRoot.querySelector('.achieved');
         if (achieved) achieved.checked = data.record.achieved;
@@ -80,6 +83,40 @@ export class PlanningItem extends HTMLElement {
         this._catalog = catalog;
         const types = this.shadowRoot.querySelector('#planning-types');
         types.replaceChildren(...[...new Set([...COMMON_PROPERTIES, ...Object.keys(catalog)])].map(property => new Option(property, property)));
+    }
+
+    get detailTabs() { return []; }
+    get tabs() {
+        return [...this.detailTabs, { id: 'associations', label: t('ui.text.associations') }, { id: 'children', label: t(this.childKind === 'goals' ? 'ui.text.goalsTab' : `ui.text.${this.childKind}`) }];
+    }
+
+    renderSummary() { return ''; }
+
+    selectTab(tab, toggle = false) {
+        this._selectedTab = toggle && this._selectedTab === tab ? null : tab;
+        this.updateTabs();
+        this.emit('planning-tab-change', { tab: this._selectedTab });
+    }
+
+    updateTabs() {
+        if (!this.tabs.some(tab => tab.id === this._selectedTab)) this._selectedTab = null;
+        if (this._selectedTab) this._lastTab = this._selectedTab;
+        this.shadowRoot.querySelectorAll('[data-planning-tab]').forEach(tab => {
+            const active = tab.dataset.planningTab === this._selectedTab;
+            tab.setAttribute('aria-selected', String(active));
+            tab.setAttribute('aria-expanded', String(active));
+            tab.tabIndex = tab.dataset.planningTab === (this._selectedTab || this._lastTab || this.tabs[0].id) ? 0 : -1;
+        });
+        this.shadowRoot.querySelectorAll('[data-planning-panel]').forEach(panel => {
+            panel.hidden = panel.dataset.planningPanel !== this._selectedTab;
+        });
+        this.shadowRoot.querySelector('.planning-card').setAttribute('data-collapsed', String(this._selectedTab === null));
+    }
+
+    resizeTitle() {
+        const input = this.shadowRoot.querySelector('.text');
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(150, Math.max(30, input.scrollHeight))}px`;
     }
 
     get untrimmedFields() { return []; }
@@ -120,21 +157,23 @@ export class PlanningItem extends HTMLElement {
                 :host { display: block; min-width: 0; }
                 * { box-sizing: border-box; }
                 [hidden] { display: none !important; }
-                article { padding: 16px; border: 1px solid var(--ink, #18242b); border-radius: 14px; background: var(--panel, #fffdf7); box-shadow: 3px 3px 0 rgba(24,36,43,.11); }
+                article { padding: 8px 8px 6px; border: 1px solid var(--ink, #18242b); border-radius: 12px; background: var(--panel, #fffdf7); box-shadow: 3px 3px 0 rgba(24,36,43,.11); }
                 :host([attention]) article { outline: 3px solid var(--blue, #315f91); }
                 button, input, select, textarea { font: inherit; color: inherit; }
                 button { min-height: 32px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 7px; padding: 4px 10px; background: var(--paper, #f3efe4); cursor: pointer; font-size: var(--font-md, 12px); }
                 button:hover { border-color: var(--ink, #18242b); }
                 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(49,95,145,.28); outline-offset: 2px; }
-                label { display: grid; gap: 5px; margin-bottom: 12px; color: var(--muted, #697177); font-size: var(--font-sm, 11px); }
+                label { display: grid; gap: 5px; margin-bottom: 6px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 textarea, input, select { width: 100%; min-width: 0; min-height: 34px; border: 1px solid var(--line, #cfc8b8); border-radius: 8px; background: var(--panel, #fffdf7); padding: 8px; color: var(--ink, #18242b); font-size: var(--font-base, 13px); }
-                .text { border: 0; padding: 0; font-size: var(--font-2xl, 17px); font-weight: 750; resize: vertical; }
-                .thinking-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-                .thinking-tabs button { flex: 1; }
-                .thinking-tabs button[aria-selected="true"] { background: var(--ink, #18242b); color: white; }
+                .title-row { display: flex; align-items: start; gap: 8px; }
+                .text { display: block; flex: 1; width: 100%; min-height: 60px; max-height: 150px; border: 0; padding: 2px 3px; background: transparent; font-size: var(--font-xl, 16px); font-weight: 720; line-height: 1.45; resize: vertical; overflow: auto; }
+                .planning-tabs { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 9px; }
+                .planning-tabs button { min-height: max(24px, 1.8em); padding: 3px 7px; border-bottom: 0; border-radius: 6px 6px 0 0; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
+                .planning-tabs button[aria-selected="true"] { background: var(--ink, #18242b); color: white; border-color: var(--ink, #18242b); }
+                [data-planning-panel] { min-width: 0; }
                 button[role="tab"]:hover { background: var(--panel, #fffdf7); color: var(--ink, #18242b); }
-                .notes, .my-thinking, .ai-thinking { min-height: 110px; resize: vertical; line-height: 1.5; font-size: var(--font-base, 13px); }
-                .achieved-label { display: flex; align-items: center; gap: 8px; }
+                .notes, .my-thinking, .ai-thinking, .successCriteria { min-height: 48px; height: 10em; max-height: 180px; border-radius: 0 8px 8px 8px; background: rgba(245,240,229,.55); resize: vertical; line-height: 1.45; font-size: var(--font-lg, 14px); }
+                .achieved-label { display: flex; align-items: center; gap: 4px; margin: 3px 0 0; }
                 .achieved { width: auto; min-height: 20px; }
                 .parent-row { display: flex; gap: 8px; }
                 .parent-row select { flex: 1; }
@@ -145,19 +184,30 @@ export class PlanningItem extends HTMLElement {
                 .association-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; margin: 8px 0 14px; }
                 .children { display: grid; gap: 5px; margin: 10px 0; }
                 .child-link { text-align: left; overflow-wrap: anywhere; }
-                h3 { margin: 18px 0 8px; font-size: var(--font-md, 12px); color: var(--muted, #697177); }
+                h3 { margin: 0 0 8px; font-size: var(--font-md, 12px); color: var(--muted, #697177); }
                 .child-form { display: flex; gap: 6px; }
                 .child-form input { flex: 1; }
-                .footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; align-items: center; }
+                .footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 5px; align-items: center; }
                 .age { color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
-                .delete { color: var(--muted, #697177); font-size: var(--font-md, 12px); }
+                .delete { min-height: 27px; border: 0; padding: 4px 0; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 .delete.armed { color: var(--accent, #D00E00); }
                 @media (max-width: 520px) { .association-form { grid-template-columns: 1fr 1fr; } .association-form button { grid-column: 1 / -1; } }
-                @media (max-width: 720px) { textarea, input, select { font-size: max(16px, var(--font-base, 13px)); } }
+                @media (max-width: 888px) {
+                    .planning-tabs { flex-wrap: nowrap; overflow-x: auto; border-bottom: 1px solid var(--line, #cfc8b8); }
+                    .planning-tabs button { flex: 1; min-height: 16px; padding: 6px; border: 0; white-space: nowrap; }
+                    [data-planning-panel] { padding: 10px 0; }
+                    .notes, .my-thinking, .ai-thinking { min-height: 100px; border-radius: 8px; }
+                    .planning-card[data-collapsed="true"] .footer { display: none; }
+                }
+                @media (max-width: 520px) { textarea, input, select { font-size: max(16px, var(--font-base, 13px)); } }
             </style>
-            <article>
-                <label>${escapeHTML(t(`ui.text.${singular}`))}<textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: t(`ui.text.${singular}`) }))}"></textarea></label>
+            <article class="planning-card">
+                <div class="title-row"><textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: t(`ui.text.${singular}`) }))}"></textarea>${this.renderSummary()}</div>
+                <div class="planning-tabs" role="tablist" aria-label="${escapeHTML(t(`ui.text.${singular}`))}">
+                    ${this.tabs.map(tab => `<button type="button" role="tab" id="planning-${tab.id}-tab" data-planning-tab="${tab.id}" aria-controls="planning-${tab.id}-panel">${escapeHTML(tab.label)}</button>`).join('')}
+                </div>
                 ${this.renderDetails()}
+                <div role="tabpanel" tabindex="0" id="planning-associations-panel" data-planning-panel="associations" aria-labelledby="planning-associations-tab" hidden>
                 ${this.renderRelationships()}
                 <div class="chips" aria-label="${escapeHTML(t('ui.text.associations'))}"></div>
                 <form class="association-form">
@@ -167,9 +217,12 @@ export class PlanningItem extends HTMLElement {
                     <datalist id="planning-values"></datalist>
                     <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                 </form>
+                </div>
+                <div role="tabpanel" tabindex="0" id="planning-children-panel" data-planning-panel="children" aria-labelledby="planning-children-tab" hidden>
                 <h3 class="children-heading">${escapeHTML(t(this.childrenTitleKey))} · ${children.length}</h3>
                 <div class="children"></div>
                 <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(childKind.slice(0, -1)) }))}" placeholder="${escapeHTML(t(this.childPlaceholderKey))}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(childKind.slice(0, -1)) }))}</button></form>
+                </div>
                 <div class="footer"><span class="age"></span><button class="delete" type="button">${escapeHTML(t('ui.text.deleteValue10', { value10: uiLabel(singular) }))}</button></div>
             </article>
         `;
@@ -184,11 +237,28 @@ export class PlanningItem extends HTMLElement {
                 if (value !== this._record[field]) this.emit('planning-update', { patch: { [field]: value }, quiet: true });
             };
             input.addEventListener('input', () => {
+                if (field === 'text') this.resizeTitle();
                 clearTimeout(this._saveTimers[field]);
                 this._saveTimers[field] = setTimeout(save, 550);
             });
             input.addEventListener('blur', save);
         }
+        this.resizeTitle();
+        this.shadowRoot.querySelectorAll('[data-planning-tab]').forEach(tab => {
+            tab.addEventListener('click', () => this.selectTab(tab.dataset.planningTab, true));
+            tab.addEventListener('keydown', event => {
+                const tabs = [...this.shadowRoot.querySelectorAll('[data-planning-tab]')];
+                const index = tabs.indexOf(tab);
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+                    : event.key === 'ArrowRight' ? (index + 1) % tabs.length
+                    : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1;
+                if (next < 0) return;
+                event.preventDefault();
+                this.selectTab(tabs[next].dataset.planningTab);
+                tabs[next].focus();
+            });
+        });
+        this.updateTabs();
         this.bindDetails(goalParents);
         this.bindWantParent(parents);
         this.renderAssociationChips(associations);

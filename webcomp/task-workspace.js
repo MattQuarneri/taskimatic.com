@@ -21,7 +21,7 @@ class TaskWorkspace extends HTMLElement {
         this.agents = [];
         this.taskEditorTabs = new Map();
         this.taskCompactTabs = new Map();
-        this.planThinkingTabs = new Map();
+        this.planningTabs = new Map();
         this.mainView = 'tasks';
         this.planningSearch = { plans: '', goals: '', wants: '' };
         this.statusFilter = 'open';
@@ -606,7 +606,7 @@ class TaskWorkspace extends HTMLElement {
         }));
         this.querySelectorAll('[data-clear-planning-filter]').forEach(button => button.addEventListener('click', () => this.setAssociationFilter(null)));
         this.addEventListener('task-plan-change', event => this.updateTask(event.detail.id, { planId: event.detail.planId }));
-        this.addEventListener('planning-thinking-tab-change', event => this.planThinkingTabs.set(event.detail.id, event.detail.tab));
+        this.addEventListener('planning-tab-change', event => this.planningTabs.set(`${event.detail.kind}:${event.detail.id}`, event.detail.tab));
         this.addEventListener('planning-update', event => this.runPlanningAction(() => this.updatePlanning(event.detail.kind, event.detail.id, event.detail.patch, { quiet: event.detail.quiet, source: event.target })));
         this.addEventListener('planning-delete', event => this.runPlanningAction(() => this.deletePlanning(event.detail.kind, event.detail.id)));
         this.addEventListener('planning-association-add', event => {
@@ -671,7 +671,7 @@ class TaskWorkspace extends HTMLElement {
                 const current = existing.get(record.id);
                 if (current) return current;
                 const element = document.createElement(`${kind.slice(0, -1)}-item`);
-                element.setData({ ...this.liveModel.planningData(kind, record.id), thinkingTab: this.planThinkingTabs.get(record.id) });
+                element.setData({ ...this.liveModel.planningData(kind, record.id), selectedTab: this.planningTabs.get(`${kind}:${record.id}`) });
                 element.model = this.liveModel;
                 return element;
             });
