@@ -477,6 +477,7 @@ function updateI18nElements(root = document) {
         });
     }
     document.documentElement.lang = window.i18n.currentLang;
+    document.documentElement.dir = ['he', 'ar'].includes(window.i18n.currentLang) ? 'rtl' : 'ltr';
 }
 
 const translatePage = async () => {

@@ -254,7 +254,7 @@ task-workspace { display: block; min-height: calc(100vh - 24px); }
 .settings-dropdown {
     position: absolute;
     top: calc(100% + 8px);
-    right: 0;
+    inset-inline-end: 0;
     z-index: 70;
     min-width: 230px;
     padding: 14px;

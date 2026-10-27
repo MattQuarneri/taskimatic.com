@@ -14,7 +14,7 @@ const placeholders = value => [...new Set(value.match(/\{\w+\}/g) || [])].sort()
 
 test('all supported locales cover every English key and preserve interpolation parameters', () => {
     const expected = flatten(english);
-    for (const lang of ['es', 'zh', 'hi', 'pt', 'ja', 'de', 'fr', 'ko', 'it', 'ru', 'id', 'uk', 'tr', 'nl']) {
+    for (const lang of Object.keys(manifest.languages)) {
         const actual = flatten(locales[lang]);
         assert.deepEqual(Object.keys(actual).sort(), Object.keys(expected).sort());
         for (const [key, value] of Object.entries(expected)) {
@@ -25,9 +25,42 @@ test('all supported locales cover every English key and preserve interpolation p
 
 function portable(search = '') {
     return createI18nContext({search, embedded: {
-        data: locales, languages: manifest.languages, currentLang: 'zh'
+        data: locales, languages: manifest.languages, fixup: manifest.fixup, currentLang: 'zh'
     }});
 }
+
+test('Latin, Hebrew, and Arabic load from language URLs and switch direction with the page language', async () => {
+    const context = portable('?lang=he-IL');
+    const {window: {i18n}, t, document, updateI18nElements} = context;
+    await i18n.ready;
+    document.documentElement = {};
+    const root = {querySelectorAll: () => []};
+    updateI18nElements(root);
+    assert.equal(i18n.currentLang, 'he');
+    assert.equal(i18n.resolveLanguage('iw-IL'), 'he');
+    assert.equal(t('ui.text.today'), 'היום');
+    assert.equal(t('ui.text.shown', {count: 3}), '3 מוצגות');
+    assert.equal(document.documentElement.lang, 'he');
+    assert.equal(document.documentElement.dir, 'rtl');
+    assert.equal(await i18n.setLanguage('ar-SA'), true);
+    updateI18nElements(root);
+    assert.equal(t('ui.text.today'), 'اليوم');
+    assert.equal(t('ui.text.shown', {count: 3}), '3 معروضة');
+    assert.equal(document.documentElement.lang, 'ar');
+    assert.equal(document.documentElement.dir, 'rtl');
+    assert.equal(await i18n.setLanguage('la'), true);
+    updateI18nElements(root);
+    assert.equal(t('ui.text.today'), 'Hodie');
+    assert.equal(t('ui.text.shown', {count: 3}), '3 ostensa');
+    assert.equal(document.documentElement.lang, 'la');
+    assert.equal(document.documentElement.dir, 'ltr');
+    const latin = portable('?lang=la');
+    await latin.window.i18n.ready;
+    assert.equal(latin.window.i18n.currentLang, 'la');
+    const arabic = portable('?lang=ar-EG');
+    await arabic.window.i18n.ready;
+    assert.equal(arabic.window.i18n.currentLang, 'ar');
+});
 
 test('portable copies switch between all embedded languages without a network request', async () => {
     const {window: {i18n}, t} = portable();

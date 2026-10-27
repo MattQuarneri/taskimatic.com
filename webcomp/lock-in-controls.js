@@ -67,9 +67,9 @@ function installLockInControls(targetWindow = window) {
 
                 </style>
                 <div class="protect-plan-group" role="group" aria-label="${escapeHTML(t('ui.text.lockIn'))}">
-                    <span class="protect-plan-label">${escapeHTML(t('ui.text.lockIn2'))}</span>
                     <div class="protect-plan-toggles">
-                        <button type="button" class="protect-toggle" data-plan="no" aria-pressed="false">?</button>
+                        <span class="protect-plan-label">🔒</span>
+                        <button type="button" class="protect-toggle" data-plan="no" aria-pressed="false">${escapeHTML(t('ui.text.perTask'))}</button>
                         <button type="button" class="protect-toggle" data-plan="now" data-duration="480" aria-pressed="false">${escapeHTML(t('ui.text.now8min'))}</button>
                         <button type="button" class="protect-toggle" data-plan="sprint" data-duration="1320" aria-pressed="false">${escapeHTML(t('ui.text.sprint22min'))}</button>
                         <button type="button" class="protect-toggle" data-plan="focus" data-duration="2640" aria-pressed="false">${escapeHTML(t('ui.text.focus44min'))}</button>

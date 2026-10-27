@@ -60,6 +60,18 @@
     "nl": {
       "Lang": "Nederlands",
       "file": "./data/i18n/nl.json"
+    },
+    "la": {
+      "Lang": "Latina",
+      "file": "./data/i18n/la.json"
+    },
+    "he": {
+      "Lang": "עברית",
+      "file": "./data/i18n/he.json"
+    },
+    "ar": {
+      "Lang": "العربية",
+      "file": "./data/i18n/ar.json"
     }
   },
   "fixup": {
@@ -85,6 +97,9 @@
     "uk-ua": "uk",
     "tr-tr": "tr",
     "nl-nl": "nl",
-    "nl-be": "nl"
+    "nl-be": "nl",
+    "he-il": "he",
+    "iw": "he",
+    "iw-il": "he"
   }
 }
