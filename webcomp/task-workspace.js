@@ -6,6 +6,7 @@ import { installLockInControls } from './lock-in-controls.js';
 import { WORKSPACE_COLLECTIONS, normalizeAssociations, normalizePlanningRecord, normalizeAgent, agentTaskReferences, normalizeWorkspaceSnapshot, validateWorkspaceLinks, planningAssociations } from '../js/task-planning-model.js';
 import { installSearcherElement } from './searcher-element.js';
 import { downloadPortableApp } from '../js/portable-app.js';
+import { fileRepo } from '../js/file-repo.js';
 
 class TaskWorkspace extends HTMLElement {
     constructor() {
@@ -285,6 +286,13 @@ class TaskWorkspace extends HTMLElement {
                             </svg>
                         </button>
                         <div class="settings-dropdown" hidden>
+                            <div class="settings-row">
+                                <span class="settings-label">FileRepo</span>
+                                <button class="file-repo-export" type="button">Export files as ZIP</button>
+                                <button class="file-repo-import" type="button">Import files from ZIP</button>
+                                <input class="file-repo-input" type="file" accept=".zip,application/zip" aria-label="Import FileRepo ZIP" hidden>
+                                <small>Back up workspace data separately to preserve task associations.</small>
+                            </div>
                             <div class="settings-row">
                                 <label class="settings-label" for="settings-language-picker">${escapeHTML(t('ui.text.language'))}</label>
                                 <select id="settings-language-picker" class="language-picker" aria-label="${escapeHTML(t('ui.text.language'))}">
@@ -1285,6 +1293,22 @@ class TaskWorkspace extends HTMLElement {
         });
         this.querySelector('.download-action').addEventListener('click', () => this.downloadApp());
         this.querySelector('.import-action').addEventListener('click', () => this.querySelector('.import-input').click());
+        this.querySelector('.file-repo-export').addEventListener('click', async () => {
+            try {
+                downloadBlob(await fileRepo.exportZip(), `taskimatic-files-${new Date().toISOString().slice(0, 10)}.zip`);
+                this.toast('FileRepo ZIP exported.');
+            } catch (error) { this.toast(`FileRepo export failed: ${error.message}`); }
+        });
+        this.querySelector('.file-repo-import').addEventListener('click', () => this.querySelector('.file-repo-input').click());
+        this.querySelector('.file-repo-input').addEventListener('change', async event => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            try {
+                const result = await fileRepo.importZip(file);
+                this.toast(`Imported ${result.imported} files into FileRepo.`);
+            } catch (error) { this.toast(`FileRepo import failed: ${error.message}`); }
+            finally { event.target.value = ''; }
+        });
         this.querySelector('.import-input').addEventListener('change', async (event) => {
             const [file] = event.target.files;
             if (!file) return;

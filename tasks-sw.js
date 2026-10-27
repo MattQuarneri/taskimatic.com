@@ -1,7 +1,8 @@
 // Bump this version whenever index.html or one of its dependencies changes.
-// A new worker waits for existing tabs to close before switching the whole shell.
+// Activate a complete shell immediately; existing pages keep their loaded code
+// until refreshed, so updates don't require closing every Taskimatic tab.
 const CACHE_PREFIX = 'taskimatic-tasks-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v31`;
+const CACHE_NAME = `${CACHE_PREFIX}v38`;
 const SHELL_ASSETS = [
     './index.html',
     './css/tasks.css',
@@ -14,6 +15,11 @@ const SHELL_ASSETS = [
     './js/tasks-app.js',
     './js/task-api.js',
     './js/task-model.js',
+    './js/file-associations.js',
+    './js/file-repo.js',
+    './js/file-zip.js',
+    './webcomp/floating-file-view.js',
+    './webcomp/jsonmd.js',
     './js/task-repository.js',
     './js/task-analytics.js',
     './webcomp/task-item.js',
@@ -67,7 +73,7 @@ self.addEventListener('install', event => {
     // addAll is atomic: a failed download never activates an incomplete shell.
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(
         SHELL_ASSETS.map(url => new Request(url, { cache: 'reload' }))
-    )));
+    )).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {

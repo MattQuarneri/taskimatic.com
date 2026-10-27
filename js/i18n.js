@@ -494,7 +494,7 @@ function uiLabel(value, capitalized = false) {
     const lower = { task: 'task', tasks: 'tasksLower', plan: 'planLower', plans: 'plansLower',
         goal: 'goalLower', goals: 'goalsLower', want: 'wantLower', wants: 'wantsLower', human: 'humanLower', agent: 'agentLower',
         time: 'timeLower', entry: 'entry', entries: 'entries', project: 'project', initiative: 'initiative',
-        'sub-system': 'subsystem', feature: 'feature', client: 'client', domain: 'domain',
+        'sub-system': 'subsystem', feature: 'feature', client: 'client', domain: 'domain', file: 'file',
         'work-area': 'workArea', 'dependent-task': 'dependentTask', Unassigned: 'unassigned', Other: 'other' };
     const upper = { tasks: 'tasksTab', plans: 'plansTab', goals: 'goalsTab', wants: 'wantsTab', human: 'human', agent: 'agent' };
     const key = (capitalized ? upper[value] : null) || lower[value];

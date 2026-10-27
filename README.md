@@ -20,3 +20,23 @@ Run checks with `node --test tests/*.test.mjs`.
 When adding an app dependency, include it in `tasks-sw.js` and bump the cache version.
 Portable exports support static named imports, side-effect imports, and named exports.
 Keep that module syntax for app dependencies and run the portable bundle test when changing imports.
+
+File associations are available on tasks, plans, goals, and wants. Click
+**+ association**, choose **file**, then choose **Link** (the default) or **Local**.
+Link accepts any absolute URL protocol, including `http:`, `https:`, and `file:`;
+the browser handles protocols that cannot be previewed. Local opens a file picker
+and stores the bytes in `taskimatic/FileRepo` in OPFS. The association stores a
+content-based ID, filename, MIME type, and size. Filename pills open the floating
+viewer; Markdown and JavaScript previews use JSONMD.
+
+Under Settings, use **Export files as ZIP** and **Import files from ZIP** to back
+up or restore FileRepo. ZIP imports merge files and preserve IDs. FileRepo ZIPs
+contain a manifest and file bytes; export workspace JSON separately to preserve
+tasks and their associations. Workspace JSON and portable HTML contain file
+references, so transfer both backups when moving to another browser or origin.
+Archive imports validate sizes, checksums, IDs, and paths before writing. ZIPs
+use standard STORE entries and support DEFLATE on import (256 MB archive limit).
+The programmatic API is `window.taskimatic.fileRepo` (`put`, `get`, `list`,
+`exportZip`, `importZip`). OPFS requires HTTPS or localhost and browser support;
+if unavailable, local file loading reports an error rather than silently using
+session memory. Existing inline attachments remain readable.

@@ -1,6 +1,7 @@
 import { APP_VERSION, cloneValue } from './task-model.js';
 import { analyticsFor } from './task-analytics.js';
 import { WORKSPACE_COLLECTIONS } from './task-planning-model.js';
+import { fileRepo } from './file-repo.js';
 
 export function installTaskimaticAPI() {
     const apiManifest = Object.freeze({
@@ -8,6 +9,7 @@ export function installTaskimaticAPI() {
         version: APP_VERSION,
         description: 'JSON-friendly local task and time management API for people, browser automation, and MCP tools.',
         storage: 'OPFS with IndexedDB fallback',
+        fileRepo: 'fileRepo.put(File), get(id), list(), exportZip(), importZip(Blob). File bytes are stored separately in OPFS; back them up as ZIP alongside workspace JSON.',
         dataModel: { schemaVersion: 4, collections: [...WORKSPACE_COLLECTIONS], relationships: { 'tasks.planId': 'Optional Plan ID', 'plans.goalId': 'Optional Goal ID', 'goals.wantId': 'Optional Want ID', 'plans.wantId': 'Optional Want ID', 'tasks.agentId': 'Optional named Agent ID' }, rollups: 'listPlans/listGoals/listWants expose derived effectiveAssociations; exports preserve own associations and parent links.' },
         methods: {
             createAgent: { input: '{ name }', returns: 'Named Agent' },
@@ -50,6 +52,7 @@ export function installTaskimaticAPI() {
     };
 
     window.taskimatic = Object.freeze({
+        fileRepo,
         version: APP_VERSION,
         manifest: apiManifest,
         describe: () => cloneValue(apiManifest),

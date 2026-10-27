@@ -23,6 +23,8 @@ class Shadow {
         this.nodes = [...html.matchAll(/<(article|input|textarea|select|button|div|span|form|datalist|h3)\b([^>]*)>/g)].map(([, tag, attrs]) => {
             const node = new Element();
             node.tag = tag;
+            node.querySelector = selector => this.querySelector(selector);
+            node.querySelectorAll = selector => this.querySelectorAll(selector);
             node.attrs = Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v]));
             for (const [key, value] of Object.entries(node.attrs)) {
                 if (key.startsWith('data-')) node.dataset[key.slice(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = value;
@@ -53,6 +55,9 @@ const context = vm.createContext({
     document: {createElement: () => new Element()},
     customElements: {define(name, component) {registry.set(name, component);}}
 });
+// Exercise the shared file controls in the same DOM harness as planning cards.
+vm.runInContext(fs.readFileSync(new URL('../js/file-associations.js', import.meta.url), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 for (const name of ['planning', 'plan', 'goal', 'want']) {
     const source = fs.readFileSync(new URL(`../webcomp/${name}-item.js`, import.meta.url), 'utf8')
         .replace(/^import .*;\n/gm, '').replace(/^export /gm, '');

@@ -1,3 +1,4 @@
+import { createFilePill, installFileAssociationEditor } from '../js/file-associations.js';
 import { COMMON_PROPERTIES, cloneValue, canonicalType, parseQuickTask } from '../js/task-model.js';
 export class PlanningItem extends HTMLElement {
     constructor() {
@@ -181,7 +182,23 @@ export class PlanningItem extends HTMLElement {
                 .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; height: auto; border: 1px solid var(--line, #cfc8b8); border-radius: 999px; padding: 4px 8px; color: var(--blue, #315f91); background: rgba(49,95,145,.06); font-size: var(--font-sm, 11px); overflow-wrap: anywhere; }
                 .chip button { min-height: 20px; height: auto; border: 0; padding: 0 3px; background: transparent; font-size: inherit; }
                 .chip.inherited { border-style: dashed; }
+                .file-source { display: flex; gap: 2px; grid-column: 1 / -1; }
+                .file-source[hidden], .association-local-file[hidden] { display: none; }
+                .file-source button { min-height: 28px; padding: 4px 12px; }
+                .file-source button[aria-checked="true"] { background: var(--blue, #315f91); color: white; }
+                .association-local-file { grid-column: 1 / -1; }
+                .file-pill { color: inherit; text-decoration: none; cursor: pointer; }
                 .association-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; margin: 8px 0 14px; }
+                .association-property-row { display: contents; }
+                .association-form[data-file-association="true"] { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
+                .association-form[data-file-association="true"] > .association-property-row { display: flex; grid-area: 1 / 1; align-items: center; gap: 5px; min-width: 0; }
+                .association-form[data-file-association="true"] .association-property-select { flex: 0 1 120px; min-width: 0; }
+                .association-form[data-file-association="true"] .file-source { flex: 0 0 auto; min-width: 0; }
+                .association-form[data-file-association="true"] .file-source button { padding-inline: 4px; }
+                .association-form[data-file-association="true"] > .association-value,
+                .association-form[data-file-association="true"] > .association-local-file { grid-area: 2 / 1; width: 100%; }
+                .association-form[data-file-association="true"] > button[type="submit"] { grid-area: 2 / 2; min-width: 0; padding-inline: 2px; }
+                .association-form[data-file-association="true"] .association-type:not([hidden]) { flex: 1 1 0; min-width: 0; }
                 .children { display: grid; gap: 5px; margin: 10px 0; }
                 .child-link { text-align: left; overflow-wrap: anywhere; }
                 h3 { margin: 0 0 8px; font-size: var(--font-md, 12px); color: var(--muted, #697177); }
@@ -211,9 +228,17 @@ export class PlanningItem extends HTMLElement {
                 ${this.renderRelationships()}
                 <div class="chips" aria-label="${escapeHTML(t('ui.text.associations'))}"></div>
                 <form class="association-form">
-                    <input class="association-type" list="planning-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}" required>
+                    <div class="association-property-row">
+                    <select class="association-property-select" aria-label="Association property" required></select>
+                        <input hidden class="association-type" list="planning-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="Custom association property" required>
                     <datalist id="planning-types"></datalist>
-                    <input class="association-value" list="planning-values" maxlength="120" placeholder="${escapeHTML(t('ui.text.chooseOrTypeAValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}" required>
+                    <div class="file-source" role="radiogroup" aria-label="File source" hidden>
+                            <button type="button" role="radio" data-file-mode="link" aria-checked="true">Link</button>
+                            <button type="button" role="radio" data-file-mode="local" aria-checked="false">Local</button>
+                        </div>
+                    </div>
+                        <input class="association-local-file" type="file" aria-label="Local file" hidden>
+                        <input class="association-value" list="planning-values" maxlength="4096" placeholder="${escapeHTML(t('ui.text.chooseOrTypeAValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}" required>
                     <datalist id="planning-values"></datalist>
                     <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                 </form>
@@ -270,10 +295,7 @@ export class PlanningItem extends HTMLElement {
             values.replaceChildren();
             for (const name of this._catalog[canonicalType(type.value)] || []) values.append(new Option(name, name));
         });
-        this.shadowRoot.querySelector('.association-form').addEventListener('submit', event => {
-            event.preventDefault();
-            this.emit('planning-association-add', { association: { type: type.value, value: value.value } });
-        });
+        installFileAssociationEditor(this.shadowRoot.querySelector('.association-form'), type, value, [...COMMON_PROPERTIES, ...Object.keys(catalog)], association => this.emit('planning-association-add', { association }));
         this.renderChildren(children);
         this.shadowRoot.querySelector('.child-form').addEventListener('submit', event => {
             event.preventDefault();
@@ -307,7 +329,14 @@ export class PlanningItem extends HTMLElement {
             const own = ownKeys.has(`${association.type}\u0000${association.value.toLowerCase()}`);
             const chip = document.createElement('span');
             chip.className = `chip${own ? '' : ' inherited'}`;
-            chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(this.childKind) })}`;
+            if (association.type === 'file') {
+                chip.append(createFilePill(association));
+                if (!own) {
+                    const origin = document.createElement('span');
+                    origin.textContent = t('ui.text.fromValue0', { value0: uiLabel(this.childKind) });
+                    chip.append(origin);
+                }
+            } else chip.textContent = `${association.type}: ${association.value}${own ? '' : t('ui.text.fromValue0', { value0: uiLabel(this.childKind) })}`;
             if (own) {
                 const remove = document.createElement('button');
                 remove.type = 'button';

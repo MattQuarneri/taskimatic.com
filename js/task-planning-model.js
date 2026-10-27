@@ -11,7 +11,7 @@ export function normalizeAssociations(input = []) {
                 const [type, ...rest] = item.split(':');
                 pairs.push({ type, value: rest.join(':') });
             } else if (item && typeof item === 'object') {
-                pairs.push({ type: item.type ?? item.property, value: item.value ?? item.name });
+                pairs.push({ type: item.type ?? item.property, value: item.value ?? item.name, file: item.file });
             }
         }
     } else if (input && typeof input === 'object') {
@@ -20,8 +20,17 @@ export function normalizeAssociations(input = []) {
         }
     }
     const seen = new Set();
-    return pairs.flatMap(({ type, value }) => {
-        const association = { type: text(type, 60).toLowerCase().replace(/\s+/g, '-'), value: text(value, 120) };
+    return pairs.flatMap(({ type, value, file }) => {
+        const normalizedType = text(type, 60).toLowerCase().replace(/\s+/g, '-');
+        const association = { type: normalizedType, value: text(value, normalizedType === 'file' ? 4096 : 120) };
+        if (association.type === 'file' && file && typeof file.data === 'string'
+            && /^data:[^,]*;base64,[a-z0-9+/=]*$/i.test(file.data) && file.data.length <= 14 * 1024 * 1024) {
+            association.file = { name: text(file.name, 255) || association.value.split(/[\\/]/).pop(),
+                mime: text(file.mime, 255), size: Math.max(0, Number(file.size) || 0), data: file.data };
+        }
+        if (association.type === 'file' && file && /^[a-f0-9]{64}$/.test(file.id)) {
+            association.file = {id: file.id, name: text(file.name, 255), mime: text(file.mime, 255), size: Math.max(0, Number(file.size) || 0)};
+        }
         const key = `${association.type}\u0000${association.value.toLowerCase()}`;
         if (!association.type || !association.value || seen.has(key)) return [];
         seen.add(key);

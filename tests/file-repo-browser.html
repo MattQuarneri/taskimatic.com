@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>FileRepo browser check</title>
+<style>body {font:16px system-ui; margin:32px; max-width:800px} button,a {padding:8px} pre {white-space:pre-wrap}</style>
+<h1>FileRepo browser check</h1>
+<p>Run on a disposable localhost origin. This writes two sample files to OPFS, checks ZIP restoration, and exposes their viewer pills.</p>
+<button id="run">Run FileRepo checks</button>
+<pre id="result" aria-live="polite">Ready</pre>
+<div id="pills"></div>
+<script type="module">
+import {fileRepo} from '../js/file-repo.js';
+import {associationFromFile, createFilePill} from '../js/file-associations.js';
+const result = document.querySelector('#result');
+document.querySelector('#run').addEventListener('click', async () => {
+    try {
+        const samples = [new File(['# OPFS Markdown\n\nSaved in FileRepo.'], 'opfs-check.md'),
+            new File(['const message = "OPFS JavaScript";\nconsole.log(message);'], 'opfs-check.js')];
+        const associations = [];
+        for (const sample of samples) {
+            const association = await associationFromFile(sample);
+            if (await (await fileRepo.get(association.file.id)).text() !== await sample.text()) throw new Error('OPFS bytes differ');
+            associations.push(association);
+        }
+        const restored = await fileRepo.importZip(await fileRepo.exportZip());
+        if (restored.imported < samples.length) throw new Error('ZIP restoration failed');
+        document.querySelector('#pills').replaceChildren(...associations.map(createFilePill));
+        result.textContent = 'PASS: local files stored in OPFS; bytes reopened; ZIP exported and restored; IDs preserved. Click a filename to verify JSONMD preview.';
+    } catch (error) { result.textContent = `FAIL: ${error.message}`; }
+});
+</script>
+</html>

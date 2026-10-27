@@ -365,6 +365,7 @@
       "project": "proyecto",
       "initiative": "iniciativa",
       "subsystem": "subsistema",
+      "file": "archivo",
       "feature": "función",
       "client": "cliente",
       "domain": "dominio",

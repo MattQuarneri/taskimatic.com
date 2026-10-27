@@ -1,3 +1,4 @@
+import { createFilePill, installFileAssociationEditor } from '../js/file-associations.js';
 import { COMMON_PROPERTIES, TIMER_ACTORS, cloneValue, canonicalType, setText, extractTaskLinks, currentDay, durationForTask, durationTodayForTask, formatAge, formatDuration, colorFor } from '../js/task-model.js';
 class TaskItem extends HTMLElement {
     constructor() {
@@ -262,6 +263,7 @@ class TaskItem extends HTMLElement {
                 }
                 .chip-label { overflow: hidden; padding: 0 5px 0 8px; text-overflow: ellipsis; white-space: nowrap; }
                 .chip button { width: 22px; height: 23px; border: 0; background: transparent; color: inherit; opacity: .65; }
+                .chip .file-pill { width: auto; height: auto; min-width: 0; padding: 4px 8px; opacity: 1; color: inherit; text-decoration: none; font: inherit; cursor: pointer; text-align: left; }
                 .link-pills { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
                 .link-pill {
                     display: inline-flex;
@@ -284,9 +286,25 @@ class TaskItem extends HTMLElement {
                 .add-group { min-height: max(25px, 1.8em); height: auto; border: 1px dashed #999488; border-radius: 999px; padding: 0 8px; background: transparent; color: var(--muted, #697177); font-size: var(--font-xs, 10px); font-weight: 750; }
                 .time-total { color: var(--muted, #697177); font: 700 var(--font-xs, 10px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
                 .time-totals { display: grid; justify-items: end; gap: 4px; }
+                .file-source { display: flex; gap: 2px; grid-column: 1 / -1; }
+                .file-source[hidden], .association-local-file[hidden] { display: none; }
+                .file-source button { min-height: 28px; padding: 4px 12px; }
+                .file-source button[aria-checked="true"] { background: var(--blue, #315f91); color: white; }
+                .association-local-file { grid-column: 1 / -1; }
+                .file-pill { color: inherit; text-decoration: none; cursor: pointer; }
                 .group-editor { display: grid; grid-template-columns: 120px minmax(130px, 1fr) auto; gap: 5px; margin: 5px 0 0 5px; padding: 8px; border: 1px solid #d6d0c3; border-radius: 9px; background: #f5f0e5; }
-                .group-editor input { min-width: 0; min-height: 34px; height: auto; border: 1px solid #bdb7aa; border-radius: 7px; background: #fffdf7; padding: 4px 8px; font-size: var(--font-md, 12px); }
+                .group-editor input, .group-editor select { min-width: 0; min-height: 34px; height: auto; border: 1px solid #bdb7aa; border-radius: 7px; background: #fffdf7; padding: 4px 8px; font-size: var(--font-md, 12px); }
                 .group-editor button { min-height: 34px; height: auto; border: 1px solid var(--ink, #18242b); border-radius: 7px; background: var(--ink, #18242b); color: white; padding: 4px 10px; font-size: var(--font-sm, 11px); font-weight: 800; }
+                .association-property-row { display: contents; }
+                .group-editor[data-file-association="true"] { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
+                .group-editor[data-file-association="true"] > .association-property-row { display: flex; grid-area: 1 / 1; align-items: center; gap: 5px; min-width: 0; }
+                .group-editor[data-file-association="true"] .association-property-select { flex: 0 1 120px; min-width: 0; }
+                .group-editor[data-file-association="true"] .file-source { flex: 0 0 auto; min-width: 0; }
+                .group-editor[data-file-association="true"] .file-source button { padding-inline: 4px; }
+                .group-editor[data-file-association="true"] > .group-value,
+                .group-editor[data-file-association="true"] > .association-local-file { grid-area: 2 / 1; width: 100%; }
+                .group-editor[data-file-association="true"] > button[type="submit"] { grid-area: 2 / 2; min-width: 0; padding-inline: 2px; }
+                .group-editor[data-file-association="true"] .group-type:not([hidden]) { flex: 1 1 0; min-width: 0; }
                 .card > [data-editor-panel] { margin-top: 5px; }
                 .plan-control { display: grid; gap: 5px; margin: 5px 0 0 5px; color: var(--muted, #697177); font-size: var(--font-xs, 10px); }
                 .plan-row { display: flex; gap: 5px; }
@@ -348,7 +366,7 @@ class TaskItem extends HTMLElement {
                     .plan-control, .meta-row, .group-editor, .footer { margin-left: 5px; }
                     .notes, .prompts, .group-editor input, .plan-select, .agent-select, .agent-form input { font-size: max(16px, var(--font-base)); }
                     .notes-wrap { margin-left: 0; }
-                    .group-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                .group-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     .group-editor button { grid-column: 1 / -1; }
                 }
                 @media (prefers-reduced-motion: reduce) { :host([clock-active]) .timer.running { animation: none; } }
@@ -395,9 +413,17 @@ class TaskItem extends HTMLElement {
                         <div class="meta-left"><div class="chips"></div><div class="link-pills" hidden></div></div>
                     </div>
                     <form class="group-editor" hidden>
-                        <input class="group-type" list="property-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="${escapeHTML(t('ui.text.associationProperty'))}">
+                        <div class="association-property-row">
+                        <select class="association-property-select" aria-label="Association property" required></select>
+                        <input hidden class="group-type" list="property-types" maxlength="60" placeholder="${escapeHTML(t('ui.text.property'))}" aria-label="Custom association property">
                         <datalist id="property-types">${COMMON_PROPERTIES.map((type) => `<option value="${type}"></option>`).join('')}</datalist>
-                        <input class="group-value" list="association-values" maxlength="120" placeholder="${escapeHTML(t('ui.text.chooseOrTypeANewValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}">
+                        <div class="file-source" role="radiogroup" aria-label="File source" hidden>
+                            <button type="button" role="radio" data-file-mode="link" aria-checked="true">Link</button>
+                            <button type="button" role="radio" data-file-mode="local" aria-checked="false">Local</button>
+                        </div>
+                        </div>
+                        <input class="association-local-file" type="file" aria-label="Local file" hidden>
+                        <input class="group-value" list="association-values" maxlength="4096" placeholder="${escapeHTML(t('ui.text.chooseOrTypeANewValue'))}" aria-label="${escapeHTML(t('ui.text.associationValue'))}">
                         <datalist id="association-values"></datalist>
                         <button type="submit">${escapeHTML(t('ui.text.addAssociation'))}</button>
                     </form>
@@ -523,9 +549,9 @@ class TaskItem extends HTMLElement {
             const chip = document.createElement('span');
             chip.className = 'chip';
             chip.style.setProperty('--chip-color', colorFor(association.type));
-            const label = document.createElement('span');
-            label.className = 'chip-label';
-            label.textContent = `${association.type}: ${association.value}`;
+            const label = association.type === 'file' ? createFilePill(association) : document.createElement('span');
+            label.className += ' chip-label';
+            if (association.type !== 'file') label.textContent = `${association.type}: ${association.value}`;
             const remove = document.createElement('button');
             remove.type = 'button';
             remove.textContent = '×';
@@ -542,7 +568,7 @@ class TaskItem extends HTMLElement {
         addGroup.addEventListener('click', () => {
             const editor = this.shadowRoot.querySelector('.group-editor');
             editor.hidden = !editor.hidden;
-            if (!editor.hidden) this.shadowRoot.querySelector('.group-type').focus();
+            if (!editor.hidden) this.shadowRoot.querySelector('.association-property-select').focus();
         });
         chips.append(addGroup);
 
@@ -583,11 +609,7 @@ class TaskItem extends HTMLElement {
         typeInput.addEventListener('input', updateValueOptions);
         typeInput.addEventListener('change', updateValueOptions);
 
-        this.shadowRoot.querySelector('.group-editor').addEventListener('submit', (event) => {
-            event.preventDefault();
-            if (!typeInput.value.trim() || !valueInput.value.trim()) return;
-            this.emit('task-association-add', { association: { type: typeInput.value, value: valueInput.value } });
-        });
+        installFileAssociationEditor(this.shadowRoot.querySelector('.group-editor'), typeInput, valueInput, [...COMMON_PROPERTIES, ...Object.keys(this._associationCatalog)], association => this.emit('task-association-add', { association }));
 
         this.shadowRoot.querySelector('session-times').data = { taskId: this._task.id, sessions: this._task.sessions };
 
