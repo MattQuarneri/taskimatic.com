@@ -7,6 +7,7 @@ import { installTaskimaticAPI } from './task-api.js';
 import '../webcomp/dual-range-slider.js';
 import '../webcomp/task-sort-controls.js';
 import '../webcomp/task-item.js';
+import '../webcomp/today-time.js';
 import '../webcomp/task-table.js';
 import '../webcomp/task-hierarchy-editor.js';
 import '../webcomp/task-visualization.js';

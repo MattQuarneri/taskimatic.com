@@ -120,6 +120,14 @@ class TaskItem extends HTMLElement {
 
     set priorityLimit(value) { this._priorityLimit = Math.max(1, Number(value) || 1); }
 
+    set backgroundColor(value) {
+        this._backgroundColor = value || '';
+        if (this._backgroundColor) this.style.setProperty('--task-background', this._backgroundColor);
+        else this.style.removeProperty('--task-background');
+    }
+
+    get backgroundColor() { return this._backgroundColor || ''; }
+
     set task(value) {
         this._task = cloneValue(value);
         this.setAttribute('task-id', value.id);
@@ -172,7 +180,7 @@ class TaskItem extends HTMLElement {
                     padding: 8px 8px 6px;
                     border: 1px solid var(--ink, #18242b);
                     border-radius: 12px;
-                    background: var(--panel, #fffdf7);
+                    background: var(--task-background, var(--panel, #fffdf7));
                     box-shadow: 3px 3px 0 rgba(24,36,43,.1);
                     transition: transform 140ms ease, box-shadow 140ms ease;
                 }

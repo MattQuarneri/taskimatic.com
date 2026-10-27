@@ -21,6 +21,14 @@ When adding an app dependency, include it in `tasks-sw.js` and bump the cache ve
 Portable exports support static named imports, side-effect imports, and named exports.
 Keep that module syntax for app dependencies and run the portable bundle test when changing imports.
 
+The Today panel's `<today-time>` component accepts a `tasks` array and emits
+`today-time-change` with `detail.tasks`, priority-ordered copies containing `color`
+and `completesAt`. Completed and tabled tasks are excluded. It schedules estimates
+from the current time (30 minutes for unestimated tasks), refreshes every minute,
+and inserts a break after each 60 minutes of work, splitting long tasks as needed.
+The inline break setting defaults to 5 minutes and is saved in browser storage;
+0 disables breaks. Task cards accept a `backgroundColor` property for matching colors.
+
 File associations are available on tasks, plans, goals, and wants. Click
 **+ association**, choose **file**, then choose **Link** (the default) or **Local**.
 Link accepts any absolute URL protocol, including `http:`, `https:`, and `file:`;

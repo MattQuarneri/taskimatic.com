@@ -16,6 +16,7 @@ class TaskWorkspace extends HTMLElement {
         this._unsubscribePlanning = null;
         this.pendingPlanningCreates = new Map();
         this.tasks = [];
+        this.todayTaskColors = new Map();
         this.plans = [];
         this.wants = [];
         this.goals = [];
@@ -402,6 +403,7 @@ class TaskWorkspace extends HTMLElement {
                     <div class="list-heading"><h2 id="today-heading">${escapeHTML(t('ui.text.today'))}</h2><span class="today-count list-count">${escapeHTML(t('ui.text.0Tasks'))}</span></div>
                     <button type="button" class="drawer-close" id="today-close" aria-label="${escapeHTML(t('ui.text.closeToday'))}">✕</button>
                 </div>
+                <today-time></today-time>
                 <lock-in-controls></lock-in-controls>
                 <p class="today-lock" id="today-lock" role="status" hidden>${escapeHTML(t('ui.text.lockIn2'))}</p>
                 <task-sort-controls class="today-sort" aria-label="${escapeHTML(t('ui.text.sortTodayTasks'))}"></task-sort-controls>
@@ -1277,6 +1279,12 @@ class TaskWorkspace extends HTMLElement {
             this.renderTasks();
         });
         this.querySelector('.today-sort').addEventListener('task-sort-change', () => this.renderTodayTasks());
+        this.querySelector('today-time').addEventListener('today-time-change', event => {
+            this.todayTaskColors = new Map(event.detail.tasks.map(task => [task.id, task.color]));
+            this.querySelectorAll('task-item').forEach(item => {
+                item.backgroundColor = this.todayTaskColors.get(item.dataset.taskId) || '';
+            });
+        });
 
         // Lock In toggles and modal
         this.querySelector('lock-in-controls').addEventListener('lock-in:change', event => {
@@ -1946,6 +1954,7 @@ class TaskWorkspace extends HTMLElement {
 
     createTaskItem(task, tableDetail = false) {
         const element = document.createElement('task-item');
+        element.backgroundColor = this.todayTaskColors.get(task.id) || '';
         element.toggleAttribute('table-detail', tableDetail);
         element.agentCatalog = this.agents;
         element.editorTab = this.taskEditorTabs.get(task.id) ?? null;
@@ -1961,6 +1970,7 @@ class TaskWorkspace extends HTMLElement {
     renderTodayTasks() {
         const controls = this.querySelector('.today-sort');
         const tasks = this.sortedTasks(this.tasks.filter(task => task.today), controls.sortKey, controls.sortDir);
+        this.querySelector('today-time').tasks = tasks;
         const list = this.querySelector('.today-task-list');
         this.querySelector('.today-count').textContent = `${tasks.length} ${uiLabel(tasks.length === 1 ? 'task' : 'tasks')}`;
         list.replaceChildren();

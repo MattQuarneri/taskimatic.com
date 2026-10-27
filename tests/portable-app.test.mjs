@@ -27,7 +27,7 @@ test('portable bundle boots the complete app graph with isolated modules and no 
         t, escapeHTML, uiLabel, console, EventTarget, CustomEvent
     });
     for (const name of ['task-workspace', 'task-item', 'task-table', 'task-hierarchy-editor',
-        'task-sort-controls', 'task-visualization', 'plan-item', 'goal-item', 'want-item', 'dual-range-slider',
+        'task-sort-controls', 'task-visualization', 'today-time', 'plan-item', 'goal-item', 'want-item', 'dual-range-slider',
         'lock-in-controls', 'searcher-element', 'session-times', 'backup-tracker']) {
         assert.ok(registered.has(name), `${name} registered`);
     }
