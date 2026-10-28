@@ -2,7 +2,7 @@
 // Activate a complete shell immediately; existing pages keep their loaded code
 // until refreshed, so updates don't require closing every Taskimatic tab.
 const CACHE_PREFIX = 'taskimatic-tasks-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v44`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const SHELL_ASSETS = [
     './index.html',
     './css/tasks.css',

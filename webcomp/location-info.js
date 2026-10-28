@@ -513,7 +513,7 @@ class LocationInfo extends HTMLElement {
           background: #fff;
         }
         .env-value {
-          font-size: calc(15px * var(--font-scale, 1));
+          font-size: calc(15px * var(--font-scale, 1) * var(--phone-font-scale, 1));
           letter-spacing: 0.3px;
           display: flex;
           gap: 8px;
@@ -524,7 +524,7 @@ class LocationInfo extends HTMLElement {
           opacity: 0.5;
         }
         .emoji {
-          font-size: calc(16px * var(--font-scale, 1));
+          font-size: calc(16px * var(--font-scale, 1) * var(--phone-font-scale, 1));
         }
         .section-box {
           margin-top: 12px;

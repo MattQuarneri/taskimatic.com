@@ -15,20 +15,21 @@
     --shadow: 4px 4px 0 rgba(24, 36, 43, 0.13);
     --radius: 14px;
     --font-scale: 1;
-    --font-3xs: calc(8px * var(--font-scale, 1));
-    --font-2xs: calc(9px * var(--font-scale, 1));
-    --font-xs: calc(10px * var(--font-scale, 1));
-    --font-sm: calc(11px * var(--font-scale, 1));
-    --font-md: calc(12px * var(--font-scale, 1));
-    --font-base: calc(13px * var(--font-scale, 1));
-    --font-lg: calc(14px * var(--font-scale, 1));
-    --font-xl: calc(2em * var(--font-scale, 1));
-    --font-2xl: calc(17px * var(--font-scale, 1));
-    --font-3xl: calc(18px * var(--font-scale, 1));
-    --font-4xl: calc(20px * var(--font-scale, 1));
-    --font-5xl: calc(24px * var(--font-scale, 1));
-    --font-6xl: calc(28px * var(--font-scale, 1));
-    --font-title: calc(32px * var(--font-scale, 1));
+    --phone-font-scale: 1;
+    --font-3xs: calc(8px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-2xs: calc(9px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-xs: calc(10px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-sm: calc(11px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-md: calc(12px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-base: calc(13px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-lg: calc(14px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-xl: calc(2em * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-2xl: calc(17px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-3xl: calc(18px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-4xl: calc(20px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-5xl: calc(24px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-6xl: calc(28px * var(--font-scale, 1) * var(--phone-font-scale, 1));
+    --font-title: calc(32px * var(--font-scale, 1) * var(--phone-font-scale, 1));
     color-scheme: light;
 }
 
@@ -144,15 +145,16 @@ task-workspace { display: block; min-height: calc(100vh - 24px); }
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    padding: 14px 22px;
+    padding: 8px 8px;
     border-bottom: 1px solid var(--ink);
     background: rgba(243, 239, 228, 0.96);
     position: sticky;
     top: 0;
     z-index: 20;
 }
+#brand-tag { display: flex; flex-direction: column; transform: translate(5px, -5px); }
 
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; }
 .brand-mark {
     width: max(38px, 1.4em);
     height: max(38px, 1.4em);
@@ -166,7 +168,7 @@ task-workspace { display: block; min-height: calc(100vh - 24px); }
     background: var(--accent);
     color: white;
     box-shadow: 2px 2px 0 var(--ink);
-    font: 800 var(--font-6xl)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    font: 800 var(--font-1xl)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .brand-help {
     position: fixed;
@@ -204,7 +206,19 @@ task-workspace { display: block; min-height: calc(100vh - 24px); }
 .brand-name { font-weight: 850; letter-spacing: -0.035em; font-size: var(--font-4xl); }
 .brand-sub { color: var(--muted); font: 650 var(--font-xs)/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; }
 .top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.top-actions button:not(.settings-button):not(.font-size-btn) { padding: 4px 13px; min-height: 38px; height: auto; font-weight: 720; font-size: var(--font-base); }
+.top-actions button:not(.settings-button):not(.font-size-btn) { height: auto; font-weight: 720; font-size: var(--font-base); }
+.top-actions .backup-action-pair { display: grid; grid-template-columns: auto auto; gap: 2px 8px; }
+.backup-action-pair::part(status) { grid-area: 1 / 1 / 3 / 2; }
+.backup-action-pair .import-action { grid-area: 1 / 2; }
+.backup-action-pair .export-action { grid-area: 2 / 2; }
+.app-action-pair { display: grid; gap: 2px; }
+.top-actions :is(.backup-action-pair, .app-action-pair) button {
+    min-height: 18px;
+    padding: 0 13px;
+    border-radius: 5px;
+    font-size: var(--font-sm);
+    line-height: 16px;
+}
 .language-picker { min-height: 38px; height: auto; width: 100%; padding: 4px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); font-size: var(--font-base); }
 .top-actions .primary { background: var(--ink); color: white; }
 .top-actions .primary:hover { background: #2c3d46; }
@@ -623,7 +637,7 @@ task-workspace { display: block; min-height: calc(100vh - 24px); }
 
 .main-column { min-width: 0; padding: 0px clamp(18px, 3vw, 42px) 64px; }
 .welcome-row { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
-.welcome-row h1 { margin: 4px 0 0; font-size: clamp(var(--font-6xl), 3vw, calc(42px * var(--font-scale, 1))); line-height: .98; letter-spacing: -.052em; }
+.welcome-row h1 { margin: 4px 0 0; font-size: clamp(var(--font-6xl), 3vw, calc(42px * var(--font-scale, 1) * var(--phone-font-scale, 1))); line-height: .98; letter-spacing: -.052em; }
 .date-stamp { color: var(--muted); font: 700 var(--font-sm)/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; text-transform: uppercase; }
 
 .capture-card {
@@ -842,7 +856,7 @@ task-item { display: block; }
 
     body:has(.today-drawer.is-open) .drawer-scrim { touch-action: none; }
     .eyebrow, .workspace-tab-list, .pip-action, .download-action { display: none; }
-    .topbar { position: static; min-height: auto; align-items: flex-start; flex-wrap: wrap; padding: 12px 14px; }
+    .topbar { position: static; min-height: auto; align-items: flex-start; flex-wrap: wrap; padding: 8px 8px; }
     .workspace-tabs {
         position: sticky;
         top: var(--plans-nav-height, 0px);
@@ -850,6 +864,10 @@ task-item { display: block; }
     }
     .brand-sub, .storage-state, .desktop-action { display: none; }
     backup-tracker::part(status) { display: none; }
+    .top-actions .backup-action-pair { grid-template-columns: auto; }
+    .backup-action-pair .import-action { grid-area: 1 / 1; }
+    .backup-action-pair .export-action { grid-area: 2 / 1; }
+    .app-action-pair { display: none; }
     .top-actions button { padding: 0 10px; }
     .app-grid { display: block; }
     .task-list, .task-list .task-group-list { grid-template-columns: minmax(0, 1fr); }
@@ -898,7 +916,7 @@ task-item { display: block; }
         align-items: center;
         gap: 2px;
         padding: 3px 2px;
-        font-size: max(12px, var(--font-sm));
+        font-size: max(calc(12px * var(--phone-font-scale)), var(--font-sm));
         font-weight: 750;
         border: 1px solid transparent;
         border-radius: 8px;
@@ -909,11 +927,11 @@ task-item { display: block; }
         background: var(--panel);
         box-shadow: 1px 1px 0 rgba(24, 36, 43, 0.12);
     }
-    .nav-count { min-width: 20px; padding: 2px 5px; font-size: max(11px, var(--font-xs)); }
+    .nav-count { min-width: 20px; padding: 2px 5px; font-size: max(calc(11px * var(--phone-font-scale)), var(--font-xs)); }
 
-    /* Prevent mobile browser (iOS Safari) automatic viewport zoom on input focus */
+    /* Keep the input zoom safeguard at the default text scale. */
     input[type="text"], input[type="search"], input[type="number"], select, textarea {
-        font-size: 16px;
+        font-size: calc(16px * var(--phone-font-scale));
     }
 
     /* Left Associations Slide-out Panel */
@@ -1015,6 +1033,8 @@ task-item { display: block; }
 }
 
 @media (max-width: 520px) {
+    /* 80% smaller text on phones, in addition to the saved font preference. */
+    :root { --phone-font-scale: 0.9; }
     .welcome-row { margin-bottom: 16px; }
     .capture-help { line-height: 1.5; }
 }

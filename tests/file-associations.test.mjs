@@ -120,3 +120,32 @@ test('Markdown and JavaScript use JSONMD, with JavaScript kept inside an escaped
         assert.equal(preview.value, name.endsWith('.js') ? '````javascript\n' + text + '\n````' : text);
     }
 });
+
+test('FloatingFileView renders a half-black/white theme toggle and toggles between dark and light themes', () => {
+    let FloatingFileView;
+    const source = fs.readFileSync(new URL('../webcomp/floating-file-view.js', import.meta.url), 'utf8')
+        .replace(/^import .*;\n/gm, '').replace(/^export \{[^}]*\};?$/gm, '').replace(/^export /gm, '');
+    vm.runInNewContext(source, {
+        HTMLElement: class {
+            constructor() { this.classList = { toggle() {} }; }
+            attachShadow() { return { innerHTML: '', addEventListener() {}, querySelector() { return null; }, querySelectorAll() { return []; } }; }
+            setAttribute(k, v) { this[k] = v; }
+            getAttribute(k) { return this[k]; }
+            addEventListener() {}
+        },
+        customElements: { get() {}, define(name, constructor) { FloatingFileView = constructor; } },
+        document: { createElement() { return { setAttribute() {}, classList: { add() {} } }; } }
+    });
+    const viewer = new FloatingFileView();
+    assert.equal(viewer._theme, 'dark');
+    const template = viewer._windowTemplate({ name: 'readme.md', mime: 'text/markdown', path: '/path/readme.md' });
+    assert.ok(template.includes('data-action="toggle-theme"'), 'has toggle-theme button');
+    assert.ok(template.includes('class="theme-circle"'), 'has half-circle icon');
+    assert.ok(template.indexOf('data-action="toggle-theme"') < template.indexOf('class="kind-group"'), 'button is to the left of kind-group');
+    viewer._toggleTheme();
+    assert.equal(viewer._theme, 'light');
+    assert.equal(viewer['data-theme'], 'light');
+    viewer._toggleTheme();
+    assert.equal(viewer._theme, 'dark');
+    assert.equal(viewer['data-theme'], 'dark');
+});

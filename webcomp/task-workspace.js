@@ -259,29 +259,29 @@ class TaskWorkspace extends HTMLElement {
         this.innerHTML = `
             <header class="topbar">
                 <div class="brand">
-                    <button type="button" class="brand-mark" popovertarget="brand-help" aria-label="${escapeHTML(t('ui.text.helpAndContactTaskimatic'))}" title="${escapeHTML(t('ui.text.questions'))}">${escapeHTML(t('ui.text.t'))}</button>
+                    <button type="button" class="brand-mark" popovertarget="brand-help" aria-label="${escapeHTML(t('ui.text.helpAndContactTaskimatic'))}" title="${escapeHTML(t('ui.text.questions'))}">+@$<</button>
                     <div class="brand-help" id="brand-help" popover aria-label="${escapeHTML(t('ui.text.helpAndContact'))}">
                         <p><strong>${escapeHTML(t('ui.text.questionProblemSuggestion'))}</strong><br>
                         ${escapeHTML(t('ui.text.email'))} <a href="mailto:bot@taskimatic.com">${escapeHTML(t('ui.text.botTaskimaticCom'))}</a></p>
                         <p>${escapeHTML(t('ui.text.weHopeTaskimaticHelpsYouGetMoreDone'))}</p>
                         <small><a href="https://mentic.com" target="_blank">${escapeHTML(t('ui.text.broughtYouByMENTICCognitiveSystems'))}</a></small>
                     </div>
-                    <div><div class="brand-name">${escapeHTML(t('ui.text.taskimatic'))}</div><div class="brand-sub">${escapeHTML(t('ui.text.localWorkLedger'))}</div></div>
-                    <span class="lock-in-pill-slot" aria-hidden="true"></span>
+                    <div id="brand-tag"><div class="brand-name">${escapeHTML(t('ui.text.taskimatic'))}</div><div class="brand-sub">${escapeHTML(t('ui.text.localWorkLedger'))}</div></div>
                 </div>
                 <div class="top-actions">
                     <task-guide></task-guide>
                     <div class="storage-state" data-mode="indexeddb" title="${escapeHTML(t('ui.text.yourWorkspaceIsStoredInThisBrowser'))}">
                         <span class="storage-dot"></span><span class="storage-label">${escapeHTML(t('ui.text.openingStorage'))}</span>
                     </div>
-                    <backup-tracker storage-key="taskimatic:backuptracker" change-event="taskimatic:change">
-                        <button slot="before-button" class="pip-action" type="button" aria-pressed="false" title="${escapeHTML(t('ui.text.openAnAlwaysOnTopTaskWindow'))}">${escapeHTML(t('ui.text.miniMe'))}</button>
+                    <backup-tracker class="backup-action-pair" storage-key="taskimatic:backuptracker" change-event="taskimatic:change">
+                        <button slot="before-button" class="import-action" type="button">${escapeHTML(t('ui.text.importData'))}</button>
                         <button slot="action" data-backup-action class="export-action" type="button">${escapeHTML(t('ui.text.exportData'))}</button>
-
                     </backup-tracker>
-                    <button class="import-action desktop-action" type="button">${escapeHTML(t('ui.text.import'))}</button>
                     <input class="import-input" type="file" accept="application/json,.json" hidden>
-                    <button class="download-action primary" type="button">${escapeHTML(t('ui.text.downloadApp'))}</button>
+                    <div class="app-action-pair">
+                        <button class="pip-action" type="button" aria-pressed="false" title="${escapeHTML(t('ui.text.openAnAlwaysOnTopTaskWindow'))}">${escapeHTML(t('ui.text.miniMe'))}</button>
+                        <button class="download-action primary" type="button">${escapeHTML(t('ui.text.downloadApp'))}</button>
+                    </div>
                     <div class="settings-menu-container">
                         <button class="settings-button" type="button" aria-label="${escapeHTML(t('ui.text.settings'))}" aria-expanded="false" aria-haspopup="true" title="${escapeHTML(t('ui.text.settings'))}">
                             <svg class="gear-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -896,7 +896,7 @@ class TaskWorkspace extends HTMLElement {
         const positionKey = targetWindow === window ? 'lockInPillPos' : 'pipLockInPillPos';
         const pill = targetWindow === window ? this.querySelector('#lock-in-pill') : targetWindow.document.querySelector('#lock-in-pill');
         if (!pill) return;
-        const slot = targetWindow === window ? this.querySelector('.lock-in-pill-slot') : null;
+        const slot = targetWindow === window ? this.querySelector('#brand-tag') : null;
         if (slot) {
             slot.style.width = `${pill.offsetWidth}px`;
             slot.style.height = `${pill.offsetHeight}px`;

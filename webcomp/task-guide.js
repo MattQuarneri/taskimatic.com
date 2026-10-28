@@ -74,7 +74,7 @@ export class TaskGuide extends HTMLElement {
             </style>
             <button class="launch" type="button">Guide</button>
             <dialog aria-labelledby="guide-title">
-                <header><h2 id="guide-title">Make room for what matters</h2><button class="close" type="button" aria-label="Close guide">Close</button></header>
+                <header><h2 id="guide-title">Make time for what matters</h2><button class="close" type="button" aria-label="Close guide">Close</button></header>
                 <div class="body"></div>
                 <p class="status" role="status" aria-live="polite"></p>
             </dialog>`;
@@ -106,10 +106,10 @@ export class TaskGuide extends HTMLElement {
         this.step = null;
         this.status();
         this.body.innerHTML = `
-            <p>Welcome to Taskimatic. Start with something you want to change, or pick up wherever you already have clarity.</p>
-            <p class="path">Want → Goal → Plan → Task</p>
-            <p class="muted">“I want more breathing room” → “My commitments fit within four workdays” → “Audit and simplify my commitments” → “List recurring commitments and weekly hours.”</p>
-            <p>How would you like to work with your assistant?</p>
+            <p>Welcome to taskimatic. Here’s how to get started. Begin by identifying what you want to achieve. We'll take it from there...</p>
+            <p class="path">Wants → Goals → Plans → Tasks</p>
+            <p class="muted">“I want more breathing room” → “Get my commitments to fit within four workdays” → “Audit and simplify my commitments” → “Organize commitments, time them out, make them fit my time boxes.”</p>
+            <p>How would you like to work with your taskimatic agent?</p>
             <div class="modes" role="group" aria-label="Assistant input mode">${['type', 'talk', 'tap'].map(mode => `<button type="button" data-mode="${mode}" aria-pressed="${this.mode === mode}">${mode[0].toUpperCase() + mode.slice(1)}</button>`).join('')}</div>
             <p class="mode-help muted"></p>
             <div class="choices">${PROCESS_STEPS.map(step => `<button type="button" data-step="${step.id}">${html(step.label)}<small>${html(step.question)}</small></button>`).join('')}</div>

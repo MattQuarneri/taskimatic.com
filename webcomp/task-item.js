@@ -372,7 +372,7 @@ class TaskItem extends HTMLElement {
                     .timer { min-width: 0; padding-inline: 4px; overflow-wrap: anywhere; }
                     .agent-picker, .agent-form { grid-column: 2; max-width: none; }
                     .plan-control, .meta-row, .group-editor, .footer { margin-left: 5px; }
-                    .notes, .prompts, .group-editor input, .plan-select, .agent-select, .agent-form input { font-size: max(16px, var(--font-base)); }
+                    .notes, .prompts, .group-editor input, .plan-select, .agent-select, .agent-form input { font-size: max(calc(16px * var(--phone-font-scale, 1)), var(--font-base)); }
                     .notes-wrap { margin-left: 0; }
                 .group-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     .group-editor button { grid-column: 1 / -1; }

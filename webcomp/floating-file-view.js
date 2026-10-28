@@ -19,6 +19,24 @@ const fileViewRegistry = new Map();
 let fileViewZ = 10000;
 let fileViewCascade = 0;
 
+function getStoredTheme() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('taskimatic-file-view-theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    }
+  } catch {}
+  return 'dark';
+}
+
+function setStoredTheme(theme) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('taskimatic-file-view-theme', theme);
+    }
+  } catch {}
+}
+
 // Textual content is capped so a multi-gigabyte log cannot take the tab down.
 const TEXT_BYTE_LIMIT = 2 * 1024 * 1024;
 
@@ -28,7 +46,7 @@ const EXTENSION_TYPES = {
   '.pdf':'application/pdf',
   '.mp4':'video/mp4', '.m4v':'video/mp4', '.webm':'video/webm', '.mov':'video/quicktime',
   '.mp3':'audio/mpeg', '.m4a':'audio/mp4', '.wav':'audio/wav', '.ogg':'audio/ogg',
-  '.flac':'audio/flac', '.aac':'audio/aac',
+  '.flac':'audio/flac', '.aac':'audio/aac', '.svg':'image/svg+xml'
 };
 
 const TEXTUAL_EXTENSIONS = new Set([
@@ -124,6 +142,7 @@ class FloatingFileView extends HTMLElement {
     this._truncated = false;
     this._saving = false;
     this._renderMarkdown = true;
+    this._theme = getStoredTheme();
     this._beforeUnload = event => {
       if (!this._isDirty) return;
       event.preventDefault();
@@ -135,6 +154,8 @@ class FloatingFileView extends HTMLElement {
     window.addEventListener('beforeunload', this._beforeUnload);
     this.addEventListener('pointerdown', () => this._raise());
     this.shadowRoot.addEventListener('pointerdown', () => this._raise(), { capture: true });
+    this.setAttribute('data-theme', this._theme);
+    this.setAttribute('data-color-mode', this._theme);
     this._render();
     this._raise();
   }
@@ -207,6 +228,8 @@ class FloatingFileView extends HTMLElement {
 
     this.classList.toggle('collapsed', this._collapsed);
     this.classList.toggle('maximized', this._maximized);
+    this.setAttribute('data-theme', this._theme);
+    this.setAttribute('data-color-mode', this._theme);
     this.shadowRoot.innerHTML = `
       <style>${this._styles()}</style>
       ${this._collapsed ? this._collapsedTemplate(file) : this._windowTemplate(file)}
@@ -250,6 +273,13 @@ class FloatingFileView extends HTMLElement {
         <div class="chrome" data-drag-handle>
           ${this._chromeButtons()}
           <div class="title" title="${this._escape(file.path)}">${this._escape(file.name)}</div>
+          <button class="theme-btn" data-action="toggle-theme" title="${this._theme === 'light' ? 'Switch to dark view' : 'Switch to light view'}" aria-label="Toggle light/dark view">
+            <svg class="theme-circle" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M 8 1 A 7 7 0 0 1 8 15 Z" fill="#f3efe4"/>
+              <path d="M 8 1 A 7 7 0 0 0 8 15 Z" fill="#111722"/>
+              <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+          </button>
           <div class="kind-group">
             <span class="kind">${this._escape(mode)}</span>
             ${modeButton}
@@ -403,6 +433,7 @@ class FloatingFileView extends HTMLElement {
       const preview = document.createElement('json-md');
       preview.setAttribute('format', 'markdown');
       preview.setAttribute('data', 'readonly');
+      preview.setAttribute('data-color-mode', this._theme || 'dark');
       // A fence longer than any backtick run keeps JavaScript strictly as source.
       let fenceLength = 3;
       for (const match of this._textCache.matchAll(/`+/g)) fenceLength = Math.max(fenceLength, match[0].length + 1);
@@ -488,6 +519,21 @@ class FloatingFileView extends HTMLElement {
     this.remove();
   }
 
+  _toggleTheme() {
+    this._theme = this._theme === 'light' ? 'dark' : 'light';
+    setStoredTheme(this._theme);
+    this.setAttribute('data-theme', this._theme);
+    this.setAttribute('data-color-mode', this._theme);
+    const button = this.shadowRoot?.querySelector('[data-action="toggle-theme"]');
+    if (button) {
+      button.title = this._theme === 'light' ? 'Switch to dark view' : 'Switch to light view';
+    }
+    const preview = this.shadowRoot?.querySelector('json-md');
+    if (preview) {
+      preview.setAttribute('data-color-mode', this._theme);
+    }
+  }
+
   _bind() {
     this.shadowRoot.querySelectorAll('[data-action]').forEach(el => {
       el.addEventListener('click', event => {
@@ -496,6 +542,7 @@ class FloatingFileView extends HTMLElement {
         event.stopPropagation();
         if (action === 'close') this.close();
         if (action === 'save') this._save();
+        if (action === 'toggle-theme') this._toggleTheme();
         if (action === 'toggle-markdown') {
           this._renderMarkdown = !this._renderMarkdown;
           this._body = null;
@@ -688,6 +735,12 @@ class FloatingFileView extends HTMLElement {
         --ffv-text:#d8e2f5;
         --ffv-dim:#8290a8;
         --ffv-accent:#00d4ff;
+        --ffv-content-bg:#0b0f16;
+        --ffv-content-text:#d8e2f5;
+        --ffv-content-dim:#8290a8;
+        --ffv-content-border:#2a3347;
+        --ffv-content-soft:rgba(255, 255, 255, 0.08);
+        --ffv-content-link:#00d4ff;
         display:flex;
         flex-direction:column;
         position:fixed;
@@ -700,6 +753,14 @@ class FloatingFileView extends HTMLElement {
         filter:drop-shadow(0 18px 36px #00000088);
         user-select:none;
         box-sizing:border-box;
+      }
+      :host([data-theme="light"]) {
+        --ffv-content-bg:#fbf9f4;
+        --ffv-content-text:#18242b;
+        --ffv-content-dim:#697177;
+        --ffv-content-border:#d5cec0;
+        --ffv-content-soft:#ede7da;
+        --ffv-content-link:#1e5fa0;
       }
       :host(.collapsed) {
         width:260px !important;
@@ -731,9 +792,9 @@ class FloatingFileView extends HTMLElement {
       .chrome {
         flex:0 0 auto;
         display:grid;
-        grid-template-columns:auto minmax(0, 1fr) auto;
+        grid-template-columns:auto minmax(0, 1fr) auto auto;
         align-items:center;
-        gap:12px;
+        gap:10px;
         min-height:34px;
         padding:8px 11px;
         background:var(--ffv-elevated);
@@ -745,9 +806,98 @@ class FloatingFileView extends HTMLElement {
       .save-btn { border:0; padding:0 2px; background:transparent; cursor:pointer; font-size:16px; }
       .save-btn[hidden] { display:none; }
       .save-btn:disabled { opacity:.5; cursor:wait; }
-      .text-body { width:100%; align-self:stretch; min-height:240px; }
-      json-md { display:block; color:var(--ffv-text); --jmd-bg:var(--ffv-bg); --jmd-soft:rgba(127,127,127,.12); --jmd-border:var(--ffv-border); }
-      .editor { display:block; min-height:300px; height:100%; resize:vertical; border:0; background:transparent; font-family:inherit; outline-offset:-2px; }
+      .text-body {
+        width:100%;
+        align-self:stretch;
+        min-height:240px;
+        background:var(--ffv-content-bg);
+        color:var(--ffv-content-text);
+      }
+      json-md {
+        display:block;
+        width:100%;
+        color:var(--ffv-content-text) !important;
+        --text:var(--ffv-content-text);
+        --clr-text:var(--ffv-content-text);
+        --bg:var(--ffv-content-bg);
+        --clr-base:var(--ffv-content-bg);
+        --clr-surface:var(--ffv-content-bg);
+        --jmd-bg:var(--ffv-content-bg) !important;
+        --jmd-soft:var(--ffv-content-soft) !important;
+        --jmd-border:var(--ffv-content-border) !important;
+      }
+      json-md .jmd-shell {
+        border:0 !important;
+        border-radius:0 !important;
+        background:var(--ffv-content-bg) !important;
+      }
+      json-md .jmd-body {
+        padding:14px 18px;
+        color:var(--ffv-content-text) !important;
+        font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size:13px;
+        line-height:1.6;
+        user-select:text;
+      }
+      json-md .jmd-body h1,
+      json-md .jmd-body h2,
+      json-md .jmd-body h3,
+      json-md .jmd-body h4,
+      json-md .jmd-body h5,
+      json-md .jmd-body h6 {
+        color:var(--ffv-content-text);
+        border-bottom-color:var(--ffv-content-border);
+      }
+      json-md .jmd-body pre {
+        background:var(--ffv-content-soft) !important;
+        border:1px solid var(--ffv-content-border);
+        border-radius:6px;
+      }
+      json-md .jmd-body code {
+        background:var(--ffv-content-soft) !important;
+        color:var(--ffv-content-text) !important;
+        font-family:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size:12px;
+      }
+      json-md .jmd-body pre code {
+        background:transparent !important;
+        color:inherit !important;
+      }
+      json-md .jmd-body blockquote {
+        border-left:3px solid var(--ffv-content-link) !important;
+        color:var(--ffv-content-dim);
+      }
+      json-md .jmd-body a {
+        color:var(--ffv-content-link);
+        text-decoration:underline;
+        text-underline-offset:2px;
+      }
+      json-md .jmd-body a:hover {
+        filter:brightness(1.2);
+      }
+      json-md .jmd-body th,
+      json-md .jmd-body td {
+        border-color:var(--ffv-content-border) !important;
+        color:var(--ffv-content-text);
+      }
+      json-md .jmd-body th {
+        background:var(--ffv-content-soft) !important;
+      }
+      json-md .jmd-body hr {
+        border:0;
+        border-top:1px solid var(--ffv-content-border);
+      }
+      .editor {
+        display:block;
+        min-height:300px;
+        height:100%;
+        resize:vertical;
+        border:0;
+        background:transparent;
+        color:var(--ffv-content-text);
+        font-family:inherit;
+        outline-offset:-2px;
+      }
       .dot {
         width:12px; height:12px;
         border:0; border-radius:50%;
@@ -764,6 +914,37 @@ class FloatingFileView extends HTMLElement {
         font-size:11px;
         font-weight:700;
         letter-spacing:.04em;
+      }
+      .theme-btn {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        padding:3px 4px;
+        border:0;
+        background:transparent;
+        color:var(--ffv-dim);
+        cursor:pointer;
+        line-height:1;
+        border-radius:4px;
+      }
+      .theme-btn:hover {
+        color:var(--ffv-accent);
+      }
+      .theme-circle {
+        display:block;
+        width:14px;
+        height:14px;
+        flex:0 0 auto;
+        transition:transform 0.25s ease;
+      }
+      .theme-btn:hover .theme-circle {
+        transform:scale(1.15);
+      }
+      :host([data-theme="light"]) .theme-circle {
+        transform:rotate(180deg);
+      }
+      :host([data-theme="light"]) .theme-btn:hover .theme-circle {
+        transform:rotate(180deg) scale(1.15);
       }
       .kind-group {
         display:flex;
@@ -795,7 +976,8 @@ class FloatingFileView extends HTMLElement {
         min-height:0;
         max-height:min(62vh, calc(100vh - 190px));
         overflow:auto;
-        background:#0b0f16;
+        background:var(--ffv-content-bg);
+        color:var(--ffv-content-text);
         user-select:text;
         box-sizing:border-box;
       }
@@ -827,7 +1009,8 @@ class FloatingFileView extends HTMLElement {
         width:100%;
         margin:0;
         padding:14px 16px;
-        color:#c6d0e5;
+        color:var(--ffv-content-text);
+        background:var(--ffv-content-bg);
         font-size:12px;
         line-height:1.55;
         white-space:pre;
