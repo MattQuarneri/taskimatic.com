@@ -2,6 +2,8 @@ import { APP_VERSION, cloneValue } from './task-model.js';
 import { analyticsFor } from './task-analytics.js';
 import { WORKSPACE_COLLECTIONS } from './task-planning-model.js';
 import { fileRepo } from './file-repo.js';
+import { createTaskToolRegistry } from './task-tools.js';
+import { createGuidanceAPI } from './task-guidance.js';
 
 export function installTaskimaticAPI() {
     const apiManifest = Object.freeze({
@@ -40,6 +42,7 @@ export function installTaskimaticAPI() {
             importData: { input: 'export object|string, { strategy?: "merge"|"replace" }', returns: 'Import summary' },
             downloadApp: { input: 'none', returns: 'Download summary' }
         },
+        tools: 'taskimatic.tools.list() returns JSON schemas; call(name, args) executes; forLoadTools() includes execute functions.',
         events: ['taskimatic:ready', 'taskimatic:change']
     });
 
@@ -51,7 +54,15 @@ export function installTaskimaticAPI() {
         return workspace;
     };
 
+    const tools = createTaskToolRegistry(getWorkspace);
+    const prompts = createGuidanceAPI(tools, (name, detail) => document.dispatchEvent(new CustomEvent(name, { detail })));
     window.taskimatic = Object.freeze({
+        tools,
+        prompts,
+        setTaskPriority: (id, priority) => tools.call('setTaskPriority', { id, priority }),
+        updateSession: (id, sessionId, patch) => tools.call('updateSession', { id, sessionId, patch }),
+        deleteSession: (id, sessionId) => tools.call('deleteSession', { id, sessionId }),
+        createChild: (kind, id, input) => tools.call('createChild', { kind, id, input }),
         fileRepo,
         version: APP_VERSION,
         manifest: apiManifest,

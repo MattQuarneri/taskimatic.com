@@ -7,10 +7,12 @@ import { WORKSPACE_COLLECTIONS, normalizeAssociations, normalizePlanningRecord, 
 import { installSearcherElement } from './searcher-element.js';
 import { downloadPortableApp } from '../js/portable-app.js';
 import { fileRepo } from '../js/file-repo.js';
+import { createTaskToolRegistry } from '../js/task-tools.js';
 
 class TaskWorkspace extends HTMLElement {
     constructor() {
         super();
+        this.tools = createTaskToolRegistry(async () => { await this.ready; return this; });
         this.repository = new TaskRepository();
         this.liveModel = new WorkspaceLiveModel();
         this._unsubscribePlanning = null;
@@ -268,6 +270,7 @@ class TaskWorkspace extends HTMLElement {
                     <span class="lock-in-pill-slot" aria-hidden="true"></span>
                 </div>
                 <div class="top-actions">
+                    <task-guide></task-guide>
                     <div class="storage-state" data-mode="indexeddb" title="${escapeHTML(t('ui.text.yourWorkspaceIsStoredInThisBrowser'))}">
                         <span class="storage-dot"></span><span class="storage-label">${escapeHTML(t('ui.text.openingStorage'))}</span>
                     </div>
@@ -484,13 +487,13 @@ class TaskWorkspace extends HTMLElement {
             this.taskEditorTabs.set(id, tab);
             this.querySelectorAll('task-item').forEach(item => { if (item.dataset.taskId === id) item.editorTab = tab; });
         });
-        this.addEventListener('task-estimate-change', event => this.updateTask(event.detail.id, { estimatedMinutes: event.detail.estimatedMinutes }, { quiet: true, source: event.target }));
-        this.addEventListener('task-prompts-change', event => this.updateTask(event.detail.id, { prompts: event.detail.prompts }, { quiet: true, source: event.target }));
-        this.addEventListener('task-agent-change', event => this.updateTask(event.detail.id, { agentId: event.detail.agentId }));
+        this.addEventListener('task-estimate-change', event => this.tools.call('updateTask', { id: event.detail.id, patch: { estimatedMinutes: event.detail.estimatedMinutes } }, { quiet: true, source: event.target }));
+        this.addEventListener('task-prompts-change', event => this.tools.call('updateTask', { id: event.detail.id, patch: { prompts: event.detail.prompts } }, { quiet: true, source: event.target }));
+        this.addEventListener('task-agent-change', event => this.tools.call('updateTask', { id: event.detail.id, patch: { agentId: event.detail.agentId } }));
         this.addEventListener('task-agent-create', async event => {
             try {
                 const agent = await this.createAgent({ name: event.detail.name });
-                await this.updateTask(event.detail.id, { agentId: agent.id });
+                await this.tools.call('updateTask', { id: event.detail.id, patch: { agentId: agent.id } });
             } catch (error) { this.toast(error.message); }
         });
         this.addEventListener('task-agents-manage', () => {
@@ -615,26 +618,13 @@ class TaskWorkspace extends HTMLElement {
             this.renderPlanning();
         }));
         this.querySelectorAll('[data-clear-planning-filter]').forEach(button => button.addEventListener('click', () => this.setAssociationFilter(null)));
-        this.addEventListener('task-plan-change', event => this.updateTask(event.detail.id, { planId: event.detail.planId }));
+        this.addEventListener('task-plan-change', event => this.tools.call('updateTask', { id: event.detail.id, patch: { planId: event.detail.planId } }));
         this.addEventListener('planning-tab-change', event => this.planningTabs.set(`${event.detail.kind}:${event.detail.id}`, event.detail.tab));
-        this.addEventListener('planning-update', event => this.runPlanningAction(() => this.updatePlanning(event.detail.kind, event.detail.id, event.detail.patch, { quiet: event.detail.quiet, source: event.target })));
-        this.addEventListener('planning-delete', event => this.runPlanningAction(() => this.deletePlanning(event.detail.kind, event.detail.id)));
-        this.addEventListener('planning-association-add', event => {
-            const { kind, id, association } = event.detail;
-            const record = this[kind].find(record => record.id === id);
-            this.runPlanningAction(() => this.updatePlanning(kind, id, { associations: normalizeAssociations([...record.associations, association]) }));
-        });
-        this.addEventListener('planning-association-remove', event => {
-            const { kind, id, association } = event.detail;
-            const record = this[kind].find(record => record.id === id);
-            this.runPlanningAction(() => this.updatePlanning(kind, id, { associations: record.associations.filter(item => !(item.type === association.type && item.value.toLowerCase() === association.value.toLowerCase())) }));
-        });
-        this.addEventListener('planning-child-add', event => {
-            const { kind, id, input } = event.detail;
-            if (kind === 'plans') this.runPlanningAction(async () => { await this.pendingPlanningCreates.get(id); return this.createTask({ ...input, planId: id }); });
-            else if (kind === 'goals') this.runPlanningAction(async () => { await this.pendingPlanningCreates.get(id); return this.createPlanning('plans', { ...input, goalId: id }); });
-            else this.runPlanningAction(async () => { await this.pendingPlanningCreates.get(id); return this.createPlanning('goals', { ...input, wantId: id }); });
-        });
+        this.addEventListener('planning-update', event => this.runPlanningAction(() => this.tools.call(`update${event.detail.kind.slice(0, -1).replace(/^./, c => c.toUpperCase())}`, { id: event.detail.id, patch: event.detail.patch }, { quiet: event.detail.quiet, source: event.target })));
+        this.addEventListener('planning-delete', event => this.runPlanningAction(() => this.tools.call(`delete${event.detail.kind.slice(0, -1).replace(/^./, c => c.toUpperCase())}`, { id: event.detail.id })));
+        this.addEventListener('planning-association-add', event => this.runPlanningAction(() => this.tools.call(`add${event.detail.kind.slice(0, -1).replace(/^./, c => c.toUpperCase())}Association`, { id: event.detail.id, association: event.detail.association })));
+        this.addEventListener('planning-association-remove', event => this.runPlanningAction(() => this.tools.call(`remove${event.detail.kind.slice(0, -1).replace(/^./, c => c.toUpperCase())}Association`, { id: event.detail.id, association: event.detail.association })));
+        this.addEventListener('planning-child-add', event => this.runPlanningAction(() => this.tools.call('createChild', { kind: event.detail.kind, id: event.detail.id, input: event.detail.input })));
         this.addEventListener('planning-navigate', event => {
             const { targetKind, targetId } = event.detail;
             if (targetKind === 'tasks') { this.closeDrawers(); this.revealTask(targetId); return; }
@@ -725,6 +715,34 @@ class TaskWorkspace extends HTMLElement {
                 && (!search || `${record.text} ${record.successCriteria || ''} ${record.targetDate || ''} ${record.notes || ''} ${record.myThinking || ''} ${record.aiThinking || ''} ${JSON.stringify(record.effectiveAssociations)}`.toLowerCase().includes(search))
                 && (!association || record.effectiveAssociations.some(item => item.type === association.type && item.value.toLowerCase() === association.value.toLowerCase())))
             .sort((a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base', numeric: true })));
+    }
+
+    async addEntityAssociation(kind, id, association) {
+        if (kind === 'tasks') return this.addAssociation(id, association);
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error('Unknown entity kind');
+        await this.pendingPlanningCreates.get(id);
+        const record = this[kind].find(item => item.id === id);
+        if (!record) throw new Error(`Record not found: ${id}`);
+        return this.updatePlanning(kind, id, { associations: normalizeAssociations([...record.associations, association]) });
+    }
+
+    async removeEntityAssociation(kind, id, association) {
+        if (kind === 'tasks') return this.removeAssociation(id, association);
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error('Unknown entity kind');
+        await this.pendingPlanningCreates.get(id);
+        const record = this[kind].find(item => item.id === id);
+        if (!record) throw new Error(`Record not found: ${id}`);
+        const [target] = normalizeAssociations([association]);
+        return this.updatePlanning(kind, id, { associations: record.associations.filter(item => !(item.type === target?.type && item.value.toLowerCase() === target.value.toLowerCase())) });
+    }
+
+    async createPlanningChild(kind, id, input) {
+        if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error('Unknown parent kind');
+        await this.pendingPlanningCreates.get(id);
+        if (!this[kind].some(item => item.id === id)) throw new Error(`Parent not found: ${id}`);
+        if (kind === 'plans') return this.createTask({ ...input, planId: id });
+        if (kind === 'goals') return this.createPlanning('plans', { ...input, goalId: id });
+        return this.createPlanning('goals', { ...input, wantId: id });
     }
 
     async createPlanning(kind, input) {
@@ -1352,24 +1370,24 @@ class TaskWorkspace extends HTMLElement {
         this.querySelector('#insights-close')?.addEventListener('click', () => this.closeDrawers());
         this.querySelector('#drawer-scrim')?.addEventListener('click', () => this.closeDrawers());
 
-        this.addEventListener('task-text-change', (event) => this.updateTask(event.detail.id, { text: event.detail.text }, { quiet: true, source: event.target }));
-        this.addEventListener('task-notes-change', (event) => this.updateTask(event.detail.id, { notes: event.detail.notes }, { quiet: true, source: event.target }));
+        this.addEventListener('task-text-change', (event) => this.tools.call('updateTask', { id: event.detail.id, patch: { text: event.detail.text } }, { quiet: true, source: event.target }));
+        this.addEventListener('task-notes-change', (event) => this.tools.call('updateTask', { id: event.detail.id, patch: { notes: event.detail.notes } }, { quiet: true, source: event.target }));
         this.addEventListener('task-status-toggle', async (event) => {
             const task = this.tasks.find((item) => item.id === event.detail.id);
-            if (task) await this.updateTask(task.id, { status: task.status === 'done' ? 'open' : 'done' });
+            if (task) await this.tools.call('updateTask', { id: task.id, patch: { status: task.status === 'done' ? 'open' : 'done' } });
         });
-        this.addEventListener('task-today-change', (event) => this.updateTask(event.detail.id, { today: event.detail.today }));
-        this.addEventListener('task-priority-change', (event) => this.setTaskPriority(event.detail.id, event.detail.priority));
-        this.addEventListener('task-tabled-change', (event) => this.updateTask(event.detail.id, { tabled: event.detail.tabled }));
+        this.addEventListener('task-today-change', (event) => this.tools.call('updateTask', { id: event.detail.id, patch: { today: event.detail.today } }));
+        this.addEventListener('task-priority-change', (event) => this.tools.call('setTaskPriority', { id: event.detail.id, priority: event.detail.priority }));
+        this.addEventListener('task-tabled-change', (event) => this.tools.call('updateTask', { id: event.detail.id, patch: { tabled: event.detail.tabled } }));
         this.addEventListener('task-timer-toggle', async (event) => {
             const task = this.tasks.find((item) => item.id === event.detail.id);
             const actor = TIMER_ACTORS.includes(event.detail.actor) ? event.detail.actor : 'human';
-            if (task?.activeTimers?.[actor]) await this.stopTimer(task.id, actor); else await this.startTimer(event.detail.id, actor);
+            await this.tools.call(task?.activeTimers?.[actor] ? 'stopTimer' : 'startTimer', { id: event.detail.id, actor });
         });
-        this.addEventListener('task-association-add', (event) => this.addAssociation(event.detail.id, event.detail.association));
-        this.addEventListener('task-association-remove', (event) => this.removeAssociation(event.detail.id, event.detail.association));
-        this.addEventListener('task-session-update', (event) => this.updateSession(event.detail.id, event.detail.sessionId, event.detail));
-        this.addEventListener('task-session-delete', (event) => this.deleteSession(event.detail.id, event.detail.sessionId));
+        this.addEventListener('task-association-add', (event) => this.tools.call('addTaskAssociation', { id: event.detail.id, association: event.detail.association }));
+        this.addEventListener('task-association-remove', (event) => this.tools.call('removeTaskAssociation', { id: event.detail.id, association: event.detail.association }));
+        this.addEventListener('task-session-update', (event) => this.tools.call('updateSession', { id: event.detail.id, sessionId: event.detail.sessionId, patch: { startedAt: event.detail.startedAt, endedAt: event.detail.endedAt } }));
+        this.addEventListener('task-session-delete', (event) => this.tools.call('deleteSession', { id: event.detail.id, sessionId: event.detail.sessionId }));
         this.addEventListener('task-chart-navigate', (event) => this.revealTask(event.detail.id));
         this.addEventListener('task-chart-filter', (event) => {
             this.setMainView('tasks');
@@ -1390,7 +1408,7 @@ class TaskWorkspace extends HTMLElement {
             this.setAssociationFilter(association, { updateUrl: !synthetic });
             this.querySelector('.list-toolbar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
-        this.addEventListener('task-delete', (event) => this.deleteTask(event.detail.id));
+        this.addEventListener('task-delete', (event) => this.tools.call('deleteTask', { id: event.detail.id }));
     }
 
     saveTablePreferences() {

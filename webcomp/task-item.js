@@ -405,8 +405,6 @@ class TaskItem extends HTMLElement {
                                 ${['notes', 'prompts', 'associations', 'time'].map(tab => `<button id="task-${tab}-tab" type="button" role="tab" data-editor-tab="${tab}" aria-controls="task-${tab}-panel">${escapeHTML(t(`ui.text.${tab}`))}</button>`).join('')}
                             </div>
                         </div>
-                        <div id="task-notes-panel" role="tabpanel" tabindex="0" data-editor-panel="notes" aria-labelledby="task-notes-tab"><textarea class="notes" rows="2" maxlength="10000" placeholder="${escapeHTML(t('ui.text.addNotes'))}" aria-label="${escapeHTML(t('ui.text.taskNotes'))}"></textarea></div>
-                        <div id="task-prompts-panel" role="tabpanel" tabindex="0" data-editor-panel="prompts" aria-labelledby="task-prompts-tab"><textarea class="prompts" rows="5" maxlength="50000" placeholder="${escapeHTML(t('ui.text.recordAPrompt'))}" aria-label="${escapeHTML(t('ui.text.taskPrompts'))}"></textarea></div>
                     </div>
                     <div class="timers">
                         <button class="timer human ${runningHuman ? 'running' : ''}" data-actor="human" type="button" ${done || tabled ? 'disabled' : ''} aria-label="${runningHuman ? t('ui.text.stopHumanTimer') : t('ui.text.startHumanTimer')}"></button>
@@ -415,6 +413,8 @@ class TaskItem extends HTMLElement {
                         <form class="agent-form" hidden><input class="agent-name" maxlength="120" placeholder="${escapeHTML(t('ui.text.agentName'))}" aria-label="${escapeHTML(t('ui.text.newAgentName'))}" required><button type="submit">${escapeHTML(t('ui.text.addAgent'))}</button><button class="agent-cancel" type="button">${escapeHTML(t('ui.text.cancel'))}</button></form>
                     </div>
                 </div>
+                <div id="task-notes-panel" role="tabpanel" tabindex="0" data-editor-panel="notes" aria-labelledby="task-notes-tab" hidden><textarea class="notes" rows="2" maxlength="10000" placeholder="${escapeHTML(t('ui.text.addNotes'))}" aria-label="${escapeHTML(t('ui.text.taskNotes'))}"></textarea></div>
+                <div id="task-prompts-panel" role="tabpanel" tabindex="0" data-editor-panel="prompts" aria-labelledby="task-prompts-tab" hidden><textarea class="prompts" rows="5" maxlength="50000" placeholder="${escapeHTML(t('ui.text.recordAPrompt'))}" aria-label="${escapeHTML(t('ui.text.taskPrompts'))}"></textarea></div>
                 <div id="task-associations-panel" role="tabpanel" tabindex="0" data-editor-panel="associations" aria-labelledby="task-associations-tab" hidden>
                     <label class="plan-control">${escapeHTML(t('ui.text.planOptional'))}<span class="plan-row"><select class="plan-select" aria-label="${escapeHTML(t('ui.text.taskPlan'))}"></select><button class="open-plan" type="button" ${this._task.planId ? '' : 'hidden'}>${escapeHTML(t('ui.text.openPlan'))}</button></span></label>
                     <div class="meta-row">
