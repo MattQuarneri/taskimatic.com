@@ -20,11 +20,50 @@ class TaskItem extends HTMLElement {
         this._plans = [];
         this._clockDayKey = '';
         this._clockMinute = -1;
+        this._expanded = false;
+        this._shrinkTimer = null;
+        this._onOutsidePointer = event => {
+            if (this._expanded && !event.composedPath().includes(this)) this.setExpanded(false);
+        };
     }
 
     connectedCallback() {
         this._compactMedia.addEventListener('change', this._onCompactChange);
         this.updateCompactLayout();
+        document.addEventListener('pointerdown', this._onOutsidePointer);
+    }
+
+    installExpansionHandlers() {
+        const card = this.shadowRoot.querySelector('.card');
+        card.addEventListener('pointerdown', event => {
+            if (!this._expanded) {
+                // The first tap reveals controls without opening the phone keyboard.
+                event.preventDefault();
+                this.setExpanded(true);
+            }
+        });
+        card.addEventListener('click', () => this.setExpanded(true));
+        card.addEventListener('focusin', () => this.setExpanded(true));
+        card.addEventListener('focusout', () => this.scheduleShrink());
+    }
+
+    setExpanded(expanded) {
+        clearTimeout(this._shrinkTimer);
+        expanded = Boolean(expanded || this._task?.activeTimers?.human || this._task?.activeTimers?.agent);
+        this._expanded = expanded;
+        this.shadowRoot.querySelector('.card')?.classList.toggle('shrunk', !expanded);
+        const text = this.shadowRoot.querySelector('.text');
+        if (text) {
+            text.readOnly = !expanded;
+            this.resizeText(text);
+        }
+    }
+
+    scheduleShrink() {
+        clearTimeout(this._shrinkTimer);
+        this._shrinkTimer = setTimeout(() => {
+            if (!this.shadowRoot.activeElement) this.setExpanded(false);
+        }, 180);
     }
 
     set compactTab(value) {
@@ -146,6 +185,8 @@ class TaskItem extends HTMLElement {
 
     disconnectedCallback() {
         this._compactMedia.removeEventListener('change', this._onCompactChange);
+        document.removeEventListener('pointerdown', this._onOutsidePointer);
+        clearTimeout(this._shrinkTimer);
         clearTimeout(this._saveTimer);
         clearTimeout(this._notesSaveTimer);
         clearTimeout(this._promptsSaveTimer);
@@ -227,7 +268,7 @@ class TaskItem extends HTMLElement {
                     padding: 2px 3px;
                     background: transparent;
                     color: var(--ink, #18242b);
-                    font-size: var(--font-xl, 16px);
+                    font-size: var(--font-lg, 16px);
                     font-weight: 720;
                     line-height: 1.45;
                 }
@@ -366,6 +407,19 @@ class TaskItem extends HTMLElement {
                 .compact .footer { flex-wrap: wrap; align-items: center; }
                 .compact .actions { margin-left: auto; }
                 .compact.done .delete { margin: 0; }
+                .card.shrunk { padding: 6px 8px; }
+                .shrunk .main-row { display: block; }
+                .shrunk .main-row > :first-child,
+                .shrunk .timers,
+                .shrunk .editor-toolbar,
+                .shrunk > [data-editor-panel],
+                .shrunk > .footer,
+                .shrunk .compact-action,
+                .shrunk .compact-tabs,
+                .shrunk [data-compact-panel] { display: none; }
+                .shrunk.compact .main-row { display: none; }
+                .shrunk .compact-text { margin: 0; }
+                .shrunk .text { min-height: 30px; resize: none; cursor: pointer; }
                 @media (max-width: 520px) {
                     .main-row { grid-template-columns: auto minmax(0, 1fr); }
                     .timers { grid-column: 2; justify-self: stretch; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -395,7 +449,7 @@ class TaskItem extends HTMLElement {
                         <label class="priority-control">${escapeHTML(t('ui.text.priority'))}<input class="priority-input" type="number" min="1" max="${this._priorityLimit || 1}" step="1" inputmode="numeric" ${done ? 'disabled' : ''} aria-label="${escapeHTML(t('ui.text.taskPriority1IsHighest'))}"></label>
                     </div>
                     <div>
-                        <textarea class="text" rows="1" aria-label="${escapeHTML(t('ui.text.taskText'))}"></textarea>
+                        <textarea id="task-text" class="text" rows="1" aria-label="${escapeHTML(t('ui.text.taskText'))}"></textarea>
                         <div class="editor-toolbar">
                             <div class="estimated-time" role="group" aria-label="${escapeHTML(t('ui.text.estimatedTimeNeeded'))}">
                                 <span>${escapeHTML(t('ui.text.estimatedTimeNeeded'))}</span>
@@ -448,6 +502,8 @@ class TaskItem extends HTMLElement {
                 </div>
             </article>
         `;
+
+        this.installExpansionHandlers();
 
         const textArea = this.shadowRoot.querySelector('.text');
         const priorityInput = this.shadowRoot.querySelector('.priority-input');
@@ -655,6 +711,7 @@ class TaskItem extends HTMLElement {
         this._compactLayoutActive = undefined;
         this.updateCompactTabs();
         this.updateCompactLayout();
+        this.setExpanded(this._expanded);
         this._clockDayKey = '';
         this._clockMinute = -1;
         this.updateClock(Date.now(), true);

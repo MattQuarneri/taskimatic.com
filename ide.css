@@ -1,0 +1,24 @@
+
+a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+
+  pre {
+    overflow-x: auto;
+    height: inherit;
+  }
+  
+  h1 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0;
+  }
+  
+  .app-title {
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 3em;
+  }
+  

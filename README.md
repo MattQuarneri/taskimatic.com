@@ -16,6 +16,12 @@ Serve this directory over HTTP for development (for example, `python3 -m http.se
 - `js/portable-app.js`: self-contained HTML exports, including styles, translations, scripts, and workspace data.
 - `js/workspace-tabs.js` and `js/offline.js`: page navigation and offline/install setup.
 
+Task cards show only task text while idle. Tap or click a card to reveal its
+controls; tap or click outside to shrink it again. Keyboard focus also expands
+a card, and leaving it with the keyboard shrinks it. The first tap reveals
+controls without opening the phone keyboard. Cards stay expanded while either
+the human or agent timer is running.
+
 Run checks with `node --test tests/*.test.mjs`.
 When adding an app dependency, include it in `tasks-sw.js` and bump the cache version.
 Portable exports support static named imports, side-effect imports, and named exports.

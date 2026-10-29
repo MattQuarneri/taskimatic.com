@@ -106,7 +106,7 @@ export class TaskGuide extends HTMLElement {
         this.step = null;
         this.status();
         this.body.innerHTML = `
-            <p>Welcome to taskimatic. Here’s how to get started. Begin by identifying what you want to achieve. We'll take it from there...</p>
+            <p>Welcome to taskimatic. Get started by identifying what you want to achieve. We'll take it from there...</p>
             <p class="path">Wants → Goals → Plans → Tasks</p>
             <p class="muted">“I want more breathing room” → “Get my commitments to fit within four workdays” → “Audit and simplify my commitments” → “Organize commitments, time them out, make them fit my time boxes.”</p>
             <p>How would you like to work with your taskimatic agent?</p>

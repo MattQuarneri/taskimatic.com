@@ -10,24 +10,36 @@ function createItem(mode = 'compact') {
     const tabs = tabNames.map(name => ({ dataset: { [`${mode}Tab`]: name }, attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } }));
     const panels = tabNames.map(name => ({ dataset: { [`${mode}Panel`]: name } }));
     const classes = new Set();
+    const handlers = {};
+    const card = {
+        classList: { toggle(name, on) { on ? classes.add(name) : classes.delete(name); } },
+        addEventListener(name, handler) { handlers[name] = handler; }
+    };
+    const text = { style: {}, scrollHeight: 30 };
+    const pendingTimers = new Map();
+    let timerId = 0;
     let TaskItem;
     vm.runInNewContext(source.slice(source.indexOf('class TaskItem')), {
         HTMLElement: class {
             attachShadow() {
                 this.shadowRoot = {
-                    querySelector: () => ({ classList: { toggle(name, on) { on ? classes.add(name) : classes.delete(name); } } }),
+                    querySelector: selector => selector === '.text' ? text : card,
                     querySelectorAll: selector => selector === `[data-${mode}-tab]` ? tabs : selector === `[data-${mode}-panel]` ? panels : []
                 };
             }
             dispatchEvent(event) { this.lastEvent = event; }
         },
         window: { matchMedia: () => ({ matches: true }) },
+        setTimeout(callback) { pendingTimers.set(++timerId, callback); return timerId; },
+        clearTimeout(id) { pendingTimers.delete(id); },
         CustomEvent: class { constructor(type, options) { this.type = type; Object.assign(this, options); } },
         customElements: { define(name, component) { TaskItem = component; } }
     });
     const item = new TaskItem();
     item._task = { id: 'task-1' };
-    return { item, tabs, panels, classes };
+    return { item, tabs, panels, classes, text, handlers,
+        flushTimers() { for (const callback of pendingTimers.values()) callback(); pendingTimers.clear(); }
+    };
 }
 
 test('each compact tab collapses its panel and footer on repeat selection, then reopens', () => {
@@ -93,4 +105,73 @@ test('full-size tab switches and synchronized state keep exactly one panel open'
     assert.ok(panels.every(panel => panel.hidden));
     item.editorTab = 'associations';
     assert.equal(panels.find(panel => !panel.hidden).dataset.editorPanel, 'associations');
+});
+
+
+test('idle cards reveal controls on tap or click without expanding on hover', () => {
+    const { item, classes, text, handlers } = createItem();
+    item.setExpanded(false);
+    item.installExpansionHandlers();
+    assert.ok(classes.has('shrunk'));
+    assert.equal(text.readOnly, true);
+    assert.equal(handlers.pointerenter, undefined);
+    assert.equal(handlers.pointerleave, undefined);
+    let prevented = false;
+    handlers.pointerdown({ preventDefault() { prevented = true; } });
+    assert.equal(prevented, true, 'first tap prevents keyboard activation');
+    assert.ok(!classes.has('shrunk'));
+    assert.equal(text.readOnly, false);
+    handlers.pointerdown({ preventDefault() { assert.fail('expanded controls must remain interactive'); } });
+    item.setExpanded(false);
+    handlers.click();
+    assert.ok(!classes.has('shrunk'));
+});
+
+test('outside taps shrink cards, while taps inside preserve their open panel', () => {
+    const { item, classes, panels } = createItem();
+    item.compactTab = 'notes';
+    item.setExpanded(true);
+    item._onOutsidePointer({ composedPath: () => [item] });
+    assert.equal(item._expanded, true);
+    item._onOutsidePointer({ composedPath: () => [] });
+    assert.ok(classes.has('shrunk'));
+    item.setExpanded(true);
+    assert.equal(panels.find(panel => !panel.hidden).dataset.compactPanel, 'notes');
+});
+
+test('keyboard focus expands cards and only shrinks after focus leaves the card', () => {
+    const { item, handlers, text, flushTimers } = createItem();
+    item.installExpansionHandlers();
+    handlers.focusin();
+    assert.equal(item._expanded, true);
+    item.shadowRoot.activeElement = text;
+    handlers.focusout();
+    flushTimers();
+    assert.equal(item._expanded, true);
+    item.shadowRoot.activeElement = null;
+    handlers.focusout();
+    flushTimers();
+    assert.equal(item._expanded, false);
+});
+
+
+test('either running timer keeps cards expanded through initial render and collapse attempts', () => {
+    for (const activeTimers of [{ human: { startedAt: 1 } }, { agent: { startedAt: 1 } }, { human: { startedAt: 1 }, agent: { startedAt: 1 } }]) {
+        const { item, classes, text, flushTimers } = createItem();
+        item._task.activeTimers = activeTimers;
+        item.setExpanded(false);
+        assert.equal(item._expanded, true);
+        assert.equal(classes.has('shrunk'), false);
+        assert.equal(text.readOnly, false);
+        item._onOutsidePointer({ composedPath: () => [] });
+        assert.equal(item._expanded, true);
+        item.scheduleShrink();
+        flushTimers();
+        assert.equal(item._expanded, true);
+
+        item._task.activeTimers = { human: null, agent: null };
+        item._onOutsidePointer({ composedPath: () => [] });
+        assert.equal(item._expanded, false);
+        assert.equal(classes.has('shrunk'), true);
+    }
 });
