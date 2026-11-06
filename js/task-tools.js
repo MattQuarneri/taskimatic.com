@@ -1,5 +1,6 @@
 import { cloneValue } from './task-model.js';
 import { analyticsFor } from './task-analytics.js';
+import { taskCapabilityReport } from './task-guidance.js';
 
 const object = (properties = {}, required = []) => ({ type: 'object', properties, required, additionalProperties: false });
 const string = { type: 'string' };
@@ -65,13 +66,14 @@ export function createTaskToolRegistry(getWorkspace) {
     for (const action of ['start', 'stop']) register(`${action}Timer`, `${action === 'start' ? 'Start' : 'Stop and log'} a task timer. Actor defaults to human. Starting a human timer stops the other human timer. Completed or tabled tasks must be reopened before starting. Returns the task.`, object({ id, actor: { enum: ['human', 'agent'] } }, ['id']), (w, a) => w[`${action}Timer`](a.id, a.actor || 'human'));
     register('updateSession', 'Edit an existing task time entry using ISO date-time strings. End must be at or after start; duration is recalculated. Returns the task.', object({ id, sessionId: id, patch: object({ startedAt: id, endedAt: id }, ['startedAt', 'endedAt']) }, ['id', 'sessionId', 'patch']), (w, a) => w.updateSession(a.id, a.sessionId, a.patch));
     register('deleteSession', 'Delete one time entry from a task. Returns the task.', object({ id, sessionId: id }, ['id', 'sessionId']), (w, a) => w.deleteSession(a.id, a.sessionId));
-    register('createAgent', 'Create a named agent that can be assigned to tasks. Returns the agent record.', object({ input: object({ name: id }, ['name']) }, ['input']), (w, a) => w.createAgent(a.input));
+    register('createAgent', 'Create a named agent record that can be assigned to tasks. Does not start a worker or execute tasks. Returns the agent record.', object({ input: object({ name: id }, ['name']) }, ['input']), (w, a) => w.createAgent(a.input));
     register('listAgents', 'List named agents and their IDs.', object(), w => cloneValue(w.agents), true);
     register('deleteAgent', 'Delete a named agent. Fails while any task is assigned to it.', object({ id }, ['id']), (w, a) => w.deleteAgent(a.id));
     register('getAnalytics', 'Read task/time analytics grouped by an association type. Empty groupBy selects individual tasks.', object({ options: object({ groupBy: string, measure: { enum: ['time', 'tasks'] }, days: { type: 'integer', minimum: 1 }, period: string }) }), (w, a) => analyticsFor(w.tasks, a.options || {}), true);
     register('exportData', 'Export all workspace records and settings as JSON. File bytes are backed up separately with taskimatic.fileRepo.', object(), w => w.exportData(), true);
     register('importData', 'Import a workspace export. Merge is the default; replace overwrites the workspace. File bytes must be imported separately.', object({ input: { type: ['object', 'array', 'string'] }, options: object({ strategy: { enum: ['merge', 'replace'] } }) }, ['input']), (w, a) => w.importData(a.input, a.options || {}));
     register('downloadApp', 'Download a portable HTML copy of the app and workspace. Returns a download summary.', object(), w => w.downloadApp());
+    register('getCapabilities', 'Read my registered Taskimatic capabilities, app-only features, limitations, release gaps, and prioritized tool wishlist with source references. Does not inspect task content or verify a live provider.', object(), () => taskCapabilityReport(registry), true);
 
     const registry = {
         register(definition, execute) {

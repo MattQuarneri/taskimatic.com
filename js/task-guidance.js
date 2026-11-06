@@ -1,7 +1,113 @@
 import { cloneValue } from './task-model.js';
 
 // Starter editorial templates. These instructions never save records on their own.
-export const GUIDANCE_VERSION = 4;
+export const GUIDANCE_VERSION = 5;
+
+// CODE: Cognitive Operations Driving Execution. FILES: Formalized Into Logical
+// Encodings. This is the planning assistant's self-description, not a grant of
+// execution rights. Keep schemas in task-tools.js; reference their real names here.
+// Reviewed against index.html, the workspace/repository, Guide, portable export,
+// service worker, and launch-plan.md. Availability means registered, not live-tested.
+const capabilityGroups = [
+    {
+        id: 'planning-records',
+        tools: ['createWant', 'listWants', 'updateWant', 'deleteWant', 'createGoal', 'listGoals', 'updateGoal', 'deleteGoal', 'createPlan', 'listPlans', 'updatePlan', 'deletePlan', 'createTask', 'listTasks', 'updateTask', 'deleteTask', 'createChild'],
+        iCan: 'I can clarify Wants, Goals, Plans, and Tasks; find existing records; save, edit, link, unlink, and delete authorized records; and preserve instructions in task prompts.',
+        limits: 'Parents are optional. There is no task-to-subtask parent field. Deleting a task removes its time history; deleting a planning parent keeps and unlinks children. Record changes do not perform the underlying work.',
+        evidence: ['js/task-tools.js:createTaskToolRegistry', 'webcomp/task-workspace.js:createPlanningChild', 'js/task-planning-model.js']
+    },
+    {
+        id: 'associations',
+        tools: ['addTaskAssociation', 'removeTaskAssociation', 'addPlanAssociation', 'removePlanAssociation', 'addGoalAssociation', 'removeGoalAssociation', 'addWantAssociation', 'removeWantAssociation'],
+        iCan: 'I can organize records with project, initiative, sub-system, feature, client, domain, work-area, dependent-task, and file references, and read derived planning rollups.',
+        limits: 'Incremental tools preserve other associations; patching associations replaces all own associations. File references do not give me file bytes. Dependencies use task titles and do not enforce order, detect cycles, or survive renames as stable ID links.',
+        evidence: ['js/task-tools.js:createTaskToolRegistry', 'js/task-planning-model.js:planningAssociations']
+    },
+    {
+        id: 'today-and-priority', tools: ['listTasks', 'updateTask', 'setTaskPriority'],
+        iCan: 'I can propose a feasible Today list, set today/tabled/status, use accepted 10/30/60/90-minute estimates, and reorder task priority with 1 highest or null to clear.',
+        limits: 'I cannot toggle Lock In or read/change its settings with these tools. The Today timeline is a UI projection, not calendar booking or dependency enforcement. Unknown estimates stay unset; tasks have no native deadline or recurrence field.',
+        evidence: ['js/task-tools.js:fields', 'js/today-time-model.js:buildTodaySchedule', 'webcomp/lock-in-controls.js']
+    },
+    {
+        id: 'assignment', tools: ['createAgent', 'listAgents', 'deleteAgent', 'updateTask'],
+        iCan: 'I can create/list/delete named agents and assign a task by agentId.',
+        limits: 'A named agent is a record, not a running worker or a model/permissions configuration. No agent rename tool exists. Deletion fails while assigned. An assignment or prompts field does not dispatch, delegate, monitor, or execute a task.',
+        evidence: ['webcomp/task-workspace.js:_createAgent', 'js/task-tools.js:createTaskToolRegistry']
+    },
+    {
+        id: 'time-and-analytics', tools: ['startTimer', 'stopTimer', 'updateSession', 'deleteSession', 'getAnalytics'],
+        iCan: 'I can start/stop human or agent timers on request, inspect sessions through listTasks, edit/delete time entries, and summarize task/time analytics by association and period.',
+        limits: 'Starting a human timer stops the previous human timer. An agent timer is bookkeeping, not evidence of execution. Analytics partWhole totals cover all recorded history; dated series use the selected period (1–365 days, today, or this-week).',
+        evidence: ['webcomp/task-workspace.js:startTimer', 'js/task-analytics.js:analyticsFor']
+    },
+    {
+        id: 'workspace-transfer', tools: ['exportData', 'importData', 'downloadApp'],
+        iCan: 'I can return workspace JSON, import supplied data with merge or replace, and request a portable HTML download.',
+        limits: 'Merge overwrites matching IDs; replace overwrites the workspace. JSON exports include records plus language/font settings, not every UI setting. JSON/HTML contain attachment references, not FileRepo bytes. Portable HTML omits the remote assistant. Downloads depend on the browser.',
+        evidence: ['webcomp/task-workspace.js:exportData', 'webcomp/task-workspace.js:_importData', 'js/portable-app.js:downloadPortableApp']
+    },
+    {
+        id: 'self-description', tools: ['getCapabilities'],
+        iCan: 'I can explain my registered tools, application-only features, limits, release gaps, and prioritized tool wishlist without reading task content.',
+        limits: 'This report describes code and registration. It does not prove storage health, model reliability, provider privacy, or production readiness.',
+        evidence: ['js/task-guidance.js:taskCapabilityReport', 'js/task-assistant.js:describeTaskAssistant']
+    }
+];
+
+// App facilities outside the model tool catalog must never be advertised as
+// callable assistant powers. Host code may use their public APIs separately.
+const applicationOnly = [
+    { id: 'local-guide', availableThrough: 'Guide UI; taskimatic.prompts.prepare/start/connect', description: 'Local draft/review/save wizard and maintained Type/Talk/Tap prompts. Talk requires host speech; choosing it does not start a microphone. The local wizard requires parents for later stages even though tools allow standalone records.', evidence: ['webcomp/task-guide.js', 'js/task-guidance.js:createGuidanceAPI'] },
+    { id: 'file-bytes', availableThrough: 'taskimatic.fileRepo.put/get/list/exportZip/importZip and file picker/viewer UI', description: 'Separate OPFS FileRepo and ZIP backup/restore. Requires browser support and secure context. No model tool reads attachments, local paths, arbitrary files, or URLs.', evidence: ['js/file-repo.js', 'js/file-associations.js', 'webcomp/floating-file-view.js'] },
+    { id: 'local-workspace', availableThrough: 'Workspace UI and browser storage', description: 'Local task management, Today timeline, Lock In, search, tables, visualization, and settings. OPFS prefers Web Locks; IndexedDB and session-memory fallbacks exist. Memory mode is not durable.', evidence: ['webcomp/task-workspace.js', 'js/task-repository.js'] },
+    { id: 'offline-and-portable', availableThrough: 'Service worker after shell caching; downloaded HTML', description: 'Core local work can operate without the companion. Remote AI/speech are not included in the offline shell or portable HTML. File-origin persistence and cross-browser restore still require acceptance checks.', evidence: ['tasks-sw.js', 'js/portable-app.js', 'launch-plan.md:Acceptance checklist'] },
+    { id: 'harness-bridge', availableThrough: 'Optional externally loaded Meme runtime; taskimatic.tools.list/call/forLoadTools/register', description: 'The bridge supplies validated JSON tools, system guidance, Tap stages, intro, and Guide forwarding. Extensions need a harness tool refresh/reconnect. There is no built-in network MCP server; an external harness must adapt this in-page API.', evidence: ['js/task-assistant.js:connectTaskAssistant', 'js/task-api.js', 'README.md:Agent tools'] }
+];
+
+// Wishlist entries describe proposed contracts, not tool names that can be called.
+// P0 = launch blocker; P1 = resolve or explicitly defer; P2 = enhancement candidate.
+const toolWishlist = [
+    { id: 'runtime-and-provider-status', priority: 'P0', iCannot: 'I cannot establish that a supported real model, production runtime, or speech service is ready from a connected callback alone.', toolsNeeded: 'Runtime/provider health and setup status, supported-model inventory, request lifecycle/error diagnostics, version pinning and rollback.', iCould: 'I could explain actual availability and recover setup failures with actionable guidance.', acceptance: 'Verified first-run/reload/reconnect/error flows outside the LAN, including Type/Tap and separately Talk.', evidence: ['index.html:taskimatic-assistant', 'js/task-assistant.js:installTaskAssistant', 'launch-plan.md:Q2–Q3'] },
+    { id: 'conflict-and-commit-recovery', priority: 'P0', iCannot: 'I cannot guarantee cross-tab edits preserve newer records, or infer that a rejected write made no durable change.', toolsNeeded: 'Durable revisions/conflict handling, authoritative read-back/reconciliation, explicit primary/backup commit outcomes, deduplicated create/import request IDs.', iCould: 'I could retry safely after uncertain results and explain exactly which changes survived.', acceptance: 'Two-tab and fault-injection/reload tests cover stale writes, imports, deletion, and OPFS success followed by recovery-copy failure.', evidence: ['js/task-repository.js:mutateOpfsWorkspace', 'webcomp/task-workspace.js:enqueueMutation', 'launch-plan.md:Persistence boundaries to resolve'] },
+    { id: 'provider-data-controls', priority: 'P0', iCannot: 'I cannot promise that AI or speech processing is entirely local, or verify remote key retention and logging from this repository.', toolsNeeded: 'Provider/data-flow disclosure, context selection/redaction, verified credential handling, and opt-in redacted diagnostics.', iCould: 'I could explain and minimize what is sent to each configured provider before use.', acceptance: 'Actual runtime/provider data and credential paths are audited; product claims match them. Review the bridge setting meme.tracking = true before asserting zero tracking; its semantics are external.', evidence: ['js/task-assistant.js:connectTaskAssistant', 'index.html', 'launch-plan.md:Q4'] },
+    { id: 'bounded-execution', priority: 'P1', iCannot: 'I cannot execute assigned tasks, run background work, dispatch workers, or verify completion of real-world work.', toolsNeeded: 'Task-to-run dispatch with allowed capabilities and scoped authorization, durable run IDs, progress/artifacts/evidence, budgets/timeouts, cancellation, and recovery.', iCould: 'I could carry an explicitly authorized task through a bounded run and report evidence-backed results.', acceptance: 'A task assignment alone never launches a run. Cancellation prevents later writes; completion requires actual evidence or the user report.', evidence: ['js/task-tools.js:createAgent/startTimer', 'js/task-assistant.js:connectTaskAssistant', 'launch-plan.md:Q1'] },
+    { id: 'preview-undo-and-history', priority: 'P1', iCannot: 'I cannot preview an atomic multi-tool change, undo it, or promise recovery from destructive/bulk edits.', toolsNeeded: 'Concrete change previews, scoped authorization enforcement, atomic batches or compensating recovery, durable action history and restore points.', iCould: 'I could make large edits reviewable and recover them without repeating already granted approval.', acceptance: 'Deletion, association replacement, reprioritization, partial hierarchy saves, and import replace have a tested recovery policy. Prompts and effect annotations alone are not enforcement.', evidence: ['js/task-tools.js:annotations', 'js/task-assistant.js:effect', 'launch-plan.md:Q5'] },
+    { id: 'research-and-file-context', priority: 'P2', iCannot: 'I cannot search the web, fetch linked pages, read FileRepo bytes, extract documents, or inspect the local filesystem with built-in model tools.', toolsNeeded: 'Scoped web search/fetch and user-selected FileRepo read/extract tools with size/type limits, citations, and untrusted-content handling.', iCould: 'I could ground plans in supplied documents and current evidence while preserving source references.', acceptance: 'Explicitly selected sources only; record/file instructions remain data and cannot grant external-action authority.', evidence: ['js/task-tools.js', 'js/file-repo.js', 'launch-plan.md:Assistant behavior to verify'] },
+    { id: 'calendar-and-reminders', priority: 'P2', iCannot: 'I cannot inspect actual calendar capacity, book time, send reminders, or schedule recurring tasks.', toolsNeeded: 'Calendar availability and event tools, task deadlines/recurrence, timezone-aware scheduling and a durable notification scheduler.', iCould: 'I could propose time slots from actual availability and schedule accepted work and reminders.', acceptance: 'Distinguish suggestions from bookings; confirm results from provider responses and persist scheduler state.', evidence: ['js/task-tools.js:fields', 'js/today-time-model.js'] },
+    { id: 'external-actions', priority: 'P2', iCannot: 'I cannot send email/messages, edit external documents, operate a browser/terminal, call arbitrary services, or make payments.', toolsNeeded: 'Explicitly configured connectors or an isolated execution environment with scoped credentials and per-action authorization.', iCould: 'I could perform specifically authorized service work and attach returned evidence to tasks.', acceptance: 'Planning approval never authorizes external actions; each connector enforces its own scope and reports real results.', evidence: ['js/task-tools.js', 'launch-plan.md:Assistant behavior to verify'] },
+    { id: 'durable-dependencies', priority: 'P2', iCannot: 'I cannot maintain reliable dependency identity through title edits, enforce prerequisite order, or represent native subtasks.', toolsNeeded: 'Stable dependency IDs, cycle validation, dependency queries and scheduling rules, optional subtask parent links and richer estimates.', iCould: 'I could detect blocked work and keep task relationships coherent as plans change.', acceptance: 'Rename/delete/duplicate-title cases preserve intended relationships; migrations retain existing associations.', evidence: ['js/task-guidance.js:ASSOCIATIONS AND DEPENDENCIES', 'js/task-tools.js:fields', 'launch-plan.md:Q9'] },
+    { id: 'scoped-context-and-ui', priority: 'P2', iCannot: 'I cannot fetch a bounded page of selected fields or control Lock In, navigation, or presentation settings through the current catalog.', toolsNeeded: 'Get-by-ID, field projection, bounded pagination, selected-record context, and narrowly scoped UI/focus tools.', iCould: 'I could minimize model context and help users focus without loading all workspace records.', acceptance: 'Queries remain useful on large workspaces; context excludes unrelated records and UI actions return actual state.', evidence: ['js/task-tools.js:listTasks/listPlans', 'webcomp/lock-in-controls.js', 'launch-plan.md:P2'] },
+    { id: 'sync-and-combined-backup', priority: 'P2', iCannot: 'I cannot synchronize devices/peers, connect a local-machine service, or create/verify one combined records-and-files backup with model tools.', toolsNeeded: 'Conflict-aware authenticated sync, an explicitly installed local bridge, and a coordinated JSON/FileRepo backup/restore verification tool.', iCould: 'I could help transfer and recover a complete workspace and work across explicitly connected devices.', acceptance: 'No WebRTC or local-machine access promise until implemented and tested; restore verifies record links and attachment bytes together.', evidence: ['index.html:land-panel', 'js/portable-app.js', 'js/file-repo.js', 'launch-plan.md:Q6–Q8'] }
+];
+
+export function taskCapabilityReport(tools) {
+    const definitions = tools?.list?.() || [];
+    const names = definitions.map(tool => tool.name);
+    const registered = new Set(names);
+    const capabilities = capabilityGroups.map(group => ({
+        ...group,
+        available: group.tools.every(name => registered.has(name)),
+        missingTools: group.tools.filter(name => !registered.has(name))
+    }));
+    const known = new Set(capabilityGroups.flatMap(group => group.tools));
+    return cloneValue({
+        version: 1, reviewedOn: '2026-11-06', scope: 'Taskimatic in-page assistant; not the tools of a separate coding agent',
+        role: 'I advise on plans and maintain authorized workspace records. I do not autonomously execute the work in them.',
+        verification: 'Source review and automated contracts are distinct from live browser/model/provider verification. See launch-plan.md for outstanding release acceptance.',
+        toolNames: names, additionalTools: names.filter(name => !known.has(name)),
+        capabilities, applicationOnly, wishlist: toolWishlist,
+        releaseGates: [
+            { priority: 'P0', id: 'runtime-model', detail: 'Reachable versioned production runtime and verified supported real-model flows.' },
+            { priority: 'P0', id: 'storage-integrity', detail: 'Cross-tab conflict handling and uncertain-commit recovery.' },
+            { priority: 'P0', id: 'claims-and-data-flow', detail: 'Accurate offline/AI/sync/privacy claims and provider disclosure.' },
+            { priority: 'P0', id: 'acceptance', detail: 'Recorded browser, backup/restore, offline/update, phone, and accessibility checks; these are verification work, not missing tools alone.' },
+            { priority: 'P1', id: 'operating-policy', detail: 'Resolve or explicitly defer destructive recovery, cancellation/diagnostics, real-model planning quality, language/accessibility support, beta ownership and support.' }
+        ],
+        extensionPolicy: 'Additional registered tools are listed without inferring their powers. Inspect their schemas and verify their behavior before treating a wishlist need as satisfied.',
+        sourceOfTruth: { schemas: 'js/task-tools.js; taskimatic.tools.list()', capabilities: 'js/task-guidance.js:taskCapabilityReport', bridge: 'js/task-assistant.js:describeTaskAssistant', release: 'launch-plan.md' }
+    });
+}
 
 // Give capable models decision criteria and room to adapt to the user's situation.
 const systemPrompt_forSmartModels = `You are Taskimatic's planning advisor. Help the user turn what matters to them into clear outcomes, workable approaches, and doable actions. Also help organize existing work, choose priorities, and make a realistic Today list. Success is a faithful, useful next step with less uncertainty or friction, not the largest possible backlog. Advise and maintain planning records; drafting a task does not mean performing the work described in it.
@@ -127,9 +233,19 @@ const systemPrompt_forSuperSmartModels = `${systemPrompt_forSmartModels}\n\n${st
 const systemPrompts = { supersmart: systemPrompt_forSuperSmartModels, smart: systemPrompt_forSmartModels, small: systemPrompt_forSmallModels, simple: systemPrompt_forSimpleModels };
 
 // Host adapters use the same instructions as prepared Guide requests.
-export function guidanceSystemPrompt(modelTier = 'smart') {
+export function guidanceSystemPrompt(modelTier = 'smart', tools) {
     if (!Object.hasOwn(systemPrompts, modelTier)) throw new Error('Unknown Taskimatic model tier');
-    return systemPrompts[modelTier];
+    if (modelTier === 'supersmart') return `${guidanceSystemPrompt('smart', tools)}\n\n${strategyReviewModifier}`;
+    const report = taskCapabilityReport(tools);
+    const discovery = report.toolNames.includes('getCapabilities')
+        ? 'Use getCapabilities({}) for my complete capability inventory, app-only APIs, release gaps, and prioritized tool wishlist.'
+        : 'No getCapabilities tool is connected. Explain only powers supported by the supplied schemas; offer unsaved drafts when write tools are absent.';
+    const boundary = `MY CAPABILITIES AND TOOL WISHLIST\n${report.role}\n${discovery}\nNamed agents and agent timers do not run tasks. Built-in tools cannot browse, read attachment bytes, access local machines, send messages, book calendars, or sync peers. Extra tools require schema inspection. Speech/model availability depends on the host; connected does not prove ready. Never claim entirely local AI, guaranteed recovery, or completed external work.`;
+    // Very small models keep a short boundary and fetch the full report on demand.
+    const inventory = modelTier === 'smart' ? '\n' + report.capabilities.map(group =>
+        group.available ? group.iCan : `Unavailable tool group ${group.id}: missing ${group.missingTools.join(', ')}.`
+    ).join('\n') : '';
+    return `${systemPrompts[modelTier]}\n\n${boundary}${inventory}`;
 }
 
 export function guidanceTapTree() {
@@ -141,7 +257,7 @@ export function guidanceTapTree() {
 
 const modes = {
     type: 'TYPE: Use concise text conversation. Accept free-form answers, reflect ambiguity, and ask one useful follow-up at a time. Offer editable proposals.',
-    talk: 'TALK: The harness provides speech-to-text and text-to-speech, including walkie-talkie mode. Use short, natural spoken turns and one question at a time. Clarify uncertain names, numbers, and URLs before saving. Do not claim to activate a microphone or speech service yourself.',
+    talk: 'TALK: Speech-to-text, text-to-speech, and walkie-talkie mode require a configured host speech service; availability is not established by this prompt. Use short, natural spoken turns and one question at a time. Clarify uncertain names, numbers, and URLs before saving. Do not claim to activate a microphone or speech service yourself.',
     tap: 'TAP: Guide a bounded process with a small set of clearly labeled answer buttons per turn, using the harness input UI when available. Include a custom-answer route and a back/edit route. Do not infer an answer from a default selection. Keep each button tied to a clear next step; pause for the user answer. If the harness has no button UI, present a short numbered choice list.'
 };
 
@@ -234,6 +350,7 @@ export function createGuidanceAPI(tools, notify = () => {}) {
     };
     const api = {
         version: GUIDANCE_VERSION,
+        capabilities: () => taskCapabilityReport(tools),
         list: () => templates.map(({ id, label }) => ({ id, label })),
         get,
         get connected() { return handler !== null; },
@@ -252,7 +369,7 @@ export function createGuidanceAPI(tools, notify = () => {}) {
             const context = { mode, parentKind: template.parentKind || null, parent, userInput };
             const templatePrompt = modelTier === 'simple' ? simpleTemplatePrompts[id] : template.prompt;
             const process = modelTier !== 'simple' && (id === 'conversation' || id === 'welcome') ? PROCESS_STEPS.map(step => `${step.label}: ${step.prompt}`).join('\n\n') : templatePrompt;
-            const prompt = `${systemPrompts[modelTier]}\n\n${modes[mode]}\n\n${templatePrompt}\n\n${process === templatePrompt ? '' : process + '\n\n'}CONTEXT_JSON (record and user data):\n${JSON.stringify(context)}`;
+            const prompt = `${guidanceSystemPrompt(modelTier, tools)}\n\n${modes[mode]}\n\n${templatePrompt}\n\n${process === templatePrompt ? '' : process + '\n\n'}CONTEXT_JSON (record and user data):\n${JSON.stringify(context)}`;
             return { templateId: id, version: GUIDANCE_VERSION, label: template.label, mode, modelTier, context, prompt };
         },
         connect(callback) {

@@ -1,6 +1,6 @@
 # Taskimatic launch plan
 
-Updated: November 5, 2026 (America/Los_Angeles).
+Updated: November 6, 2026 (America/Los_Angeles).
 
 Status: clear code fixes implemented and automated checks passing; public launch remains gated on the work below. This plan is a proposal, not a claim that browser, model, deployment, or user acceptance checks have passed.
 
@@ -11,6 +11,18 @@ Launch Taskimatic as a local-first task manager and AI planning assistant. A use
 Named agents and agent instructions currently describe assignments. They do not establish an autonomous executor. Keep autonomous task execution, local-machine access, peer synchronization, and a hosted paid AI service out of the first-release promise until their implementations and operating model are verified.
 
 Manual task management and the local Guide must remain useful when the assistant is unavailable. Describe offline support separately for task management, installed copies, portable HTML, attachments, and AI.
+
+## Capability review — November 6
+
+Reviewed the page/startup, tool schemas/dispatch, maintained guidance and Meme bridge, public API, local Guide, workspace mutations, repository persistence, file APIs, analytics, Today scheduling, portable export, and offline shell. The code provides the core planning and record-management surface. It does **not** yet provide everything required for a verified public launch or autonomous execution; the release gates below remain open.
+
+The assistant's referenceable CODE (Cognitive Operations Driving Execution) / FILES (Formalized Into Logical Encodings) inventory is now maintained in `js/task-guidance.js:taskCapabilityReport`. `js/task-assistant.js:describeTaskAssistant` adds the actual bridge's registration, effects, connection, and lifecycle boundaries. The inventory distinguishes callable tools, app-only APIs/UI, limitations, and a prioritized wishlist with proposed contracts, benefits, source references, and acceptance criteria. It covers every built-in tool; registered extensions are identified without assuming what they can do.
+
+Read it through `taskimatic.tools.call('getCapabilities', {})`, `taskimatic.getCapabilities()`, or `taskimatic.prompts.capabilities()`. The last route does not require workspace storage or a connected model. All model tiers now receive the boundary and discovery instructions; the adapter and prepared Guide prompts use the same source. Removed unused legacy prompts containing obsolete tool names, pricing, and entirely-local AI claims. Corrected page metadata/structured data/noscript claims about offline AI and WebRTC; this does not constitute a complete audit of translated UI or the external runtime. The loader still uses the existing LAN URL. The external meaning of `meme.tracking = true`, provider data handling, and production readiness remain unverified.
+
+The wishlist includes runtime/provider status, conflict and commit recovery, provider data controls, bounded execution/cancellation, previews/undo/history, scoped research and file extraction, calendars/reminders, external-action connectors, durable dependencies/subtasks, bounded queries/UI tools, and sync/combined backup. These are proposed capabilities, not newly installed tools. Verification and operating-policy work cannot be solved by tool availability alone.
+
+Verification for this review: `node --test tests/*.test.mjs` passes **112/112** tests, including capability/catalog coverage, isolated read-only discovery, unavailable-tool handling, extension classification, all-tier prompt integration, adapter forwarding, and the portable bundle. No live browser/model/provider or public-deployment pass is claimed. Changes remain uncommitted.
 
 ## Clear fixes completed in this pass
 

@@ -57,6 +57,33 @@ session memory. Existing inline attachments remain readable.
 
 ## Agent tools
 
+The assistant's CODE (Cognitive Operations Driving Execution) / FILES (Formalized
+Into Logical Encodings) capability inventory lives in `js/task-guidance.js`.
+It records first-person capabilities, exact tool names, app-only APIs, limits,
+source references, and a prioritized tool wishlist with acceptance criteria.
+`js/task-assistant.js` exports `describeTaskAssistant(api)` for the same inventory
+plus bridge/lifecycle boundaries. These describe this app's powers, not those of
+an external coding agent or all powers of the connected harness.
+
+```js
+// Model-facing discovery; safe to serialize and does not read task content.
+const capabilities = await taskimatic.tools.call('getCapabilities', {});
+// Equivalent convenience entry point:
+await taskimatic.getCapabilities();
+// Available without a model connection or workspace storage initialization:
+taskimatic.prompts.capabilities();
+```
+
+All model tiers receive the capability boundary and discovery instructions.
+The report checks the current registry; additional host tools are listed without
+assuming they implement wishlist features. Reconnect the companion after adding
+tools so its registered tool snapshot refreshes. Availability in this report
+means registration, not a verified provider connection or launch readiness.
+Taskimatic currently supports planning and authorized record management. Named
+agents, prompts, assignments, and agent timers do not execute underlying tasks.
+`launch-plan.md` tracks the remaining runtime, persistence, privacy, recovery,
+and real-browser/model verification work.
+
 The app entry point (`index.html` → `js/tasks-app.js`) installs
 `window.taskimatic.tools`. It is available after the app module loads. Tool calls
 wait for workspace storage to initialize. If loading your agent earlier, listen

@@ -43,6 +43,7 @@ export function installTaskimaticAPI() {
             downloadApp: { input: 'none', returns: 'Download summary' }
         },
         tools: 'taskimatic.tools.list() returns JSON schemas; call(name, args) executes; forLoadTools() includes execute functions.',
+        capabilities: 'taskimatic.getCapabilities() or tools.call("getCapabilities", {}) returns registered powers, app-only features, gaps, and tool wishlist; prompts.capabilities() also works without a connected model.',
         events: ['taskimatic:ready', 'taskimatic:change']
     });
 
@@ -60,6 +61,7 @@ export function installTaskimaticAPI() {
     window.taskimatic = Object.freeze({
         tools,
         prompts,
+        getCapabilities: () => tools.call('getCapabilities'),
         setTaskPriority: (id, priority) => tools.call('setTaskPriority', { id, priority }),
         updateSession: (id, sessionId, patch) => tools.call('updateSession', { id, sessionId, patch }),
         deleteSession: (id, sessionId) => tools.call('deleteSession', { id, sessionId }),

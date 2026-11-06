@@ -1,8 +1,27 @@
-import { guidanceSystemPrompt, guidanceTapTree } from './task-guidance.js';
+import { guidanceSystemPrompt, guidanceTapTree, taskCapabilityReport } from './task-guidance.js';
+
+// CODE (Cognitive Operations Driving Execution) / FILES (Formalized Into Logical
+// Encodings): self-knowledge is maintained in task-guidance.js and grounded in
+// this connection's tool registry. The host's own powers are not Taskimatic tools.
+// getCapabilities is the model-facing read-only route to the same report.
+export function describeTaskAssistant(api) {
+    return {
+        ...taskCapabilityReport(api.tools),
+        adapter: {
+            source: 'js/task-assistant.js:connectTaskAssistant',
+            toolBinding: 'Snapshot of tools.list() at connect; reconnect after registering extensions. Each handler revalidates through tools.call().',
+            effects: 'Reads use none; all writes/downloads use unsafe. These are host policy declarations, not an authorization UI or undo system.',
+            guidanceConnected: api.prompts.connected,
+            connectionMeaning: 'Guide callback installed; does not establish provider health, successful setup, or speech availability.',
+            lifecycle: 'Guide modes and requests forward to Meme. Null results and provider errors reject. This adapter does not wire durable runs, abort signals, timeouts, or retry/reconciliation.',
+            runtime: 'Optional loader configured by index.html meta; not pinned here. Portable HTML omits it. Runtime internals and remote data handling require separate verification.'
+        }
+    };
+}
 
 // Keep the external companion optional: local tasks and the Guide work without it.
 export async function connectTaskAssistant(meme, api, { modelTier = 'smart' } = {}) {
-    meme.systemPrompt = guidanceSystemPrompt(modelTier);
+    meme.systemPrompt = guidanceSystemPrompt(modelTier, api.tools);
     meme.tools = api.tools.list().map(definition => ({
         ...definition,
         inputSchema: definition.parameters,
