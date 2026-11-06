@@ -233,8 +233,11 @@ test('font scale supports 50% to 300% and defines full CSS variable scale', () =
 
     const tasksCss = fs.readFileSync(new URL('../css/tasks.css', import.meta.url), 'utf8');
     assert.match(tasksCss, /--font-scale:\s*1/);
-    assert.match(tasksCss, /--font-xs:\s*calc\(10px \* var\(--font-scale, 1\)\)/);
-    assert.match(tasksCss, /--font-base:\s*calc\(13px \* var\(--font-scale, 1\)\)/);
-    assert.match(tasksCss, /--font-xl:\s*calc\(16px \* var\(--font-scale, 1\)\)/);
-    assert.match(tasksCss, /--font-title:\s*calc\(32px \* var\(--font-scale, 1\)\)/);
+    assert.match(tasksCss, /--phone-font-scale:\s*1/);
+    const sizes = new Map([...tasksCss.matchAll(/--(font-[\w-]+):\s*(calc\([^;]+\));/g)].map(([, name, value]) => [name, value]));
+    for (const name of ['font-xs', 'font-base', 'font-xl', 'font-title']) assert.ok(sizes.has(name), `${name} is defined`);
+    for (const [name, value] of sizes) {
+        assert.match(value, /var\(--font-scale, 1\)/, `${name} follows the selected font scale`);
+        assert.match(value, /var\(--phone-font-scale, 1\)/, `${name} follows the phone font scale`);
+    }
 });

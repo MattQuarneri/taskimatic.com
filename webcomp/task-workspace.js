@@ -49,7 +49,8 @@ class TaskWorkspace extends HTMLElement {
         } catch (error) { /* Preferences are optional when storage is unavailable. */ }
         this.tableTaskId = null;
         this.taskTable = document.createElement('task-table');
-        this.ready = new Promise((resolve) => { this.resolveReady = resolve; });
+        this.ready = new Promise((resolve, reject) => { this.resolveReady = resolve; this.rejectReady = reject; });
+        this.ready.catch(() => {}); // Consumers still observe rejection without a startup unhandled-rejection.
         this.timerTick = null;
         this.lastClockTickAt = 0;
         this.lastMainClockMinute = -1;
@@ -143,7 +144,13 @@ class TaskWorkspace extends HTMLElement {
         window.addEventListener('hashchange', this.handleHashChange);
         window.addEventListener('keydown', this.handleGlobalKeyDown);
         document.addEventListener('visibilitychange', this.handleClockStateChange);
-        this.initialize();
+        this.initialize().catch(error => {
+            this.rejectReady(error);
+            console.error('Taskimatic could not initialize its workspace.', error);
+            const label = this.querySelector('.storage-label');
+            if (label) label.textContent = error.message;
+            document.dispatchEvent(new CustomEvent('taskimatic:error', { detail: { message: error.message } }));
+        });
     }
 
     disconnectedCallback() {
@@ -543,7 +550,41 @@ class TaskWorkspace extends HTMLElement {
         }
     }
 
-    async createAgent(input) {
+    // UI, compatibility API and tool registries all enter the same mutation queue.
+    // A rejected operation releases the queue so a corrected request can proceed.
+    enqueueMutation(operation) {
+        const result = (this.mutationTail || Promise.resolve()).then(async () => {
+            await this.ready;
+            return operation();
+        });
+        this.mutationTail = result.catch(() => {});
+        return result;
+    }
+
+    whenIdle() { return this.mutationTail || Promise.resolve(); }
+
+    createAgent(...args) { return this.enqueueMutation(() => this._createAgent(...args)); }
+    deleteAgent(...args) { return this.enqueueMutation(() => this._deleteAgent(...args)); }
+    addEntityAssociation(...args) { return this.enqueueMutation(() => this._addEntityAssociation(...args)); }
+    removeEntityAssociation(...args) { return this.enqueueMutation(() => this._removeEntityAssociation(...args)); }
+    createPlanningChild(...args) { return this.enqueueMutation(() => this._createPlanningChild(...args)); }
+    createPlanning(...args) { return this.enqueueMutation(() => this._createPlanning(...args)); }
+    updatePlanning(...args) { return this.enqueueMutation(() => this._updatePlanning(...args)); }
+    deletePlanning(...args) { return this.enqueueMutation(() => this._deletePlanning(...args)); }
+    createTask(...args) { return this.enqueueMutation(() => this._createTask(...args)); }
+    reprioritize(...args) { return this.enqueueMutation(() => this._reprioritize(...args)); }
+    setTaskPriority(...args) { return this.enqueueMutation(() => this._setTaskPriority(...args)); }
+    updateTask(...args) { return this.enqueueMutation(() => this._updateTask(...args)); }
+    deleteTask(...args) { return this.enqueueMutation(() => this._deleteTask(...args)); }
+    startTimer(...args) { return this.enqueueMutation(() => this._startTimer(...args)); }
+    stopTimer(...args) { return this.enqueueMutation(() => this._stopTimer(...args)); }
+    updateSession(...args) { return this.enqueueMutation(() => this._updateSession(...args)); }
+    deleteSession(...args) { return this.enqueueMutation(() => this._deleteSession(...args)); }
+    addAssociation(...args) { return this.enqueueMutation(() => this._addAssociation(...args)); }
+    removeAssociation(...args) { return this.enqueueMutation(() => this._removeAssociation(...args)); }
+    importData(...args) { return this.enqueueMutation(() => this._importData(...args)); }
+
+    async _createAgent(input) {
         const record = normalizeAgent(typeof input === 'string' ? { name: input } : input);
         if (!record.name) throw new Error(t('error.messages.anAgentNameIsRequired'));
         if (this.agents.some(agent => agent.id === record.id)) throw new Error(t('error.messages.agentAlreadyExistsValue0', { value0: record.id }));
@@ -556,7 +597,7 @@ class TaskWorkspace extends HTMLElement {
         return cloneValue(record);
     }
 
-    async deleteAgent(id) {
+    async _deleteAgent(id) {
         const agent = this.agents.find(agent => agent.id === id);
         if (!agent) throw new Error(t('error.messages.agentNotFoundValue0', { value0: id }));
         const references = agentTaskReferences(this.tasks, id);
@@ -715,35 +756,35 @@ class TaskWorkspace extends HTMLElement {
             .sort((a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base', numeric: true })));
     }
 
-    async addEntityAssociation(kind, id, association) {
-        if (kind === 'tasks') return this.addAssociation(id, association);
+    async _addEntityAssociation(kind, id, association) {
+        if (kind === 'tasks') return this._addAssociation(id, association);
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error('Unknown entity kind');
         await this.pendingPlanningCreates.get(id);
         const record = this[kind].find(item => item.id === id);
         if (!record) throw new Error(`Record not found: ${id}`);
-        return this.updatePlanning(kind, id, { associations: normalizeAssociations([...record.associations, association]) });
+        return this._updatePlanning(kind, id, { associations: normalizeAssociations([...record.associations, association]) });
     }
 
-    async removeEntityAssociation(kind, id, association) {
-        if (kind === 'tasks') return this.removeAssociation(id, association);
+    async _removeEntityAssociation(kind, id, association) {
+        if (kind === 'tasks') return this._removeAssociation(id, association);
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error('Unknown entity kind');
         await this.pendingPlanningCreates.get(id);
         const record = this[kind].find(item => item.id === id);
         if (!record) throw new Error(`Record not found: ${id}`);
         const [target] = normalizeAssociations([association]);
-        return this.updatePlanning(kind, id, { associations: record.associations.filter(item => !(item.type === target?.type && item.value.toLowerCase() === target.value.toLowerCase())) });
+        return this._updatePlanning(kind, id, { associations: record.associations.filter(item => !(item.type === target?.type && item.value.toLowerCase() === target.value.toLowerCase())) });
     }
 
-    async createPlanningChild(kind, id, input) {
+    async _createPlanningChild(kind, id, input) {
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error('Unknown parent kind');
         await this.pendingPlanningCreates.get(id);
         if (!this[kind].some(item => item.id === id)) throw new Error(`Parent not found: ${id}`);
-        if (kind === 'plans') return this.createTask({ ...input, planId: id });
-        if (kind === 'goals') return this.createPlanning('plans', { ...input, goalId: id });
-        return this.createPlanning('goals', { ...input, wantId: id });
+        if (kind === 'plans') return this._createTask({ ...input, planId: id });
+        if (kind === 'goals') return this._createPlanning('plans', { ...input, goalId: id });
+        return this._createPlanning('goals', { ...input, wantId: id });
     }
 
-    async createPlanning(kind, input) {
+    async _createPlanning(kind, input) {
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const payload = typeof input === 'string' ? { text: input } : input;
         if (!payload || !cleanString(payload.text ?? payload.title ?? payload.name, 1000)) throw new Error(t('error.messages.aTitleIsRequired'));
@@ -770,7 +811,7 @@ class TaskWorkspace extends HTMLElement {
         return cloneValue(record);
     }
 
-    async updatePlanning(kind, id, patch = {}, options = {}) {
+    async _updatePlanning(kind, id, patch = {}, options = {}) {
         await this.pendingPlanningCreates.get(id);
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const index = this[kind].findIndex(record => record.id === id);
@@ -796,7 +837,7 @@ class TaskWorkspace extends HTMLElement {
         return cloneValue(record);
     }
 
-    async deletePlanning(kind, id) {
+    async _deletePlanning(kind, id) {
         await this.pendingPlanningCreates.get(id);
         if (!['plans', 'goals', 'wants'].includes(kind)) throw new Error(t('error.messages.expectedPlansOrWants'));
         const record = this[kind].find(record => record.id === id);
@@ -2197,7 +2238,7 @@ class TaskWorkspace extends HTMLElement {
         document.dispatchEvent(new CustomEvent('taskimatic:change', { detail: { action, kind, record: record ? cloneValue(record) : null, task: kind === 'task' && record ? cloneValue(record) : null } }));
     }
 
-    async createTask(input) {
+    async _createTask(input) {
         await this.ready;
         const payload = typeof input === 'string' ? { text: input } : input;
         if (!payload || !cleanString(payload.text ?? payload.name, 1000)) throw new Error(t('error.messages.taskTextIsRequired'));
@@ -2220,37 +2261,46 @@ class TaskWorkspace extends HTMLElement {
         return this.tasks.filter((task) => task.id !== taskId && task.status !== 'done').length + 1;
     }
 
-    async reprioritize({ taskId = null, requestedPriority = null } = {}) {
-        const task = taskId ? this.tasks.find((item) => item.id === taskId) : null;
+    prioritizedTasks(tasks, { taskId = null, requestedPriority = null } = {}) {
+        const task = taskId ? tasks.find(item => item.id === taskId) : null;
         if (taskId && !task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: taskId }));
-        const shouldInsert = task?.status !== 'done' && requestedPriority !== null;
-        const ranked = this.tasks
-            .filter((item) => item.status !== 'done' && item.id !== taskId)
+        const shouldInsert = task && task.status !== 'done' && requestedPriority !== null;
+        const ranked = tasks.filter(item => item.status !== 'done' && item.id !== taskId)
             .sort((a, b) => (a.priority ?? Infinity) - (b.priority ?? Infinity)
-                || a.createdAt.localeCompare(b.createdAt)
-                || a.id.localeCompare(b.id));
-
-        if (shouldInsert) {
-            const position = Math.min(requestedPriority, ranked.length + 1);
-            ranked.splice(position - 1, 0, task);
-        }
-
-        const now = nowISO();
-        const updatedById = new Map();
-        ranked.forEach((item, index) => {
-            const priority = index + 1;
-            updatedById.set(item.id, { ...item, priority, updatedAt: item.id === taskId ? now : item.updatedAt });
-        });
-        if (task && !shouldInsert) {
-            updatedById.set(task.id, { ...task, priority: null, updatedAt: now });
-        }
-
-        await Promise.all([...updatedById.values()].map((item) => this.repository.put(item)));
-        this.tasks = this.tasks.map((item) => updatedById.get(item.id) || item);
-        return taskId ? cloneValue(this.tasks.find((item) => item.id === taskId)) : null;
+                || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+        if (shouldInsert) ranked.splice(Math.min(requestedPriority, ranked.length + 1) - 1, 0, task);
+        const byId = new Map(ranked.map((item, index) => [item.id, { ...item, priority: index + 1,
+            updatedAt: item.id === taskId ? nowISO() : item.updatedAt }]));
+        if (task && !shouldInsert) byId.set(task.id, { ...task, priority: null, updatedAt: nowISO() });
+        return tasks.map(item => byId.get(item.id) || item);
     }
 
-    async setTaskPriority(id, value) {
+    async persistTaskRecords(records) {
+        // Batches (completion + priorities, or switching human timers) are one storage commit.
+        if (records.length === 1) await this.repository.put(records[0]);
+        else if (records.length) await this.repository.putMany(records);
+        const byId = new Map(records.map(record => [record.id, record]));
+        this.tasks = this.tasks.map(item => byId.get(item.id) || item);
+        records.forEach(record => invalidateDurationCache(record.id));
+    }
+
+    stopTaskTimers(task, actors = TIMER_ACTORS, endedAt = nowISO()) {
+        for (const actor of actors) {
+            const startedAt = task.activeTimers[actor];
+            if (!startedAt) continue;
+            const durationSeconds = Math.max(1, Math.round((Date.parse(endedAt) - Date.parse(startedAt)) / 1000));
+            task.sessions.push({ id: uid('session'), actor, startedAt, endedAt, durationSeconds });
+            task.activeTimers[actor] = null;
+        }
+        task.updatedAt = endedAt;
+    }
+
+    async _reprioritize(options = {}) {
+        await this.persistTaskRecords(this.prioritizedTasks(this.tasks, options));
+        return options.taskId ? cloneValue(this.tasks.find(item => item.id === options.taskId)) : null;
+    }
+
+    async _setTaskPriority(id, value) {
         const task = this.tasks.find((item) => item.id === id);
         if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         if (task.status === 'done') return cloneValue(task);
@@ -2259,23 +2309,16 @@ class TaskWorkspace extends HTMLElement {
             throw new Error(t('error.messages.priorityMustBeAWholeNumberStartingAt1'));
         }
 
-        const updated = await this.reprioritize({ taskId: id, requestedPriority });
+        const updated = await this._reprioritize({ taskId: id, requestedPriority });
         this.renderAll();
         this.emitChange('priority-changed', updated);
         return updated;
     }
 
-    async updateTask(id, patch = {}, options = {}) {
-        let index = this.tasks.findIndex((task) => task.id === id);
+    async _updateTask(id, patch = {}, options = {}) {
+        const index = this.tasks.findIndex((task) => task.id === id);
         if (index < 0) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
-        let current = this.tasks[index];
-        if (patch.status === 'done' || patch.tabled === true) {
-            for (const actor of TIMER_ACTORS) {
-                if (current.activeTimers?.[actor]) await this.stopTimer(id, actor, { silent: true });
-            }
-            index = this.tasks.findIndex((task) => task.id === id);
-            current = this.tasks[index];
-        }
+        const current = this.tasks[index];
         const updated = cloneValue(current);
         if ('text' in patch) {
             const text = cleanString(patch.text, 1000);
@@ -2312,9 +2355,14 @@ class TaskWorkspace extends HTMLElement {
         }
         if ('associations' in patch) updated.associations = normalizeAssociations(patch.associations);
         updated.updatedAt = nowISO();
-        await this.repository.put(updated);
-        this.tasks.splice(index, 1, updated);
-        if (patch.status === 'done') await this.reprioritize();
+        const stoppedActors = (patch.status === 'done' || patch.tabled === true)
+            ? TIMER_ACTORS.filter(actor => updated.activeTimers[actor]) : [];
+        if (stoppedActors.length) this.stopTaskTimers(updated, stoppedActors);
+        const records = patch.status === 'done'
+            ? this.prioritizedTasks(this.tasks.map(task => task.id === id ? updated : task)) : [updated];
+        await this.persistTaskRecords(records);
+        for (const actor of stoppedActors) this.emitChange(`${actor}-timer-stopped`, updated);
+        if (stoppedActors.includes('human') && this.protectTaskId === id) this.closeProtectModal();
         if (!options.quiet) this.renderAll();
         else {
             this.querySelectorAll('task-item').forEach(item => {
@@ -2332,7 +2380,7 @@ class TaskWorkspace extends HTMLElement {
         return cloneValue(updated);
     }
 
-    async deleteTask(id) {
+    async _deleteTask(id) {
         const task = this.tasks.find((item) => item.id === id);
         if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         await this.repository.delete(id);
@@ -2344,51 +2392,46 @@ class TaskWorkspace extends HTMLElement {
         return { id, deleted: true };
     }
 
-    async startTimer(id, actor = 'human') {
-        const task = this.tasks.find((item) => item.id === id);
-        if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
+    async _startTimer(id, actor = 'human') {
+        const current = this.tasks.find(item => item.id === id);
+        if (!current) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         if (!TIMER_ACTORS.includes(actor)) throw new Error(t('error.messages.timerActorMustBeHumanOrAgent'));
-        if (task.status === 'done') throw new Error(t('error.messages.reopenTheTaskBeforeStartingItsTimer'));
-        if (task.tabled) throw new Error(t('error.messages.untableTheTaskBeforeStartingATimer'));
-        if (task.activeTimers[actor]) return cloneValue(task);
-        if (actor === 'human') {
-            const otherRunning = this.tasks.find((item) => item.activeTimers?.human && item.id !== id);
-            if (otherRunning) await this.stopTimer(otherRunning.id, 'human', { silent: true });
-        }
-        task.activeTimers[actor] = nowISO();
-        task.updatedAt = nowISO();
-        await this.repository.put(task);
+        if (current.status === 'done') throw new Error(t('error.messages.reopenTheTaskBeforeStartingItsTimer'));
+        if (current.tabled) throw new Error(t('error.messages.untableTheTaskBeforeStartingATimer'));
+        if (current.activeTimers[actor]) return cloneValue(current);
+        const task = cloneValue(current);
+        const endedAt = nowISO();
+        const stopped = actor === 'human' ? this.tasks.filter(item => item.id !== id && item.activeTimers.human).map(item => cloneValue(item)) : [];
+        stopped.forEach(item => this.stopTaskTimers(item, ['human'], endedAt));
+        task.activeTimers[actor] = endedAt;
+        task.updatedAt = endedAt;
+        await this.persistTaskRecords([...stopped, task]);
         this.renderAll();
+        stopped.forEach(item => this.emitChange('human-timer-stopped', item));
         this.emitChange(`${actor}-timer-started`, task);
-        if (actor === 'human' && this.isProtectPlanEngaged()) {
-            this.openProtectModal(task);
-        }
+        if (actor === 'human' && this.isProtectPlanEngaged()) this.openProtectModal(task);
+        else if (stopped.some(item => item.id === this.protectTaskId)) this.closeProtectModal();
         return cloneValue(task);
     }
 
-    async stopTimer(id, actor = 'human', options = {}) {
-        const task = this.tasks.find((item) => item.id === id);
-        if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
+    async _stopTimer(id, actor = 'human', options = {}) {
+        const current = this.tasks.find(item => item.id === id);
+        if (!current) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         if (!TIMER_ACTORS.includes(actor)) throw new Error(t('error.messages.timerActorMustBeHumanOrAgent'));
-        if (!task.activeTimers[actor]) return cloneValue(task);
-        const endedAt = nowISO();
-        const durationSeconds = Math.max(1, Math.round((Date.parse(endedAt) - Date.parse(task.activeTimers[actor])) / 1000));
-        task.sessions.push({ id: uid('session'), actor, startedAt: task.activeTimers[actor], endedAt, durationSeconds });
-        task.activeTimers[actor] = null;
-        task.updatedAt = endedAt;
-        invalidateDurationCache(id);
-        await this.repository.put(task);
+        if (!current.activeTimers[actor]) return cloneValue(current);
+        const task = cloneValue(current);
+        this.stopTaskTimers(task, [actor]);
+        const durationSeconds = task.sessions[task.sessions.length - 1].durationSeconds;
+        await this.persistTaskRecords([task]);
         this.renderAll();
         if (!options.silent) this.toast(t('ui.text.loggedValue0ForValue1', { value0: formatDuration(durationSeconds, true), value1: uiLabel(actor) }));
         this.emitChange(`${actor}-timer-stopped`, task);
-        if (actor === 'human' && this.protectTaskId === id && !options.protectPause) {
-            this.closeProtectModal();
-        }
+        if (actor === 'human' && this.protectTaskId === id && !options.protectPause) this.closeProtectModal();
         return cloneValue(task);
     }
 
-    async updateSession(id, sessionId, patch = {}) {
-        const task = this.tasks.find((item) => item.id === id);
+    async _updateSession(id, sessionId, patch = {}) {
+        const task = cloneValue(this.tasks.find((item) => item.id === id));
         if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         const session = task.sessions.find((item) => item.id === sessionId);
         if (!session) throw new Error(t('error.messages.sessionNotFoundValue0', { value0: sessionId }));
@@ -2400,42 +2443,40 @@ class TaskWorkspace extends HTMLElement {
         session.endedAt = new Date(endedAt).toISOString();
         session.durationSeconds = Math.max(0, Math.round((endedAt - startedAt) / 1000));
         task.updatedAt = nowISO();
-        invalidateDurationCache(id);
-        await this.repository.put(task);
+        await this.persistTaskRecords([task]);
         this.renderAll();
         this.toast(t('ui.text.updatedTimeEntryValue0', { value0: formatDuration(session.durationSeconds, true) }));
         this.emitChange('updated', task);
         return cloneValue(task);
     }
 
-    async deleteSession(id, sessionId) {
-        const task = this.tasks.find((item) => item.id === id);
+    async _deleteSession(id, sessionId) {
+        const task = cloneValue(this.tasks.find((item) => item.id === id));
         if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         const idx = task.sessions.findIndex((item) => item.id === sessionId);
         if (idx === -1) throw new Error(t('error.messages.sessionNotFoundValue0', { value0: sessionId }));
         const [removed] = task.sessions.splice(idx, 1);
         task.updatedAt = nowISO();
-        invalidateDurationCache(id);
-        await this.repository.put(task);
+        await this.persistTaskRecords([task]);
         this.renderAll();
         this.toast(t('ui.text.deletedTimeEntryValue0', { value0: formatDuration(removed.durationSeconds, true) }));
         this.emitChange('updated', task);
         return cloneValue(task);
     }
 
-    async addAssociation(id, association) {
+    async _addAssociation(id, association) {
         const task = this.tasks.find((item) => item.id === id);
         if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         const associations = normalizeAssociations([...task.associations, association]);
-        return this.updateTask(id, { associations });
+        return this._updateTask(id, { associations });
     }
 
-    async removeAssociation(id, association) {
+    async _removeAssociation(id, association) {
         const task = this.tasks.find((item) => item.id === id);
         if (!task) throw new Error(t('error.messages.taskNotFoundValue0', { value0: id }));
         const target = normalizeAssociations([association])[0];
         const associations = task.associations.filter((item) => !(item.type === target?.type && item.value.toLowerCase() === target.value.toLowerCase()));
-        return this.updateTask(id, { associations });
+        return this._updateTask(id, { associations });
     }
 
     async listTasks(query = {}) {
@@ -2483,7 +2524,7 @@ class TaskWorkspace extends HTMLElement {
         return this.exportData();
     }
 
-    async importData(input, options = {}) {
+    async _importData(input, options = {}) {
         let rawSettings = null;
         if (typeof input === 'string') {
             try { rawSettings = JSON.parse(input)?.settings; } catch {}

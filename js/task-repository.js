@@ -130,15 +130,20 @@ class TaskRepository {
         if (this.mode === 'memory') return Promise.resolve(operation(null));
         const execute = () => new Promise((resolve, reject) => {
             const transaction = this.db.transaction(mode === 'readwrite' ? [kind, '__storage'] : kind, mode);
-            if (mode === 'readwrite') transaction.objectStore('__storage').put({ id: 'backend', value: 'indexeddb' });
-            const store = transaction.objectStore(kind);
-            let request;
             let result;
-            try { request = operation(store); } catch (error) { reject(error); return; }
-            if (request && 'onsuccess' in request) request.onsuccess = () => { result = request.result; };
             transaction.oncomplete = () => resolve(result);
             transaction.onerror = () => reject(transaction.error);
             transaction.onabort = () => reject(transaction.error || new Error(t('error.messages.databaseTransactionAborted')));
+            try {
+                if (mode === 'readwrite') transaction.objectStore('__storage').put({ id: 'backend', value: 'indexeddb' });
+                const request = operation(transaction.objectStore(kind));
+                if (request && 'onsuccess' in request) request.onsuccess = () => { result = request.result; };
+            } catch (error) {
+                // Synchronous errors (e.g. DataCloneError on a later batch record)
+                // must roll back earlier puts in the same transaction.
+                try { transaction.abort(); } catch { /* It may have already aborted. */ }
+                reject(error);
+            }
         });
         return mode === 'readwrite' && navigator.locks?.request
             ? navigator.locks.request('taskimatic-workspace-storage', execute) : execute();
@@ -157,14 +162,23 @@ class TaskRepository {
     }
 
     async put(record, kind = STORE_NAME) {
-        const normalized = kind === 'tasks' ? normalizeTask(record) : kind === 'agents' ? normalizeAgent(record) : normalizePlanningRecord(kind, record);
+        return (await this.putMany([record], kind))[0];
+    }
+
+    async putMany(records, kind = STORE_NAME) {
+        const normalized = records.map(record => kind === 'tasks' ? normalizeTask(record) : kind === 'agents' ? normalizeAgent(record) : normalizePlanningRecord(kind, record));
         if (this.mode === 'opfs') await this.mutateOpfsWorkspace(snapshot => {
-            const index = snapshot[kind].findIndex(item => item.id === normalized.id);
-            if (index < 0) snapshot[kind].push(cloneValue(normalized));
-            else snapshot[kind][index] = cloneValue(normalized);
+            const byId = new Map(snapshot[kind].map(record => [record.id, record]));
+            for (const record of normalized) byId.set(record.id, cloneValue(record));
+            snapshot[kind] = [...byId.values()];
         });
-        else if (this.mode === 'memory') this.memories[kind].set(normalized.id, cloneValue(normalized));
-        else await this.request('readwrite', store => store.put(normalized), kind);
+        else if (this.mode === 'memory') {
+            for (const record of normalized) this.memories[kind].set(record.id, cloneValue(record));
+        } else await this.request('readwrite', store => {
+            let last;
+            for (const record of normalized) last = store.put(record);
+            return last;
+        }, kind);
         return cloneValue(normalized);
     }
 

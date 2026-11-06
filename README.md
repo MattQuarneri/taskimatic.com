@@ -194,3 +194,35 @@ prompts and the Guide currently use English; the agent can converse in the user'
 language. Dependency instructions match the current picker: `dependent-task`
 values use prerequisite task titles, while record IDs identify tool call targets.
 Dependencies are descriptive associations, not enforced scheduling constraints.
+
+## Built-in assistant connection
+
+`js/task-assistant.js` connects the Meme companion after the local API is installed.
+The `taskimatic-assistant` meta tag in the page head specifies its loader URL;
+the installer defines the callback before loading that script. The companion gets
+Taskimatic's validated tool catalog adapted to Meme's `handler` and `inputSchema`
+contract. Read tools declare effect `none`; writes declare `unsafe` because this
+app does not yet provide retry deduplication or compensating actions. This effect
+metadata describes replay behavior; it is not an approval policy.
+
+The assistant uses the same maintained planning instructions and process steps
+as the Guide. Its registered `intro` script prepares the welcome template, and
+Guide requests carry the prepared prompt and selected Type/Talk/Tap composer mode.
+Selecting Talk does not call microphone capture; users start listening using
+Meme's controls. Speech, model credentials, and model availability remain the
+companion's responsibility. A missing loader leaves local planning usable.
+
+Portable downloads intentionally omit the external assistant configuration,
+loader, and mounted UI. They retain local planning, the guided form, copyable
+prompts, and the public tools API for connecting a separately supplied harness.
+The companion and a remote model are not bundled for offline execution.
+
+Workspace mutations from UI handlers, compatibility API methods, and built-in
+tools share one queue per mounted workspace. Reads through the public API and
+read tools wait for already-queued writes; synchronous UI planning lists retain
+their optimistic rendering behavior. Nested mutations use internal methods so
+the queue cannot wait on itself. Completion/priority updates and human-timer
+switches commit their related task records in one storage batch, with memory
+published after save success. This queue does not resolve stale writes between
+separate browser tabs, exactly-once retries, or a failed IndexedDB recovery copy
+after an OPFS commit; these remain launch-readiness work.

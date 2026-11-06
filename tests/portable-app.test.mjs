@@ -54,6 +54,7 @@ test('portable assets embed CSS and classic scripts and can be exported again wi
         removeAttribute(name) { this.removedAttribute = name; }};
     const clone = {querySelectorAll(selector) {
         if (selector === 'link[data-taskimatic-style]') return link.style ? [] : [link];
+        if (selector !== 'script[src]') return [];
         return script.removedAttribute ? [] : [script];
     }};
     try {
@@ -71,6 +72,24 @@ test('portable assets embed CSS and classic scripts and can be exported again wi
             'https://taskimatic.test/subdir/js/workspace-tabs.js']);
         await embedPortableAssets(clone);
         assert.equal(requests.length, 2);
+    } finally {
+        globalThis.document = previousDocument;
+        globalThis.fetch = previousFetch;
+    }
+});
+
+test('portable export removes companion configuration, mounted UI and loader without fetching them', async () => {
+    const previousDocument = globalThis.document;
+    const previousFetch = globalThis.fetch;
+    const removed = [];
+    const companion = ['configuration', 'loader', 'widget'].map(name => ({ remove() { removed.push(name); } }));
+    globalThis.document = { baseURI: 'https://taskimatic.test/' };
+    globalThis.fetch = () => { throw Error('external companion must not be fetched'); };
+    try {
+        await embedPortableAssets({ querySelectorAll(selector) {
+            return selector.includes('meta[name="taskimatic-assistant"]') ? companion : [];
+        } });
+        assert.deepEqual(removed, ['configuration', 'loader', 'widget']);
     } finally {
         globalThis.document = previousDocument;
         globalThis.fetch = previousFetch;

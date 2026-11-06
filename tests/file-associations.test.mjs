@@ -79,7 +79,7 @@ test('the property dropdown includes file and its editor defaults to Link then s
     const added = [];
     context.installFileAssociationEditor(form, type, value, ['project', 'domain'], association => added.push(association));
     assert.ok(property.children.some(option => option.value === 'file'));
-    assert.equal(property.children.find(option => option.value === 'file').textContent, 'local file');
+    assert.equal(property.children.find(option => option.value === 'file').textContent, 'file');
     property.value = 'file';
     await property.fire('change');
     assert.equal(form.dataset.fileAssociation, 'true');

@@ -126,6 +126,19 @@ const systemPrompt_forSuperSmartModels = `${systemPrompt_forSmartModels}\n\n${st
 
 const systemPrompts = { supersmart: systemPrompt_forSuperSmartModels, smart: systemPrompt_forSmartModels, small: systemPrompt_forSmallModels, simple: systemPrompt_forSimpleModels };
 
+// Host adapters use the same instructions as prepared Guide requests.
+export function guidanceSystemPrompt(modelTier = 'smart') {
+    if (!Object.hasOwn(systemPrompts, modelTier)) throw new Error('Unknown Taskimatic model tier');
+    return systemPrompts[modelTier];
+}
+
+export function guidanceTapTree() {
+    return Object.fromEntries(PROCESS_STEPS.map(step => [step.label, {
+        prompt: step.prompt,
+        ...(step.next ? { next: PROCESS_STEPS.find(next => next.id === step.next).label } : {})
+    }]));
+}
+
 const modes = {
     type: 'TYPE: Use concise text conversation. Accept free-form answers, reflect ambiguity, and ask one useful follow-up at a time. Offer editable proposals.',
     talk: 'TALK: The harness provides speech-to-text and text-to-speech, including walkie-talkie mode. Use short, natural spoken turns and one question at a time. Clarify uncertain names, numbers, and URLs before saving. Do not claim to activate a microphone or speech service yourself.',

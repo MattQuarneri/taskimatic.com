@@ -187,3 +187,40 @@ test('older OPFS workspaces acquire an empty Goals collection without losing exi
     assert.equal((await reloaded.all('goals'))[0].text, 'New outcome');
     assert.equal((await reloaded.all('wants'))[0].id, 'legacy-want');
 });
+
+test('batch task writes use one OPFS commit and preserve all prior records on failure', async () => {
+    const env = environment();
+    const repo = await new env.Repository().init();
+    await repo.putMany([{ id: 'first', notes: 'before' }, { id: 'second', notes: 'before' }]);
+    const before = env.files.get('workspace.json');
+    env.setFailWrite();
+    await assert.rejects(repo.putMany([{ id: 'first', notes: 'after' }, { id: 'second', notes: 'after' }]), /disk full/);
+    assert.equal(env.files.get('workspace.json'), before);
+});
+
+test('synchronous errors in a later IndexedDB batch put abort earlier writes', async () => {
+    const env = environment({ available: false });
+    const repo = await new env.Repository().init();
+    let aborted = false;
+    const committed = [];
+    repo.db = { transaction() {
+        const staged = [];
+        const transaction = {
+            abort() { aborted = true; },
+            objectStore(kind) { return { put(record) {
+                if (kind === '__storage') return {};
+                if (record.id === 'bad') throw Error('cannot clone second record');
+                staged.push(record);
+                return {};
+            } }; }
+        };
+        queueMicrotask(() => {
+            if (aborted) transaction.onabort?.();
+            else { committed.push(...staged); transaction.oncomplete?.(); }
+        });
+        return transaction;
+    } };
+    await assert.rejects(repo.putMany([{ id: 'first' }, { id: 'bad' }]), /cannot clone/);
+    assert.equal(aborted, true);
+    assert.deepEqual(committed, []);
+});

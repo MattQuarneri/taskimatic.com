@@ -1,3 +1,4 @@
+import { installTaskAssistant } from './task-assistant.js';
 import { installBackupTracker } from '../webcomp/backuptracker.js';
 import { installSearcherElement } from '../webcomp/searcher-element.js';
 import { installSessionTimes } from '../webcomp/session-times.js';
@@ -25,3 +26,5 @@ installBackupTracker();
 customElements.define('task-workspace', TaskWorkspace);
 installTaskimaticAPI();
 installTaskGuide();
+
+installTaskAssistant();

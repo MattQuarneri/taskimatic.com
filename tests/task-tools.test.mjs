@@ -18,7 +18,7 @@ function fixture() {
     const w = Object.create(Workspace.prototype);
     Object.assign(w, {
         tasks: [], plans: [], goals: [], wants: [], agents: [], pendingPlanningCreates: new Map(),
-        ready: Promise.resolve(), statusFilter: 'open', repository: { async put() {} },
+        ready: Promise.resolve(), statusFilter: 'open', repository: { async put() {}, async putMany() {} },
         renderAll() {}, renderPlanning() {}, emitChange() {}, querySelectorAll: () => [],
         toast() {}, isProtectPlanEngaged: () => false,
         tools: null
@@ -116,4 +116,114 @@ test('list tools expose derived planning associations and quiet updates preserve
     await w.tools.call('updateTask', { id: 'task', patch: { notes: 'typing' } }, { quiet: true, source });
     assert.equal(received.source, source);
     assert.equal(received.quiet, true);
+});
+
+test('UI and independent tool registries serialize patches and incremental associations against current state', async () => {
+    const w = fixture();
+    const task = await w.createTask({ text: 'Original' });
+    const external = createTaskToolRegistry(async () => w);
+    await Promise.all([
+        w.updateTask(task.id, { notes: 'Human edit' }),
+        external.call('updateTask', { id: task.id, patch: { text: 'Agent edit' } }),
+        w.addAssociation(task.id, { type: 'project', value: 'One' }),
+        external.call('addTaskAssociation', { id: task.id, association: { type: 'client', value: 'Two' } })
+    ]);
+    assert.equal(w.tasks[0].text, 'Agent edit');
+    assert.equal(w.tasks[0].notes, 'Human edit');
+    assert.equal(w.tasks[0].associations.length, 2);
+    const plan = await w.createPlanning('plans', { text: 'Approach' });
+    await Promise.all([
+        w.updatePlanning('plans', plan.id, { myThinking: 'Human reasoning' }),
+        external.call('updatePlan', { id: plan.id, patch: { aiThinking: 'Proposal' } }),
+        w.addEntityAssociation('plans', plan.id, { type: 'project', value: 'One' }),
+        external.call('addPlanAssociation', { id: plan.id, association: { type: 'client', value: 'Two' } })
+    ]);
+    assert.equal(w.plans[0].myThinking, 'Human reasoning');
+    assert.equal(w.plans[0].aiThinking, 'Proposal');
+    assert.equal(w.plans[0].associations.length, 2);
+});
+
+test('invalid completion validates all fields before stopping timers or writing storage', async () => {
+    const w = fixture();
+    const task = await w.createTask({ text: 'Working' });
+    await w.startTimer(task.id);
+    const before = structuredClone(w.tasks);
+    let writes = 0;
+    w.repository.put = w.repository.putMany = async () => { writes++; };
+    await assert.rejects(w.tools.call('updateTask', { id: task.id, patch: { status: 'done', planId: 'missing' } }));
+    assert.deepEqual(structuredClone(w.tasks), before);
+    assert.equal(writes, 0);
+    // Failure must not poison the mutation queue.
+    await w.updateTask(task.id, { notes: 'Corrected request' });
+    assert.equal(w.tasks[0].notes, 'Corrected request');
+});
+
+test('failed timer and session writes preserve the last published task state', async () => {
+    const w = fixture();
+    const task = await w.createTask({ text: 'Working' });
+    const save = w.repository.put;
+    const fail = async () => { throw Error('disk full'); };
+    async function unchanged(operation) {
+        const before = structuredClone(w.tasks);
+        w.repository.put = fail;
+        await assert.rejects(operation(), /disk full/);
+        assert.deepEqual(structuredClone(w.tasks), before);
+        w.repository.put = save;
+    }
+    await unchanged(() => w.startTimer(task.id));
+    await w.startTimer(task.id);
+    await unchanged(() => w.stopTimer(task.id));
+    await w.stopTimer(task.id);
+    const sessionId = w.tasks[0].sessions[0].id;
+    await unchanged(() => w.updateSession(task.id, sessionId, { startedAt: '2026-10-27T12:00:00Z', endedAt: '2026-10-27T12:01:00Z' }));
+    await unchanged(() => w.deleteSession(task.id, sessionId));
+});
+
+test('timer switching and completion commit related records in one batch before publication', async () => {
+    const w = fixture();
+    const first = await w.createTask({ text: 'First' });
+    const second = await w.createTask({ text: 'Second' });
+    await w.startTimer(first.id);
+    const before = structuredClone(w.tasks);
+    let batch;
+    w.repository.putMany = async records => { batch = records; throw Error('batch failed'); };
+    await assert.rejects(w.startTimer(second.id), /batch failed/);
+    assert.equal(batch.length, 2);
+    assert.deepEqual(structuredClone(w.tasks), before);
+    await assert.rejects(w.updateTask(first.id, { status: 'done' }), /batch failed/);
+    assert.deepEqual(structuredClone(w.tasks), before);
+    w.repository.putMany = async records => { batch = structuredClone(records); };
+    await w.startTimer(second.id);
+    assert.equal(batch.find(record => record.id === first.id).activeTimers.human, null);
+    assert.ok(batch.find(record => record.id === second.id).activeTimers.human);
+    assert.equal(w.tasks.filter(record => record.activeTimers.human).length, 1);
+});
+
+test('queued child creation completes before parent deletion and the child is unlinked', async () => {
+    const w = fixture();
+    w.repository.replaceWorkspace = async () => {};
+    const plan = await w.createPlanning('plans', { text: 'Plan' });
+    const [task] = await Promise.all([
+        w.createPlanningChild('plans', plan.id, { text: 'Child' }),
+        w.deletePlanning('plans', plan.id)
+    ]);
+    assert.equal(w.tasks.find(record => record.id === task.id).planId, null);
+    assert.equal(w.plans.length, 0);
+});
+
+test('read tools wait for queued optimistic planning writes and never report a failed draft as saved', async () => {
+    const w = fixture();
+    let rejectSave;
+    const pending = new Promise((resolve, reject) => { rejectSave = reject; });
+    w.repository.put = () => pending;
+    const create = w.createPlanning('plans', { text: 'Pending draft' });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(w.plans.length, 1, 'UI may show an optimistic card');
+    let readCompleted = false;
+    const read = w.tools.call('listPlans').then(records => { readCompleted = true; return records; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(readCompleted, false);
+    rejectSave(Error('save failed'));
+    await assert.rejects(create, /save failed/);
+    assert.deepEqual(await read, []);
 });

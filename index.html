@@ -34,6 +34,8 @@
 
     <script src="./js/i18n.js" data-taskimatic-i18n-service></script>
 
+    <meta name="taskimatic-assistant" content="https://lan.taskimatic.com/mweb/CORE/Meme/meme.js">
+
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
@@ -62,27 +64,6 @@
         "Privacy-focused and secure",
         "WebRTC peer-to-peer synchronization"
       ]
-    }
-
-    function initMeme(meme) {
-        meme.systemPrompt = systemPrompt;
-
-        meme.taptree = taptree_prompts;
-
-        /* Meme configuration TBD
-            meme.skills = "";
-            meme.tools = "";
-            meme.scripts = "";
-            meme.intro = "";
-            meme.defaultConfig = {
-                voice: "",
-                model: ""
-            }
-        */
-
-        meme.draggable = true;
-        meme.tracking = true;
-        meme.location = "top-center";
     }
 
     </script>
@@ -126,6 +107,5 @@
 
     <script src="./js/offline.js" data-taskimatic-offline></script>
     <script type="module" src="./js/tasks-app.js"></script>
-    <script src="https://lan.taskimatic.com/mweb/CORE/Meme/meme.js?init=initMeme"></script>
 </body>
 </html>

@@ -84,7 +84,9 @@ export function createTaskToolRegistry(getWorkspace) {
             const entry = entries.get(name);
             if (!entry) throw new Error(`Unknown Taskimatic tool: ${name}`);
             validate(entry.definition.parameters, args);
-            return cloneValue(await entry.execute(await getWorkspace(), args, context));
+            const workspace = await getWorkspace();
+            if (entry.definition.annotations.readOnly) await workspace.whenIdle?.();
+            return cloneValue(await entry.execute(workspace, args, context));
         },
         // Functions are kept out of list() so its output can cross JSON/message boundaries.
         forLoadTools: () => registry.list().map(definition => ({ ...definition, signature: definition.parameters, execute: args => registry.call(definition.name, args) }))

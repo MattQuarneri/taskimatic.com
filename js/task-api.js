@@ -51,6 +51,7 @@ export function installTaskimaticAPI() {
         const workspace = document.querySelector('task-workspace');
         if (!workspace) throw new Error(t('error.messages.taskimaticWorkspaceIsNotMounted'));
         await workspace.ready;
+        await workspace.whenIdle?.();
         return workspace;
     };
 

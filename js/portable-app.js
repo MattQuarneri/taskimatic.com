@@ -48,6 +48,9 @@ export async function bundleModule(entryURL, readSource = readAsset) {
 // Inline every local dependency before serializing, including on re-downloads
 // from a portable copy where these assets are already embedded.
 export async function embedPortableAssets(clone) {
+    // Meme loads its own dependency graph from its script URL and cannot be inlined.
+    // Portable copies keep all local planning/tools and can connect another harness.
+    for (const external of clone.querySelectorAll('meta[name="taskimatic-assistant"], [data-taskimatic-assistant], meme-widget, ai-widget')) external.remove();
     for (const link of clone.querySelectorAll('link[data-taskimatic-style]')) {
         const style = document.createElement('style');
         if (link.id) style.id = link.id;
