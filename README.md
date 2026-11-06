@@ -128,6 +128,18 @@ with the selected parent and current draft for an assistant.
 The maintained starter templates are in `js/task-guidance.js`: `welcome`,
 `conversation`, `clarify-want`, `clarify-goals`, `clarify-plans`, and `detail-tasks`.
 Each process has shared planning instructions plus Type, Talk, or Tap guidance.
+The default `smart` model tier uses detailed guidance for judgment and tradeoffs;
+`small` uses a shorter checklist with concrete examples. The `simple` tier is
+designed for very small browser models: a distilled prompt, one item at a time,
+and a short instruction for the selected stage instead of the full playbook.
+The optional `supersmart` tier layers a strategy/review modifier onto the same
+smart prompt. It checks goal alignment, assumptions, competing commitments,
+alternative approaches, and opportunities to simplify or test uncertainty.
+Review recommendations are proposals; the shared tool and saving rules apply.
+Select a tier explicitly for your harness; the app does not detect model
+capabilities. For `simple`, supply only relevant records and tool definitions,
+and validate tool calls in the harness. Prompt wording alone does not establish
+a model's ability to use tools reliably.
 Type is free-form text; Talk expects the harness's speech and walkie-talkie
 features; Tap asks the harness for bounded choices with a custom-answer route.
 The app does not supply a model, speech engine, or assistant input renderer.
@@ -149,7 +161,13 @@ await taskimatic.prompts.start('clarify-goals', {
 
 // Open-ended sessions and onboarding use the same planning principles.
 const conversation = await taskimatic.prompts.prepare('conversation', {
-    mode: 'talk', userInput: 'Help me make sense of what matters this week.'
+    mode: 'talk', modelTier: 'simple',
+    userInput: 'Help me make sense of what matters this week.'
+});
+// Use the shared smart instructions with deeper strategic review.
+const review = await taskimatic.prompts.prepare('clarify-plans', {
+    modelTier: 'supersmart', parentId: 'existing-goal-id',
+    userInput: 'Review how we could reach this goal and recommend a simpler approach.'
 });
 // Load conversation.prompt into your harness; supply the tool registry separately.
 // prepare() only returns data. start() hands it to the connected handler.
@@ -157,10 +175,12 @@ disconnect();
 ```
 
 `taskimatic.prompts.list()` returns template IDs and labels; `get(id)` returns
-process metadata; `prepare(id, {mode?, parentId?, userInput?})` returns
-`{templateId, version, label, mode, context, prompt}`. Defaults are Type mode,
-no parent, and empty input. A supplied parent ID is resolved against the expected
-collection. Without a parent, the prompt asks the agent to help select one.
+process metadata; `prepare(id, {mode?, modelTier?, parentId?, userInput?})` returns
+`{templateId, version, label, mode, modelTier, context, prompt}`. Defaults are Type
+mode, the `smart` tier, no parent, and empty input. `modelTier` accepts `supersmart`,
+`smart`, `small`, or `simple`; `start()` accepts the same options. A supplied parent
+ID is resolved against the expected collection. The supersmart, smart, and small
+tiers help select a parent when needed; all tiers support standalone records.
 Preparing a prompt never mutates workspace records. `connect(handler)` returns
 an unsubscribe function; `connected` reports availability. Connection changes
 emit `taskimatic:guidance-connection` on document. `start()` rejects when no
