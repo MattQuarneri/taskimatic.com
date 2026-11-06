@@ -95,7 +95,6 @@ class TaskWorkspace extends HTMLElement {
         this.suppressLockInPillClick = false;
         this.handleResize = () => {
             this.positionTodayTab(this.todayTabTop);
-            this.updateTaskColumns();
             this.positionBrandHelp();
             this.positionLockInPill();
         };
@@ -133,7 +132,6 @@ class TaskWorkspace extends HTMLElement {
             this.style.setProperty('--plans-nav-height', `${plansNav.getBoundingClientRect().height}px`);
         });
         this.plansNavResizeObserver.observe(plansNav);
-        this.updateTaskColumns();
         this.bindEvents();
         window.addEventListener('resize', this.handleResize);
         window.addEventListener('scroll', this.handlePillScroll, { passive: true });
@@ -1905,11 +1903,6 @@ class TaskWorkspace extends HTMLElement {
                 );
             }
         }
-    }
-
-    updateTaskColumns() {
-        const columns = Math.max(1, 1 + Math.ceil((window.innerWidth - 1366) / 700));
-        this.style.setProperty('--task-columns', String(columns));
     }
 
     renderTasks() {

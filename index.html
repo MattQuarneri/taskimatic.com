@@ -63,6 +63,28 @@
         "WebRTC peer-to-peer synchronization"
       ]
     }
+
+    function initMeme(meme) {
+        meme.systemPrompt = systemPrompt;
+
+        meme.taptree = taptree_prompts;
+
+        /* Meme configuration TBD
+            meme.skills = "";
+            meme.tools = "";
+            meme.scripts = "";
+            meme.intro = "";
+            meme.defaultConfig = {
+                voice: "",
+                model: ""
+            }
+        */
+
+        meme.draggable = true;
+        meme.tracking = true;
+        meme.location = "top-center";
+    }
+
     </script>
     <link id="lock-in-pill-styles" rel="stylesheet" href="./css/lock-in-pill.css" data-taskimatic-style>
     <link rel="stylesheet" href="./css/tasks.css" data-taskimatic-style>
@@ -104,5 +126,6 @@
 
     <script src="./js/offline.js" data-taskimatic-offline></script>
     <script type="module" src="./js/tasks-app.js"></script>
+    <script src="https://lan.taskimatic.com/mweb/CORE/Meme/meme.js?init=initMeme"></script>
 </body>
 </html>

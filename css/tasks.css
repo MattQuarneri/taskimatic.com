@@ -735,7 +735,8 @@ searcher-element { position: relative; display: block; width: min(230px, 42%); }
 
 .active-filter button { min-height: 28px; height: auto; padding: 2px 9px; border-color: rgba(49,95,145,.35); background: transparent; box-shadow: none; color: var(--blue); font-size: var(--font-sm); }
 .task-list { display: grid; gap: 11px; }
-.task-list, .task-list .task-group-list { grid-template-columns: repeat(var(--task-columns, 1), minmax(560px, 1fr)); align-items: start; }
+/* Add a column only when another 400px card and the gap fit; share spare space. */
+.task-list, .task-group-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); align-items: start; }
 .task-list > .task-group, .task-list > task-table, .task-list > task-item[table-detail], .task-list > .empty-state { grid-column: 1 / -1; min-width: 0; }
 .task-list task-item { min-width: 0; }
 task-item { display: block; }
@@ -870,7 +871,6 @@ task-item { display: block; }
     .app-action-pair { display: none; }
     .top-actions button { padding: 0 10px; }
     .app-grid { display: block; }
-    .task-list, .task-list .task-group-list { grid-template-columns: minmax(0, 1fr); }
 
     /* Mobile Bottom Views Rail */
     .rail { display: contents; }
@@ -1030,6 +1030,10 @@ task-item { display: block; }
     .list-toolbar-right { flex-wrap: wrap; }
     .toast-region { bottom: calc(140px + env(safe-area-inset-bottom)); }
     .lock-in-pill { bottom: 132px; }
+}
+
+@media (max-width: 680px) {
+    .task-list, .task-group-list { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 520px) {
