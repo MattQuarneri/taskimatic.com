@@ -46,6 +46,33 @@ test('assistant adapts the real tool catalog and shares maintained instructions,
     assert.ok(meme.systemPrompt.includes('SAVING AND TOOL USE'));
 });
 
+test('assistant adapts systemPrompt, Tap tree, intro, and Guide requests to Meme modelLevel changes', async () => {
+    const { api, meme } = fixture();
+    const listeners = new Map();
+    meme.modelLevel = 'simple';
+    meme.on = (type, fn) => {
+        listeners.set(type, fn);
+        return () => listeners.delete(type);
+    };
+    const disconnect = await connectTaskAssistant(meme, api);
+    assert.ok(meme.systemPrompt.includes("Taskimatic's planning helper"));
+    assert.ok(!meme.systemPrompt.includes('SAVING AND TOOL USE'));
+    const simpleIntro = await meme.scripts[meme.intro]();
+    assert.ok(simpleIntro.includes('Briefly introduce Taskimatic'));
+    await api.prompts.start('clarify-want', { mode: 'tap', userInput: 'More calm' });
+    assert.ok(meme.requests.at(-1).prompt.includes("Taskimatic's planning helper"));
+
+    meme.modelLevel = 'supersmart';
+    listeners.get('modellevelchange')?.({ detail: { modelLevel: 'supersmart' } });
+    assert.ok(meme.systemPrompt.includes('STRATEGY / REVIEW MODE'));
+    for (const step of PROCESS_STEPS) assert.equal(meme.taptree[step.label].prompt, step.prompt);
+    const superIntro = await meme.scripts[meme.intro]();
+    assert.ok(superIntro.includes('STRATEGY / REVIEW MODE'));
+
+    disconnect();
+    assert.equal(listeners.has('modellevelchange'), false);
+});
+
 test('Guide forwards each input mode and prepared context; errors and cancelled requests remain visible', async () => {
     const { api, meme } = fixture();
     const disconnect = await connectTaskAssistant(meme, api);

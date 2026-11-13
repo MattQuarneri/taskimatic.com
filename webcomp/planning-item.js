@@ -218,6 +218,7 @@ export class PlanningItem extends HTMLElement {
                 }
                 @media (max-width: 520px) { textarea, input, select { font-size: max(16px, var(--font-base, 13px)); } }
             </style>
+            <link rel="stylesheet" href="./css/record-tabs.css">
             <article class="planning-card">
                 <div class="title-row"><textarea class="text" rows="1" maxlength="1000" aria-label="${escapeHTML(t('ui.text.value1Title', { value1: t(`ui.text.${singular}`) }))}"></textarea>${this.renderSummary()}</div>
                 <div class="planning-tabs" role="tablist" aria-label="${escapeHTML(t(`ui.text.${singular}`))}">
@@ -246,7 +247,7 @@ export class PlanningItem extends HTMLElement {
                 <div role="tabpanel" tabindex="0" id="planning-children-panel" data-planning-panel="children" aria-labelledby="planning-children-tab" hidden>
                 <h3 class="children-heading">${escapeHTML(t(this.childrenTitleKey))} · ${children.length}</h3>
                 <div class="children"></div>
-                <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue7', { value7: uiLabel(childKind.slice(0, -1)) }))}" placeholder="${escapeHTML(t(this.childPlaceholderKey))}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(childKind.slice(0, -1)) }))}</button></form>
+                <form class="child-form"><input class="child-text" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue', { value7: uiLabel(childKind.slice(0, -1)) }))}" placeholder="${escapeHTML(t(this.childPlaceholderKey))}" required><button type="submit">${escapeHTML(t('ui.text.addValue9', { value9: uiLabel(childKind.slice(0, -1)) }))}</button></form>
                 </div>
                 <div class="footer"><span class="age"></span><button class="delete" type="button">${escapeHTML(t('ui.text.deleteValue10', { value10: uiLabel(singular) }))}</button></div>
             </article>

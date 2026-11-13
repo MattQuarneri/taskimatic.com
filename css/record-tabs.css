@@ -1,0 +1,14 @@
+/* Shared by task and planning cards inside their shadow roots. */
+button[role="tab"][aria-selected="true"],
+button[role="tab"][aria-selected="true"]:hover {
+    background: var(--ink, #18242b);
+    border-color: var(--ink, #18242b);
+    color: white;
+}
+
+button[role="tab"]:not([aria-selected="true"]):hover {
+    background: #e8e8e8;
+    border-color: transparent;
+    border-radius: 999px;
+    color: var(--ink, #18242b);
+}

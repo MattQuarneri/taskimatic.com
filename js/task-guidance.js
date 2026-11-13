@@ -230,7 +230,7 @@ Lead with the recommendation or main finding. Briefly give the decisive evidence
 
 const systemPrompt_forSuperSmartModels = `${systemPrompt_forSmartModels}\n\n${strategyReviewModifier}`;
 
-const systemPrompts = { supersmart: systemPrompt_forSuperSmartModels, smart: systemPrompt_forSmartModels, small: systemPrompt_forSmallModels, simple: systemPrompt_forSimpleModels };
+export const systemPrompts = Object.freeze({ supersmart: systemPrompt_forSuperSmartModels, smart: systemPrompt_forSmartModels, small: systemPrompt_forSmallModels, simple: systemPrompt_forSimpleModels });
 
 // Host adapters use the same instructions as prepared Guide requests.
 export function guidanceSystemPrompt(modelTier = 'smart', tools) {
@@ -248,9 +248,9 @@ export function guidanceSystemPrompt(modelTier = 'smart', tools) {
     return `${systemPrompts[modelTier]}\n\n${boundary}${inventory}`;
 }
 
-export function guidanceTapTree() {
+export function guidanceTapTree(modelTier = 'smart') {
     return Object.fromEntries(PROCESS_STEPS.map(step => [step.label, {
-        prompt: step.prompt,
+        prompt: modelTier === 'simple' ? simpleTemplatePrompts[step.id] : step.prompt,
         ...(step.next ? { next: PROCESS_STEPS.find(next => next.id === step.next).label } : {})
     }]));
 }
@@ -343,6 +343,7 @@ const simpleTemplatePrompts = {
 
 export function createGuidanceAPI(tools, notify = () => {}) {
     let handler = null;
+    let defaultModelTier = () => 'smart';
     const get = id => {
         const template = templates.find(item => item.id === id);
         if (!template) throw new Error(`Unknown Taskimatic prompt: ${id}`);
@@ -350,11 +351,19 @@ export function createGuidanceAPI(tools, notify = () => {}) {
     };
     const api = {
         version: GUIDANCE_VERSION,
+        systemPrompts,
+        forModel: (modelTier = defaultModelTier()) => guidanceSystemPrompt(modelTier, tools),
         capabilities: () => taskCapabilityReport(tools),
         list: () => templates.map(({ id, label }) => ({ id, label })),
         get,
         get connected() { return handler !== null; },
-        async prepare(id, { mode = 'type', modelTier = 'smart', parentId = null, userInput = '' } = {}) {
+        async prepare(id, options = {}) {
+            const { mode = 'type', parentId = null, userInput = '' } = options;
+            const modelTier = Object.hasOwn(options, 'modelTier')
+                ? options.modelTier
+                : Object.hasOwn(options, 'modelLevel')
+                    ? options.modelLevel
+                    : defaultModelTier();
             if (!Object.hasOwn(modes, mode)) throw new Error('Input mode must be type, talk, or tap');
             if (typeof modelTier !== 'string' || !Object.hasOwn(systemPrompts, modelTier)) throw new Error('Model tier must be supersmart, smart, small, or simple');
             if (typeof userInput !== 'string' || (parentId !== null && typeof parentId !== 'string')) throw new TypeError('Expected text input and a parent ID or null');
@@ -372,13 +381,17 @@ export function createGuidanceAPI(tools, notify = () => {}) {
             const prompt = `${guidanceSystemPrompt(modelTier, tools)}\n\n${modes[mode]}\n\n${templatePrompt}\n\n${process === templatePrompt ? '' : process + '\n\n'}CONTEXT_JSON (record and user data):\n${JSON.stringify(context)}`;
             return { templateId: id, version: GUIDANCE_VERSION, label: template.label, mode, modelTier, context, prompt };
         },
-        connect(callback) {
+        connect(callback, { modelTier } = {}) {
             if (typeof callback !== 'function') throw new TypeError('Expected a prompt handler function');
             handler = callback;
+            if (modelTier !== undefined) {
+                defaultModelTier = typeof modelTier === 'function' ? modelTier : () => modelTier;
+            }
             notify('taskimatic:guidance-connection', { connected: true });
             return () => {
                 if (handler !== callback) return;
                 handler = null;
+                defaultModelTier = () => 'smart';
                 notify('taskimatic:guidance-connection', { connected: false });
             };
         },

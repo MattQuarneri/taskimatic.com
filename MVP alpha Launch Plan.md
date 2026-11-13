@@ -8,13 +8,11 @@ Get taskimatic.com live with Meme (the AI assistant) working for a **small, invi
 
 **Alpha promise (the only thing we claim):** a local-first task manager where you can talk to Meme to turn a Want into Goals, Plans, and Tasks, review, save, pick Today work, and track time. Manual task management and the Guide work without Meme.
 
-**Explicitly out of the alpha promise:** autonomous task execution, peer sync / WebRTC, offline AI, hosted/paid AI service, Talk (voice) unless it happens to pass, multi-device use.
+**Explicitly out of the alpha promise:** autonomous task execution, peer sync / WebRTC, offline AI, hosted/paid AI service, multi-device use.
 
 ## Current state (from the Nov 6 review)
 
-- Done: core planning/record surface, tool schemas and dispatch, Meme bridge (`js/task-assistant.js`), ordered writes, timer-safe persistence, portable export without remote loader, startup failure reporting, capability inventory. 112/112 automated tests pass. Nothing is committed.
-- **The single biggest blocker:** `index.html:37` loads Meme from `https://lan.taskimatic.com/mweb/CORE/Meme/meme.js`, a LAN URL. A tester outside your network gets no assistant.
-- Never verified live: Meme with a real model, any real browser pass, production deployment.
+- Done: core planning/record surface, tool schemas and dispatch, Meme bridge (`js/task-assistant.js`), ordered writes, timer-safe persistence, portable export without remote loader, startup failure reporting, capability inventory. 112/112 automated tests pass.
 
 ## Priorities
 

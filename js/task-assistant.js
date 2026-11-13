@@ -20,30 +20,41 @@ export function describeTaskAssistant(api) {
 }
 
 // Keep the external companion optional: local tasks and the Guide work without it.
-export async function connectTaskAssistant(meme, api, { modelTier = 'smart' } = {}) {
-    meme.systemPrompt = guidanceSystemPrompt(modelTier, api.tools);
+export async function connectTaskAssistant(meme, api, options = {}) {
+    const explicitTier = options.modelLevel ?? options.modelTier;
+    const resolveTier = (level = meme.modelLevel ?? meme.modelTier) => explicitTier ?? level ?? 'smart';
+    const applyTier = level => {
+        const tier = resolveTier(level);
+        meme.systemPrompt = guidanceSystemPrompt(tier, api.tools);
+        meme.taptree = guidanceTapTree(tier);
+    };
+    applyTier();
+    const offModelLevel = meme.on?.('modellevelchange', event => applyTier(event?.detail?.modelLevel));
     meme.tools = api.tools.list().map(definition => ({
         ...definition,
         inputSchema: definition.parameters,
         effect: definition.annotations.readOnly ? 'none' : 'unsafe',
         handler: args => api.tools.call(definition.name, args)
     }));
-    meme.taptree = guidanceTapTree();
     meme.scripts = {
-        intro: async () => (await api.prompts.prepare('welcome', { mode: 'tap', modelTier })).prompt
+        intro: async () => (await api.prompts.prepare('welcome', { mode: 'tap', modelTier: resolveTier() })).prompt
     };
     // Meme boot resolves this registered name after init completes.
     meme.intro = 'intro';
     meme.draggable = true;
     meme.tracking = true;
     meme.location = 'top-center';
-    return api.prompts.connect(async request => {
+    const disconnectPrompts = api.prompts.connect(async request => {
         // Select the composer; microphone capture still starts through Meme’s own controls.
         meme.setPrompterMode(request.mode);
         const result = await meme.ask(request.prompt);
         if (result == null) throw new Error('The assistant did not complete the request. Check its connection or setup and try again.');
         return result;
-    });
+    }, { modelTier: () => resolveTier() });
+    return () => {
+        offModelLevel?.();
+        disconnectPrompts();
+    };
 }
 
 export function installTaskAssistant() {

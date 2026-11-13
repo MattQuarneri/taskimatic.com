@@ -433,6 +433,7 @@ class TaskItem extends HTMLElement {
                 }
                 @media (prefers-reduced-motion: reduce) { :host([clock-active]) .timer.running { animation: none; } }
             </style>
+            <link rel="stylesheet" href="./css/record-tabs.css">
             <article class="card ${running ? 'running' : ''} ${done ? 'done' : ''} ${tabled ? 'tabled' : ''}">
                 <div class="compact-shell" hidden>
                     <div class="compact-text"></div>

@@ -100,6 +100,7 @@ class TaskWorkspace extends HTMLElement {
             this.positionLockInPill();
         };
         this.handlePillScroll = () => { if (!this.lockInPillPos) this.positionLockInPill(); };
+        this.handleCaptureScroll = () => this.collapseCaptureCards();
         this.handleClockStateChange = () => this.syncClock();
         this.handleHashChange = () => {
             const association = this.associationFromHash();
@@ -159,6 +160,7 @@ class TaskWorkspace extends HTMLElement {
         this.plansNavResizeObserver?.disconnect();
         this.pillResizeObserver?.disconnect();
         window.removeEventListener('scroll', this.handlePillScroll);
+        window.removeEventListener('scroll', this.handleCaptureScroll, true);
         clearTimeout(this.timerTick);
         if (this.protectTimerInterval) {
             clearInterval(this.protectTimerInterval);
@@ -325,6 +327,7 @@ class TaskWorkspace extends HTMLElement {
                     <div class="rail-sticky">
                         <div class="eyebrow rail-eyebrow">${escapeHTML(t('ui.text.views'))}</div>
                         <nav class="nav-list" aria-label="${escapeHTML(t('ui.text.taskViews'))}">
+                            <div class="association-filter-pills" hidden></div>
                             <button class="nav-button active" type="button" data-status="open"><span>${escapeHTML(t('ui.text.active'))}</span><span class="nav-count" data-count="open">0</span></button>
                             <button class="nav-button" type="button" data-status="tabled"><span>${escapeHTML(t('ui.text.tabled'))}</span><span class="nav-count" data-count="tabled">0</span></button>
                             <button class="nav-button" type="button" data-status="all"><span>${escapeHTML(t('ui.text.allTasks'))}</span><span class="nav-count" data-count="all">0</span></button>
@@ -355,6 +358,8 @@ class TaskWorkspace extends HTMLElement {
                         ${['tasks', 'plans', 'goals', 'wants'].map((kind, index) => `<button class="workspace-tab" id="${kind}-tab" type="button" role="tab" aria-controls="${kind}-view" aria-selected="${index === 0}" tabindex="${index === 0 ? '0' : '-1'}" data-view="${kind}">${escapeHTML(uiLabel(kind, true))}<span class="nav-count" data-workspace-count="${kind}">0</span></button>`).join('')}
                     </nav>
                     <section id="tasks-view" role="tabpanel" aria-labelledby="tasks-tab">
+                    <button class="capture-open" type="button" data-capture-open="tasks" aria-controls="tasks-capture" hidden>${escapeHTML(t('ui.text.newValue', { value7: uiLabel('task', true) }))}</button>
+                    <div class="capture-region" id="tasks-capture">
                     <div class="welcome-row">
                         <div><div class="eyebrow">${escapeHTML(t('ui.text.yourWorkbench'))}</div><h1>${escapeHTML(t('ui.text.whatNeedsDoing'))}</h1></div>
                         <div class="date-stamp" data-day="${dayKey}">${today.toLocaleDateString(window.i18n.currentLang, { weekday: 'long' })}<br>${today.toLocaleDateString(window.i18n.currentLang, { month: 'long', day: 'numeric', year: 'numeric' })}</div>
@@ -366,6 +371,7 @@ class TaskWorkspace extends HTMLElement {
                         </form>
                         <div class="capture-help">${escapeHTML(t('ui.text.tagAsYouType'))} <code>${escapeHTML(t('ui.text.projectWebsite'))}</code> <code>${escapeHTML(t('ui.text.clientNorthWind'))}</code></div>
                     </section>
+                    </div>
                     <div class="list-toolbar">
                         <div class="list-heading"><h2>${escapeHTML(t('ui.text.activeTasks'))}</h2><span class="list-count">${escapeHTML(t('ui.text.0Shown'))}</span><label class="table-toggle"><input class="table-checkbox" type="checkbox"> ${escapeHTML(t('ui.text.table2'))}</label><button class="hierarchy-button" type="button" aria-haspopup="dialog" hidden>${escapeHTML(t('ui.text.hierarchy'))}</button></div>
                         <div class="list-toolbar-right">
@@ -378,9 +384,12 @@ class TaskWorkspace extends HTMLElement {
                     </section>
                     ${['plans', 'goals', 'wants'].map(kind => `
                         <section id="${kind}-view" role="tabpanel" aria-labelledby="${kind}-tab" hidden>
+                            <button class="capture-open" type="button" data-capture-open="${kind}" aria-controls="${kind}-capture" hidden>${escapeHTML(t('ui.text.newValue', { value7: uiLabel(kind.slice(0, -1), true) }))}</button>
+                            <div class="capture-region" id="${kind}-capture">
                             <div class="welcome-row"><div><div class="eyebrow">${kind === 'goals' ? t('ui.text.goalsEyebrow') : kind === 'plans' ? t('ui.text.fromThinkingToDoing') : t('ui.text.roomForPossibilities')}</div><h1>${kind === 'goals' ? t('ui.text.goalsHeading') : kind === 'plans' ? t('ui.text.shapeAPlan') : t('ui.text.whatWouldYouLikeToHaveOrAchieve')}</h1></div></div>
                             <p class="planning-help">${kind === 'goals' ? t('ui.text.goalsHelp') : kind === 'plans' ? t('ui.text.developYourApproachAndLinkTheTasksThatMakeItHappenAssociationsOnThoseTasksRollUpIntoT') : t('ui.text.captureVagueDesiresAndAspirationsThenTurnThemIntoPlansWhenTheyTakeShape')}</p>
                             <section class="capture-card"><form class="planning-capture capture-form" data-kind="${kind}"><input class="capture-input" maxlength="1000" aria-label="${escapeHTML(t('ui.text.newValue6Title', { value6: uiLabel(kind.slice(0, -1)) }))}" placeholder="${kind === 'goals' ? t('ui.text.goalPlaceholder') : kind === 'plans' ? t('ui.text.giveYourPlanAName') : t('ui.text.captureADesireOrAspiration')}" required><button class="add-button" type="submit">${escapeHTML(t('ui.text.addValue8', { value8: uiLabel(kind.slice(0, -1)) }))}</button></form></section>
+                            </div>
                             <div class="planning-search"><input type="search" data-planning-search="${kind}" aria-label="${escapeHTML(t('ui.text.searchValue10', { value10: uiLabel(kind) }))}" placeholder="${escapeHTML(t('ui.text.searchValue11ThinkingAndAssociations', { value11: uiLabel(kind) }))}"></div>
                             <div class="active-filter planning-filter" data-kind="${kind}" hidden><span></span><button type="button" data-clear-planning-filter>${escapeHTML(t('ui.text.clearGrouping'))}</button></div>
                             <section class="planning-list" data-kind="${kind}" aria-live="polite"></section>
@@ -624,7 +633,48 @@ class TaskWorkspace extends HTMLElement {
         this.renderPlanning();
     }
 
+    collapseCaptureCards() {
+        this.querySelectorAll('.capture-region').forEach(region => {
+            const button = this.querySelector(`[aria-controls="${region.id}"]`);
+            if (region.hidden || region.dataset.collapsing) return;
+            region._captureAnimation?.cancel();
+            const finish = () => {
+                region.hidden = true;
+                button.hidden = false;
+                delete region.dataset.collapsing;
+            };
+            if (region.closest('[role="tabpanel"]').hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                finish();
+                return;
+            }
+            region.dataset.collapsing = 'true';
+            region._captureAnimation = region.animate(
+                [{ height: `${region.offsetHeight}px`, opacity: 1, overflow: 'hidden' }, { height: '0px', opacity: 0, overflow: 'hidden' }],
+                { duration: 500, easing: 'ease-in-out' }
+            );
+            region._captureAnimation.onfinish = finish;
+        });
+    }
+
     bindPlanningEvents() {
+        this.querySelectorAll('.capture-open').forEach(button => button.addEventListener('click', () => {
+            const card = this.querySelector(`#${button.dataset.captureOpen}-capture`);
+            card.hidden = false;
+            button.hidden = true;
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                card._captureAnimation = card.animate(
+                    [{ height: '0px', opacity: 0, overflow: 'hidden' }, { height: `${card.offsetHeight}px`, opacity: 1, overflow: 'hidden' }],
+                    { duration: 250, easing: 'ease-in-out' }
+                );
+            }
+            card.querySelector('input').focus({ preventScroll: true });
+        }));
+        const collapseOutsideCapture = event => {
+            if (!event.composedPath().some(node => node.classList?.contains('capture-region') || node.classList?.contains('capture-open'))) this.collapseCaptureCards();
+        };
+        this.addEventListener('pointerdown', collapseOutsideCapture, true);
+        this.addEventListener('focusin', collapseOutsideCapture, true);
+        window.addEventListener('scroll', this.handleCaptureScroll, true);
         const kinds = ['tasks', 'plans', 'goals', 'wants'];
         this.querySelectorAll('.workspace-tab').forEach(tab => {
             tab.addEventListener('click', () => this.setMainView(tab.dataset.view));
@@ -1586,6 +1636,7 @@ class TaskWorkspace extends HTMLElement {
         this.querySelectorAll('.nav-button').forEach((button) => {
             button.classList.toggle('active', button.dataset.status === this.statusFilter);
         });
+        this.renderAssociations();
         this.renderTasks();
         requestAnimationFrame(() => {
             const element = [...this.querySelectorAll('task-item')].find((item) => item.dataset.taskId === taskId);
@@ -2086,6 +2137,24 @@ class TaskWorkspace extends HTMLElement {
 
     renderAssociations() {
         const container = this.querySelector('.association-nav');
+        const pills = this.querySelector('.association-filter-pills');
+        pills.replaceChildren();
+        pills.hidden = !this.associationFilter;
+        if (this.associationFilter) {
+            const pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = 'association-filter-pill';
+            const label = `${this.associationFilter.type}: ${this.associationFilter.value}`;
+            pill.setAttribute('aria-label', `${t('ui.text.clearGrouping')}: ${label}`);
+            const text = document.createElement('span');
+            text.textContent = label;
+            const close = document.createElement('span');
+            close.setAttribute('aria-hidden', 'true');
+            close.textContent = '×';
+            pill.append(text, close);
+            pill.addEventListener('click', () => this.setAssociationFilter(null));
+            pills.append(pill);
+        }
         const grouped = new Map();
         const records = this.mainView === 'tasks' ? this.tasks : this.listPlanning(this.mainView);
         for (const task of records) {
