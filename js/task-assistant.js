@@ -1,4 +1,5 @@
 import { guidanceSystemPrompt, guidanceTapTree, taskCapabilityReport } from './task-guidance.js';
+import { gTools } from './gTools.js';
 
 // CODE (Cognitive Operations Driving Execution) / FILES (Formalized Into Logical
 // Encodings): self-knowledge is maintained in task-guidance.js and grounded in
@@ -43,7 +44,7 @@ export async function connectTaskAssistant(meme, api, options = {}) {
     meme.intro = 'intro';
     meme.draggable = true;
     meme.tracking = true;
-    meme.location = 'top-center';
+    meme.location = 'bottom-center';
     const disconnectPrompts = api.prompts.connect(async request => {
         // Select the composer; microphone capture still starts through Meme’s own controls.
         meme.setPrompterMode(request.mode);
@@ -62,6 +63,7 @@ export function installTaskAssistant() {
     const source = document.querySelector('meta[name="taskimatic-assistant"]')?.content;
     if (!source) return; // Portable copies omit the external assistant.
     const api = window.taskimatic;
+    if (api?.tools?.register) gTools.registerWith(api.tools);
     window.initMeme = meme => connectTaskAssistant(meme, api);
     const script = document.createElement('script');
     script.dataset.taskimaticAssistant = '';

@@ -1,0 +1,179 @@
+/* Default styles for the gTools human-in-the-loop approval dialog (#gtools-approval-dialog).
+ * Override by placing a gTools.css in the same directory as gTools.js, in ../css/gTools.css,
+ * or in ../gTools.css.
+ */
+
+#gtools-approval-dialog {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0;
+    max-width: 58rem;
+    width: calc(100vw - 2rem);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #111827;
+    background: #ffffff;
+    margin: auto;
+}
+
+#gtools-approval-dialog:modal {
+    overscroll-behavior: contain;
+}
+
+#gtools-approval-dialog::backdrop {
+    background: rgb(15 23 42 / 0.55);
+    backdrop-filter: blur(2px);
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+
+#gtools-approval-dialog .gt-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+#gtools-approval-dialog .gt-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+#gtools-approval-dialog .gt-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+#gtools-approval-dialog .gt-badge {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+#gtools-approval-dialog .gt-badge-create { background: #dbeafe; color: #1d4ed8; }
+#gtools-approval-dialog .gt-badge-update { background: #fef3c7; color: #b45309; }
+#gtools-approval-dialog .gt-badge-delete { background: #fee2e2; color: #b91c1c; }
+
+#gtools-approval-dialog .gt-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+#gtools-approval-dialog .gt-body {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+#gtools-approval-dialog .gt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+#gtools-approval-dialog .gt-table th {
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    position: sticky;
+    top: 0;
+}
+
+#gtools-approval-dialog .gt-table td {
+    padding: 0.625rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: top;
+}
+
+#gtools-approval-dialog .gt-table tr:last-child td {
+    border-bottom: none;
+}
+
+#gtools-approval-dialog .gt-table tr.gt-row-unchecked td {
+    opacity: 0.5;
+}
+
+#gtools-approval-dialog .gt-tool-name {
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+}
+
+#gtools-approval-dialog .gt-kv-list {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+#gtools-approval-dialog .gt-kv-list dt {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+#gtools-approval-dialog .gt-kv-list dd {
+    margin: 0;
+    color: #111827;
+    word-break: break-word;
+}
+
+#gtools-approval-dialog .gt-actions {
+    padding: 0.875rem 1.25rem;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.625rem;
+    background: #f9fafb;
+}
+
+#gtools-approval-dialog button {
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+#gtools-approval-dialog .gt-btn-cancel {
+    background: #ffffff;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+#gtools-approval-dialog .gt-btn-cancel:hover { background: #f3f4f6; }
+
+#gtools-approval-dialog .gt-btn-approve {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+#gtools-approval-dialog .gt-btn-approve:hover:not(:disabled) { background: #1d4ed8; }
+#gtools-approval-dialog .gt-btn-approve:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#gtools-approval-dialog .gt-btn-delete {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+#gtools-approval-dialog .gt-btn-delete:hover:not(:disabled) { background: #b91c1c; }

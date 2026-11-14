@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gTools Agent Test Bed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 flex items-center justify-center p-4">
+
+    <div class="max-w-3xl w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-white">
+            <h1 class="text-2xl font-semibold">gTools Agent Test Bed</h1>
+            <p class="text-blue-100 text-sm mt-1">Standalone Google Calendar, Contacts &amp; Tasks + Approval Gate</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- 1. Configuration & Auth -->
+            <section class="space-y-3">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">1. Configuration &amp; OAuth</h2>
+                <div>
+                    <label for="clientId" class="block text-sm font-medium text-gray-700">Google OAuth Client ID</label>
+                    <input type="text" id="clientId" placeholder="1234567890-abcxyz.apps.googleusercontent.com"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    <p class="text-xs text-gray-400 mt-1">Authorized for this origin. Scopes: Calendar Events, Contacts, Tasks.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="authBtn" type="button" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md font-medium transition-colors shadow-sm text-sm">
+                        Connect Google Account
+                    </button>
+                    <button id="exportAuthBtn" type="button" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md font-medium shadow-sm text-sm">Export</button>
+                    <button id="importAuthBtn" type="button" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md font-medium shadow-sm text-sm">Import</button>
+                    <input id="importAuthFile" type="file" accept=".json,application/json" hidden>
+                    <span id="authStatus" class="text-sm text-gray-500 font-medium ml-auto">Not authenticated</span>
+                </div>
+            </section>
+
+            <!-- 2. Direct gTools Quick Tests -->
+            <section class="space-y-4 pt-4 border-t border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">2. Direct gTools API</h2>
+
+                <!-- Calendar -->
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                    <div class="text-xs font-semibold text-gray-600 uppercase">Calendar</div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input id="calDate" type="date" class="border rounded px-2 py-1 text-sm bg-white">
+                        <button data-auth-req id="getDayEventsBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">Get Day Events</button>
+                        <button data-auth-req id="getWeekEventsBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">Next 7 Days</button>
+                        <button data-auth-req id="createEventBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">Create Demo Event</button>
+                    </div>
+                </div>
+
+                <!-- Contacts -->
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                    <div class="text-xs font-semibold text-gray-600 uppercase">Contacts</div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input id="contactQuery" type="text" placeholder="Search name/email..." class="border rounded px-2 py-1 text-sm bg-white flex-1 min-w-[160px]">
+                        <button data-auth-req id="findContactsBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">Find Contacts</button>
+                        <button data-auth-req id="listContactsBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">List Contacts</button>
+                    </div>
+                </div>
+
+                <!-- Tasks -->
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                    <div class="text-xs font-semibold text-gray-600 uppercase">Google Tasks</div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input id="taskTitle" type="text" placeholder="New task title..." class="border rounded px-2 py-1 text-sm bg-white flex-1 min-w-[160px]">
+                        <button data-auth-req id="listTasksBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">List Tasks</button>
+                        <button data-auth-req id="listTaskListsBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">Task Lists</button>
+                        <button data-auth-req id="createTaskBtn" disabled class="disabled:opacity-50 bg-white border border-gray-300 hover:bg-gray-100 px-3 py-1.5 rounded text-sm font-medium">Create Task</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Agent Tool Simulator (Approval Gate) -->
+            <section class="space-y-3 pt-4 border-t border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">3. Agent Tool Runner (Tests Approval Pop-up)</h2>
+                    <span id="toolEffectBadge" class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">read-only</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <select id="agentToolSelect" class="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white flex-1 min-w-[220px]"></select>
+                    <button data-auth-req id="runAgentToolBtn" disabled class="disabled:opacity-50 bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium">
+                        Run as Agent
+                    </button>
+                    <button id="testBatchBtn" type="button" class="bg-amber-50 border border-amber-300 text-amber-800 hover:bg-amber-100 px-3 py-2 rounded-md text-sm font-medium">
+                        Test Batch (3 calls)
+                    </button>
+                </div>
+                <textarea id="agentToolArgs" rows="4" class="w-full border border-gray-300 rounded-md p-2 font-mono text-xs bg-gray-50" spellcheck="false"></textarea>
+            </section>
+
+            <!-- 4. Live Web Component (getUI) -->
+            <section class="space-y-3 pt-4 border-t border-gray-100">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">4. Live Web Component (getUI)</h2>
+                    <div class="flex flex-wrap gap-2">
+                        <button data-auth-req id="mountCalDayBtn" disabled class="disabled:opacity-50 bg-blue-50 border border-blue-300 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded text-sm font-medium">Calendar.connect(gTools, 'day')</button>
+                        <button data-auth-req id="mountCalWeekBtn" disabled class="disabled:opacity-50 bg-blue-50 border border-blue-300 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded text-sm font-medium">Calendar.connect(gTools, 'week')</button>
+                        <button id="clearUiMountBtn" type="button" class="bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded text-sm font-medium">Clear</button>
+                    </div>
+                </div>
+                <div id="uiMount" class="min-h-[120px] rounded-lg border border-dashed border-gray-300 bg-gray-50/50"></div>
+            </section>
+
+            <!-- Output Console -->
+            <section class="space-y-2 pt-4 border-t border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Output Console</h2>
+                    <button id="clearLogBtn" type="button" class="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+                </div>
+                <div class="bg-gray-900 rounded-md p-4 overflow-x-auto h-64">
+                    <pre id="consoleOutput" class="text-green-400 text-xs font-mono whitespace-pre-wrap m-0"></pre>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module">
+        import { gTools } from './js/gTools.js';
+        import { Calendar } from './js/calendarUI.js';
+
+        const consoleEl = document.getElementById('consoleOutput');
+        const clientIdInput = document.getElementById('clientId');
+        const authStatusEl = document.getElementById('authStatus');
+        const calDateInput = document.getElementById('calDate');
+        const agentToolSelect = document.getElementById('agentToolSelect');
+        const agentToolArgs = document.getElementById('agentToolArgs');
+        const toolEffectBadge = document.getElementById('toolEffectBadge');
+
+        calDateInput.value = new Date().toISOString().slice(0, 10);
+
+        function logMsg(msg, isError = false) {
+            const time = new Date().toLocaleTimeString();
+            const span = document.createElement('span');
+            span.textContent = `[${time}] ${msg}\n`;
+            if (isError) span.className = 'text-red-400';
+            consoleEl.appendChild(span);
+            consoleEl.parentElement.scrollTop = consoleEl.parentElement.scrollHeight;
+        }
+
+        function setAuthenticatedUI(label) {
+            authStatusEl.textContent = label;
+            authStatusEl.className = 'text-sm text-green-600 font-medium ml-auto';
+            document.querySelectorAll('[data-auth-req]').forEach((btn) => { btn.disabled = false; });
+        }
+
+        function setUnauthenticatedUI(label, isExpired = false) {
+            authStatusEl.textContent = label;
+            authStatusEl.className = isExpired
+                ? 'text-sm text-amber-600 font-medium ml-auto'
+                : 'text-sm text-gray-500 font-medium ml-auto';
+            document.querySelectorAll('[data-auth-req]').forEach((btn) => { btn.disabled = true; });
+        }
+
+        window.addEventListener('gtools:auth-expired', () => {
+            setUnauthenticatedUI('Token expired — reconnect', true);
+        });
+
+        document.getElementById('clearLogBtn').addEventListener('click', () => { consoleEl.textContent = ''; });
+
+        // Client ID persistence
+        clientIdInput.addEventListener('input', () => {
+            gTools.auth.setClientId(clientIdInput.value).catch((err) => logMsg(`Client ID Save Error: ${err.message}`, true));
+        });
+
+        // Connect OAuth
+        document.getElementById('authBtn').addEventListener('click', async () => {
+            try {
+                logMsg('Requesting Google OAuth token (Calendar, Contacts, Tasks)...');
+                await gTools.auth.connect({ clientId: clientIdInput.value });
+                logMsg('✅ Authenticated! Token saved in IndexedDB.');
+                setAuthenticatedUI('Authenticated');
+            } catch (err) {
+                logMsg(`Auth Error: ${err.message}`, true);
+            }
+        });
+
+        // Export / Import
+        document.getElementById('exportAuthBtn').addEventListener('click', async () => {
+            try {
+                await gTools.auth.downloadBackup();
+                logMsg('OAuth credentials exported.');
+            } catch (err) {
+                logMsg(`Export Error: ${err.message}`, true);
+            }
+        });
+
+        const importAuthFile = document.getElementById('importAuthFile');
+        document.getElementById('importAuthBtn').addEventListener('click', () => importAuthFile.click());
+        importAuthFile.addEventListener('change', async () => {
+            const file = importAuthFile.files[0];
+            if (!file) return;
+            try {
+                const res = await gTools.auth.importBackup(await file.text());
+                clientIdInput.value = res.clientId;
+                setAuthenticatedUI('Imported credentials');
+                logMsg(`OAuth credentials imported (${res.format}).`);
+            } catch (err) {
+                logMsg(`Import Error: ${err.message}`, true);
+            } finally {
+                importAuthFile.value = '';
+            }
+        });
+
+        // Direct gTools tests
+        document.getElementById('getDayEventsBtn').addEventListener('click', async () => {
+            try {
+                const date = calDateInput.value || new Date();
+                const events = await gTools.calendar.getDayEvents(date);
+                logMsg(`Calendar (${date}): ${events.length} event(s)\n` + JSON.stringify(events.map((e) => ({ id: e.id, summary: e.summary, start: e.start })), null, 2));
+            } catch (err) {
+                logMsg(`Calendar Error: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('getWeekEventsBtn').addEventListener('click', async () => {
+            try {
+                const start = new Date();
+                const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const events = await gTools.calendar.getEvents({ start, end });
+                logMsg(`Calendar (Next 7 days): ${events.length} event(s)\n` + JSON.stringify(events.map((e) => ({ id: e.id, summary: e.summary, start: e.start })), null, 2));
+            } catch (err) {
+                logMsg(`Calendar Error: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('createEventBtn').addEventListener('click', async () => {
+            try {
+                const created = await gTools.calendar.newEvent({
+                    summary: '🤖 gTools Demo Event',
+                    description: 'Created via gTools.calendar.newEvent'
+                });
+                logMsg(`✅ Event created: ${created.id} (${created.htmlLink})`);
+            } catch (err) {
+                logMsg(`Calendar Error: ${err.message}`, true);
+            }
+        });
+
+        for (const [btnId, mode] of [['mountCalDayBtn', 'day'], ['mountCalWeekBtn', 'week']]) {
+            document.getElementById(btnId).addEventListener('click', () => {
+                const mount = document.getElementById('uiMount');
+                const ui = Calendar.connect(gTools, { mode, date: calDateInput.value || new Date() });
+                mount.replaceChildren(ui);
+                logMsg(`Mounted <calendar-ui> via Calendar.connect(gTools, { mode: '${mode}' }).`);
+            });
+        }
+        document.getElementById('clearUiMountBtn').addEventListener('click', () => {
+            document.getElementById('uiMount').replaceChildren();
+        });
+
+        document.getElementById('findContactsBtn').addEventListener('click', async () => {
+            try {
+                const q = document.getElementById('contactQuery').value.trim();
+                const matches = await gTools.contacts.find(q);
+                logMsg(`Contacts matching "${q}": ${matches.length}\n` + JSON.stringify(matches, null, 2));
+            } catch (err) {
+                logMsg(`Contacts Error: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('listContactsBtn').addEventListener('click', async () => {
+            try {
+                const res = await gTools.contacts.list({ pageSize: 20 });
+                logMsg(`Contacts listed: ${res.connections.length}\n` + JSON.stringify(res.connections, null, 2));
+            } catch (err) {
+                logMsg(`Contacts Error: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('listTaskListsBtn').addEventListener('click', async () => {
+            try {
+                const lists = await gTools.tasks.listLists();
+                logMsg(`Task Lists: ${lists.length}\n` + JSON.stringify(lists, null, 2));
+            } catch (err) {
+                logMsg(`Tasks Error: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('listTasksBtn').addEventListener('click', async () => {
+            try {
+                const items = await gTools.tasks.list('@default');
+                logMsg(`Tasks (@default): ${items.length}\n` + JSON.stringify(items, null, 2));
+            } catch (err) {
+                logMsg(`Tasks Error: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('createTaskBtn').addEventListener('click', async () => {
+            try {
+                const title = document.getElementById('taskTitle').value.trim() || 'gTools Demo Task';
+                const task = await gTools.tasks.create({ title });
+                logMsg(`✅ Task created: ${task.id} — ${task.title}`);
+            } catch (err) {
+                logMsg(`Tasks Error: ${err.message}`, true);
+            }
+        });
+
+        // Agent Tool Runner
+        const SAMPLE_ARGS = {
+            google_calendar_get_events: { start: new Date().toISOString().slice(0, 10), end: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10) },
+            google_calendar_get_day_events: { date: new Date().toISOString().slice(0, 10) },
+            google_calendar_get_colors: {},
+            google_calendar_new_event: { summary: 'Agent Scheduled Sync', description: 'Created via agent tool with approval' },
+            google_calendar_new_scheduled_task: { title: 'Draft launch email', notes: 'Time-blocked on calendar', durationMinutes: 30 },
+            google_calendar_update_event: { eventId: 'EVENT_ID', patch: { summary: 'Updated Title', description: 'Added details', location: 'Zoom' } },
+            google_calendar_delete_event: { eventId: 'EVENT_ID' },
+            google_contacts_find: { query: 'alex' },
+            google_contacts_list: { pageSize: 10 },
+            google_contacts_create: { displayName: 'Alex Example', email: 'alex@example.com' },
+            google_contacts_update: { resourceName: 'people/CONTACT_ID', patch: { phone: '+15550100' } },
+            google_contacts_delete: { resourceName: 'people/CONTACT_ID' },
+            google_contacts_get_labels: {},
+            google_contacts_add_label: { labelResourceName: 'contactGroups/LABEL_ID', contactResourceNames: ['people/CONTACT_ID'] },
+            google_contacts_remove_label: { labelResourceName: 'contactGroups/LABEL_ID', contactResourceNames: ['people/CONTACT_ID'] },
+            google_tasks_list_lists: {},
+            google_tasks_list: { taskListId: '@default', showCompleted: false },
+            google_tasks_find: { query: 'review plan' },
+            google_tasks_create_list: { title: 'Project Launch' },
+            google_tasks_create: { title: 'Review Q4 plan', due: new Date().toISOString().slice(0, 10) },
+            google_tasks_update: { taskId: 'TASK_ID', patch: { title: 'Updated task' } },
+            google_tasks_complete: { taskId: 'TASK_ID' },
+            google_tasks_move: { taskId: 'TASK_ID', parent: 'PARENT_TASK_ID' },
+            google_tasks_delete: { taskId: 'TASK_ID' }
+        };
+
+        const agentTools = gTools.getAgentTools({ requireApproval: true });
+        for (const tool of agentTools) {
+            const opt = document.createElement('option');
+            opt.value = tool.name;
+            opt.textContent = `${tool.name} (${tool.annotations.requiresApproval ? 'approval required' : 'no approval'})`;
+            agentToolSelect.appendChild(opt);
+        }
+
+        function syncSelectedTool() {
+            const tool = agentTools.find((t) => t.name === agentToolSelect.value);
+            if (!tool) return;
+            agentToolArgs.value = JSON.stringify(SAMPLE_ARGS[tool.name] || {}, null, 2);
+            const needsApproval = tool.annotations.requiresApproval;
+            toolEffectBadge.textContent = !needsApproval ? 'runs directly' : tool.annotations.destructive ? 'destructive (approval pop-up)' : 'write (approval pop-up)';
+            toolEffectBadge.className = !needsApproval
+                ? 'text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium'
+                : tool.annotations.destructive
+                    ? 'text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium'
+                    : 'text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium';
+        }
+        agentToolSelect.addEventListener('change', syncSelectedTool);
+        syncSelectedTool();
+
+        document.getElementById('runAgentToolBtn').addEventListener('click', async () => {
+            const tool = agentTools.find((t) => t.name === agentToolSelect.value);
+            if (!tool) return;
+            try {
+                const args = JSON.parse(agentToolArgs.value || '{}');
+                logMsg(`Agent invoking ${tool.name}...`);
+                const result = await tool.execute(args);
+                logMsg(`Result from ${tool.name}:\n` + JSON.stringify(result, null, 2));
+            } catch (err) {
+                logMsg(`${tool.name}: ${err.message}`, true);
+            }
+        });
+
+        document.getElementById('testBatchBtn').addEventListener('click', async () => {
+            logMsg('Staging 3 clustered write/delete calls (2s batch window)...');
+            const byName = Object.fromEntries(agentTools.map((t) => [t.name, t]));
+            const calls = [
+                byName.google_calendar_new_scheduled_task.execute({ title: 'Review Q4 Budget', durationMinutes: 30 }),
+                byName.google_tasks_create.execute({ title: 'Send summary to team', due: new Date().toISOString().slice(0, 10) }),
+                byName.google_calendar_delete_event.execute({ eventId: 'demo-event-id' })
+            ];
+            const settled = await Promise.allSettled(calls);
+            settled.forEach((res, idx) => {
+                if (res.status === 'fulfilled') logMsg(`Batch item #${idx + 1} executed.`);
+                else logMsg(`Batch item #${idx + 1}: ${res.reason?.message}`, true);
+            });
+        });
+
+        // Init from IndexedDB
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const savedId = await gTools.auth.getClientId();
+                if (savedId && !clientIdInput.value) clientIdInput.value = savedId;
+                const status = await gTools.auth.getStatus();
+                if (status.authenticated) {
+                    setAuthenticatedUI('Previously Authenticated');
+                    logMsg('Found existing credentials in IndexedDB.');
+                } else if (status.expired) {
+                    setUnauthenticatedUI('Token expired — reconnect', true);
+                    logMsg('Stored OAuth token expired. Click "Connect Google Account" to re-authenticate.', true);
+                } else {
+                    setUnauthenticatedUI('Not authenticated');
+                    logMsg('System initialized. Connect Google Account or import credentials.');
+                }
+            } catch (err) {
+                logMsg(`Init Error: ${err.message}`, true);
+            }
+        });
+    </script>
+</body>
+</html>

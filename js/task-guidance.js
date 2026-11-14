@@ -289,6 +289,46 @@ export const PROCESS_STEPS = [
         hint: 'Start with a verb. Name a finish condition and split work that is too broad to start.',
         fields: [{ key: 'text', label: 'Task / action', required: true }, { key: 'notes', label: 'Done when / context' }, { key: 'prompts', label: 'Instructions for an agent (optional)' }],
         prompt: `Use the supplied Plan and read its thinking and linked Goal before decomposing it. If missing, listPlans and help select one, unless the user asks for standalone tasks or clearly requests adding a task without a parent. Propose a small, useful set of imperative Tasks, ordered by real dependencies. Each should identify a concrete action, a clear finish condition in notes, and enough context to begin. Split vague or oversized work; avoid manufacturing a large backlog. Ask whether a human or named agent should do it only when assignment matters. Preserve user-supplied agent instructions in prompts. Use planId when selected; suggest relevant project, initiative, sub-system, feature, client, domain, work-area, or dependent-task associations without requiring every category. If one new task depends on another, save the prerequisite first; retain its returned ID for tool calls and use its exact saved title as the dependent-task association value. Estimates can only be 10, 30, 60, 90 minutes or null; leave uncertain values unset and do not round silently. Set estimates, Today, priority, or assignments only when requested or accepted; start timers only when explicitly requested. Save requested or accepted tasks with createTask/createChild, or edit with updateTask and association tools. End with the next actionable task and any unresolved blocker; offer another task or stop when useful.`
+    },
+    {
+        id: 'dependent-tasks', label: "Let's organize task dependencies", kind: 'tasks', parentKind: null, next: null,
+        question: 'Which tasks depend on other tasks?',
+        hint: 'Identify dependencies or related work between tasks.',
+        fields: [{ key: 'taskId', label: 'Task ID', required: true }, { key: 'relatedTaskId', label: 'Related Task ID', required: true }],
+        prompt: `Use the supplied Task IDs to establish associations between tasks. If missing, listTasks and help select the relevant tasks. Save the associations using the appropriate tool.`,
+        tools: ['associateTasks','listTasks'],
+        preTool: 'independentTasks'
+    },
+    {
+        id: 'tag-tasks', label: "Let's tag tasks", kind: 'tasks', parentKind: null, next: null,
+        question: 'Are there any association tags that should be applied to tasks that aren\'t already tagged?',
+        hint: 'Use tags to associate tasks so we can flexibly organize them.',
+        fields: [{ key: 'taskId', label: 'Task ID', required: true }, { key: 'tags', label: 'Tags (comma-separated)', required: true }],
+        prompt: `Use the association tool to get the list of associations and tasks that exist in the app and use your intelligence to determine appropriate connections.`,
+        preTool: 'taggableTasks'
+    },
+    {
+        id: 'infer-plans', label: "Let's infer plans", kind: 'plans', parentKind: null, next: null,
+        question: 'Are there any plans that can be inferred from existing tasks that aren\'t associated with a plan?',
+        hint: 'Identify plans that logically follow from these tasks that have no plan.',
+        tools: ['inferPlans','listPlans'],
+        prompt: `Use the supplied Task IDs to infer relevant plans. If missing, listTasks and help select the relevant tasks. Save the inferred plans using the appropriate tool.`,
+        preTool: 'inferablePlans'
+    },
+    {   id: 'determine-sub-tasks', label: "Let's determine sub-tasks", kind: 'tasks', parentKind: null, next: null,
+        question: 'Are there any sub-tasks that can be derived from existing tasks?',
+        hint: 'Break down tasks into smaller, manageable sub-tasks.',
+        tools: ['listTasks','saveSubTask'],
+        prompt: `Use the supplied Task IDs to determine relevant sub-tasks. If missing, listTasks and help select the relevant tasks. Save the sub-tasks using the appropriate tool.`,
+        preTool: 'listTasks'
+    },
+    {
+        id: 'infer-goals', label: "Let's infer goals", kind: 'goals', parentKind: null, next: null,
+        question: 'Look at the tasks that don\'t have an associated plans and plans that don\'t have an associated goal. Are there any goals that can be inferred from these?',
+        hint: 'Identify goals that logically follow from these tasks and plans that don\'t have an associated goal.',
+        tools: ['inferGoals','listPlans','listGoals'],
+        prompt: `Use the supplied Task and Plan IDs to infer relevant goals. If missing, listTasks and listPlans and help select the relevant tasks and plans. Save the inferred goals using the appropriate tool.`,
+        preTool: 'GoalessTasksAndPlans'
     }
 ];
 
